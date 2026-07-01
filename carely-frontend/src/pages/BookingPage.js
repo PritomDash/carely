@@ -1,31 +1,384 @@
-import React, { useState, useEffect } from 'react';
-import api, { API_BASE } from '../services/api';
+import React, { useState, useEffect, useMemo } from 'react';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { formatBDT } from '../utils/currency';
+import SafetyDisclaimer from '../components/SafetyDisclaimer';
 
-// Book a professional with calendar and time picker
-// TODO: Full implementation via Claude Code
+const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const DAY_BY_INDEX = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+const toDateStr = (d) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
+const toMin = (t) => {
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+};
+
+const toHHMM = (mins) => `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`;
+
+const getDayType = (dateStr) => {
+  const dow = new Date(dateStr).getDay();
+  if (dow === 6) return 'saturday';
+  if (dow === 0) return 'sunday';
+  return 'weekday';
+};
+
+const getAppliedRate = (dateStr, pro) => {
+  const type = getDayType(dateStr);
+  if (type === 'saturday' && pro.saturdayRate > 0) return pro.saturdayRate;
+  if (type === 'sunday' && pro.sundayRate > 0) return pro.sundayRate;
+  if (pro.weekdayRate > 0) return pro.weekdayRate;
+  return pro.hourlyRate || 0;
+};
 
 export default function BookingPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { id } = useParams();
 
-  return (
-    <div className="page">
-      <div className="card" style={{ textAlign: 'center', padding: 40 }}>
-        <h2>BookingPage</h2>
-        <p className="text-muted" style={{ marginTop: 8 }}>
-          Book a professional with calendar and time picker
-        </p>
-        <p style={{ marginTop: 20, color: '#16a34a' }}>
-          ✅ Route registered — implement with Claude Code
-        </p>
-        <div style={{ marginTop: 20, display: 'flex', gap: 12, justifyContent: 'center' }}>
-          <Link to="/" className="btn btn-secondary">Home</Link>
-          <Link to="/login" className="btn btn-primary">Login</Link>
+  const [pro, setPro] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [confirmation, setConfirmation] = useState(null);
+
+  const [fullyBlockedDates, setFullyBlockedDates] = useState([]);
+  const [partiallyBlockedDates, setPartiallyBlockedDates] = useState({});
+
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const [bookedRanges, setBookedRanges] = useState([]);
+  const [availableWindow, setAvailableWindow] = useState(null);
+  const [selectedTime, setSelectedTime] = useState('');
+
+  const [duration, setDuration] = useState(1);
+  const [type, setType] = useState('short');
+  const [recurringDays, setRecurringDays] = useState([]);
+  const [address, setAddress] = useState('');
+  const [workDescription, setWorkDescription] = useState('');
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+    }
+  }, [user, navigate]);
+
+  useEffect(() => {
+    api.get(`/api/users/${id}`)
+      .then((res) => setPro(res.data))
+      .catch(() => setError('Failed to load professional'))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  useEffect(() => {
+    api.get(`/api/bookings/disabled-days/${id}`)
+      .then((res) => {
+        setFullyBlockedDates(res.data.fullyBlockedDates || []);
+        setPartiallyBlockedDates(res.data.partiallyBlockedDates || {});
+      })
+      .catch(() => {});
+  }, [id]);
+
+  useEffect(() => {
+    if (!selectedDate) {
+      setBookedRanges([]);
+      setAvailableWindow(null);
+      setSelectedTime('');
+      return;
+    }
+    setSlotsLoading(true);
+    setSelectedTime('');
+    api.get('/api/bookings/unavailable-times', {
+      params: { professionalId: id, date: toDateStr(selectedDate) },
+    }).then((res) => {
+      setBookedRanges(res.data.bookedRanges || []);
+      setAvailableWindow(res.data.availableWindow || null);
+    }).catch(() => {
+      setBookedRanges([]);
+      setAvailableWindow(null);
+    }).finally(() => setSlotsLoading(false));
+  }, [selectedDate, id]);
+
+  const timeSlots = useMemo(() => {
+    if (!availableWindow?.start || !availableWindow?.end) return [];
+    const startMin = toMin(availableWindow.start);
+    const endMin = toMin(availableWindow.end);
+    const durationMin = Number(duration) * 60;
+    const slots = [];
+    for (let m = startMin; m < endMin; m += 30) {
+      const slotEnd = m + durationMin;
+      const overlapsBooked = bookedRanges.some(
+        (r) => toMin(r.start) < slotEnd && toMin(r.end) > m
+      );
+      const fitsWindow = slotEnd <= endMin;
+      slots.push({ time: toHHMM(m), disabled: overlapsBooked || !fitsWindow });
+    }
+    return slots;
+  }, [availableWindow, bookedRanges, duration]);
+
+  const estimatedPrice = useMemo(() => {
+    if (!pro || !selectedDate) return 0;
+    if (type === 'short') {
+      return getAppliedRate(toDateStr(selectedDate), pro) * Number(duration);
+    }
+    let total = 0;
+    for (let i = 0; i < 7; i++) {
+      const cur = new Date(selectedDate);
+      cur.setDate(cur.getDate() + i);
+      if (recurringDays.includes(DAY_BY_INDEX[cur.getDay()])) {
+        total += getAppliedRate(toDateStr(cur), pro) * Number(duration);
+      }
+    }
+    if (total === 0) {
+      total = getAppliedRate(toDateStr(selectedDate), pro) * Number(duration);
+    }
+    return total;
+  }, [pro, selectedDate, type, duration, recurringDays]);
+
+  const toggleDay = (day) => {
+    setRecurringDays((prev) => prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]);
+  };
+
+  const filterDate = (date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (date < today) return false;
+    return !fullyBlockedDates.includes(toDateStr(date));
+  };
+
+  const dayClassName = (date) => {
+    return partiallyBlockedDates[toDateStr(date)] ? 'day-partial' : undefined;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    if (!selectedDate || !selectedTime) {
+      setError('Please select a date and time.');
+      return;
+    }
+    if (!address.trim() || !workDescription.trim()) {
+      setError('Address and work description are required.');
+      return;
+    }
+    if (type === 'long' && recurringDays.length === 0) {
+      setError('Please select at least one day for a long-term booking.');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const dateStr = toDateStr(selectedDate);
+
+      const checkRes = await api.post('/api/bookings/check-availability', {
+        professionalId: id,
+        date: dateStr,
+        time: selectedTime,
+        duration,
+      });
+
+      if (!checkRes.data.available) {
+        setError('That time is no longer available. Please choose another slot.');
+        setSubmitting(false);
+        return;
+      }
+
+      const createRes = await api.post('/api/bookings/create', {
+        professionalId: id,
+        date: dateStr,
+        time: selectedTime,
+        type,
+        recurringDays: type === 'long' ? recurringDays : [],
+        duration,
+        address,
+        workDescription,
+      });
+
+      setConfirmation(createRes.data.bookingId);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to create booking.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (loading) {
+    return <div className="page"><p className="text-muted">Loading...</p></div>;
+  }
+
+  if (!pro) {
+    return (
+      <div className="page">
+        <div className="card" style={{ textAlign: 'center', padding: 40 }}>
+          <p className="text-muted">{error || 'Professional not found.'}</p>
+          <Link to="/home" className="btn btn-secondary" style={{ marginTop: 16 }}>Back to Home</Link>
         </div>
       </div>
+    );
+  }
+
+  if (confirmation) {
+    return (
+      <div className="page" style={{ maxWidth: 480 }}>
+        <div className="card" style={{ textAlign: 'center', padding: 40 }}>
+          <h2 style={{ color: '#16a34a', marginBottom: 12 }}>Booking Requested!</h2>
+          <p className="text-muted" style={{ marginBottom: 8 }}>
+            Your booking request has been sent to {pro.name}.
+          </p>
+          <p className="text-muted" style={{ marginBottom: 20 }}>
+            Booking ID: <strong>{confirmation}</strong>
+          </p>
+          <Link to="/my-bookings" className="btn btn-primary">View My Bookings</Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="page" style={{ maxWidth: 640 }}>
+      <div className="card">
+        <h2>Book {pro.name}</h2>
+        <div className="grid-3" style={{ marginTop: 12 }}>
+          <div>
+            <div className="text-muted">Weekday</div>
+            <div style={{ fontWeight: 600 }}>{formatBDT(pro.weekdayRate)}/hr</div>
+          </div>
+          <div>
+            <div className="text-muted">Saturday</div>
+            <div style={{ fontWeight: 600 }}>{formatBDT(pro.saturdayRate)}/hr</div>
+          </div>
+          <div>
+            <div className="text-muted">Sunday</div>
+            <div style={{ fontWeight: 600 }}>{formatBDT(pro.sundayRate)}/hr</div>
+          </div>
+        </div>
+      </div>
+
+      {error && (
+        <div className="badge badge-red" style={{ display: 'block', marginTop: 16, padding: '8px 12px' }}>{error}</div>
+      )}
+
+      <form onSubmit={handleSubmit}>
+        <div className="card" style={{ marginTop: 16 }}>
+          <div className="form-group">
+            <label>Date</label>
+            <DatePicker
+              selected={selectedDate}
+              onChange={setSelectedDate}
+              filterDate={filterDate}
+              dayClassName={dayClassName}
+              minDate={new Date()}
+              placeholderText="Select a date"
+              dateFormat="yyyy-MM-dd"
+            />
+            <p className="text-muted" style={{ marginTop: 6 }}>
+              Greyed-out dates are fully booked. Dates with an orange dot are partially booked.
+            </p>
+          </div>
+
+          {selectedDate && (
+            <div className="form-group">
+              <label>Available Time Slots</label>
+              {slotsLoading ? (
+                <p className="text-muted">Loading time slots...</p>
+              ) : timeSlots.length === 0 ? (
+                <p className="text-muted">No available time slots on this date.</p>
+              ) : (
+                <div className="time-slot-grid">
+                  {timeSlots.map((slot) => (
+                    <button
+                      key={slot.time}
+                      type="button"
+                      disabled={slot.disabled}
+                      className={`time-slot ${selectedTime === slot.time ? 'selected' : ''}`}
+                      onClick={() => setSelectedTime(slot.time)}
+                    >
+                      {slot.time}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="grid-2">
+            <div className="form-group">
+              <label>Duration (hours)</label>
+              <select value={duration} onChange={(e) => setDuration(Number(e.target.value))}>
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((h) => <option key={h} value={h}>{h} hour{h > 1 ? 's' : ''}</option>)}
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Booking Type</label>
+              <select value={type} onChange={(e) => setType(e.target.value)}>
+                <option value="short">Short-term</option>
+                <option value="long">Long-term (recurring)</option>
+              </select>
+            </div>
+          </div>
+
+          {type === 'long' && (
+            <div className="form-group">
+              <label>Repeat On</label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                {DAYS.map((day) => (
+                  <label key={day} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13 }}>
+                    <input
+                      type="checkbox"
+                      style={{ width: 'auto' }}
+                      checked={recurringDays.includes(day)}
+                      onChange={() => toggleDay(day)}
+                    />
+                    {day}
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="form-group">
+            <label>Address</label>
+            <textarea
+              rows={3}
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="Full address where service is needed"
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Work Description</label>
+            <textarea
+              rows={3}
+              value={workDescription}
+              onChange={(e) => setWorkDescription(e.target.value)}
+              placeholder="Describe the work needed"
+              required
+            />
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderTop: '1px solid #f3f4f6' }}>
+            <span className="text-muted">Estimated Total</span>
+            <span style={{ fontSize: 20, fontWeight: 700, color: '#16a34a' }}>{formatBDT(estimatedPrice)}</span>
+          </div>
+
+          <button type="submit" className="btn btn-primary" disabled={submitting} style={{ width: '100%', marginTop: 8 }}>
+            {submitting ? 'Submitting...' : 'Confirm Booking Request'}
+          </button>
+        </div>
+      </form>
+
+      <SafetyDisclaimer />
     </div>
   );
 }
