@@ -1,30 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import api, { API_BASE } from '../services/api';
-import { useAuth } from '../context/AuthContext';
-import { useNavigate, useParams, Link } from 'react-router-dom';
-import { formatBDT } from '../utils/currency';
-
-// 404 page
-// TODO: Full implementation via Claude Code
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function NotFoundPage() {
-  const { user } = useAuth();
   const navigate = useNavigate();
 
   return (
-    <div className="page">
+    <div className="page" style={{ maxWidth: 420 }}>
       <div className="card" style={{ textAlign: 'center', padding: 40 }}>
-        <h2>NotFoundPage</h2>
-        <p className="text-muted" style={{ marginTop: 8 }}>
-          404 page
+        <h2 style={{ fontSize: 48, color: '#16a34a', marginBottom: 8 }}>404</h2>
+        <p className="text-muted" style={{ marginBottom: 24 }}>
+          The page you're looking for doesn't exist.
         </p>
-        <p style={{ marginTop: 20, color: '#16a34a' }}>
-          ✅ Route registered — implement with Claude Code
-        </p>
-        <div style={{ marginTop: 20, display: 'flex', gap: 12, justifyContent: 'center' }}>
-          <Link to="/" className="btn btn-secondary">Home</Link>
-          <Link to="/login" className="btn btn-primary">Login</Link>
-        </div>
+        <button className="btn btn-primary" onClick={() => navigate('/')}>
+          Go Home
+        </button>
       </div>
     </div>
   );

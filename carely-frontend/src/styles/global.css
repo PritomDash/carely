@@ -48,3 +48,10 @@ input, select, textarea { font-family: inherit; }
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
 @media (max-width: 768px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+@media (max-width: 480px) {
+  .page { padding: 20px 16px; }
+  .card { padding: 16px; }
+  .nav-inner { height: auto; padding: 12px 0; flex-wrap: wrap; gap: 10px; }
+  .nav-links { flex-wrap: wrap; gap: 10px; }
+}

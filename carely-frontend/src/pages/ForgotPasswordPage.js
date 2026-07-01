@@ -1,29 +1,66 @@
-import React, { useState, useEffect } from 'react';
-import api, { API_BASE } from '../services/api';
-import { useAuth } from '../context/AuthContext';
-import { useNavigate, useParams, Link } from 'react-router-dom';
-import { formatBDT } from '../utils/currency';
-
-// Forgot password form
-// TODO: Full implementation via Claude Code
+import React, { useState } from 'react';
+import api from '../services/api';
+import { Link } from 'react-router-dom';
 
 export default function ForgotPasswordPage() {
-  const { user } = useAuth();
-  const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    setLoading(true);
+    try {
+      await api.post('/api/auth/forgot-password', { email });
+      setSuccess('Check your email for a link to reset your password.');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="page">
-      <div className="card" style={{ textAlign: 'center', padding: 40 }}>
-        <h2>ForgotPasswordPage</h2>
-        <p className="text-muted" style={{ marginTop: 8 }}>
-          Forgot password form
+    <div className="page" style={{ maxWidth: 420 }}>
+      <div className="card">
+        <h2 style={{ marginBottom: 20, textAlign: 'center' }}>Forgot Password</h2>
+        <p className="text-muted" style={{ marginBottom: 20, textAlign: 'center' }}>
+          Enter your email and we'll send you a link to reset your password.
         </p>
-        <p style={{ marginTop: 20, color: '#16a34a' }}>
-          ✅ Route registered — implement with Claude Code
-        </p>
-        <div style={{ marginTop: 20, display: 'flex', gap: 12, justifyContent: 'center' }}>
-          <Link to="/" className="btn btn-secondary">Home</Link>
-          <Link to="/login" className="btn btn-primary">Login</Link>
+
+        {error && (
+          <div className="badge badge-red" style={{ display: 'block', marginBottom: 16, padding: '8px 12px' }}>
+            {error}
+          </div>
+        )}
+        {success && (
+          <div className="badge badge-green" style={{ display: 'block', marginBottom: 16, padding: '8px 12px' }}>
+            {success}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label>Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              required
+            />
+          </div>
+
+          <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: '100%', marginTop: 8 }}>
+            {loading ? 'Sending...' : 'Send Reset Link'}
+          </button>
+        </form>
+
+        <div style={{ marginTop: 20, textAlign: 'center' }}>
+          <Link to="/login" className="text-green">Back to login</Link>
         </div>
       </div>
     </div>
