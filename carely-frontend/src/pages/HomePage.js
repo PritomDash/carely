@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import api, { API_BASE } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
@@ -6,9 +6,7 @@ import { formatBDT } from '../utils/currency';
 import LocationSelector from '../components/LocationSelector';
 import socket from '../socket';
 import {
-  Bell, LogOut, Search, MapPin, Clock, Star,
-  ClipboardList, FileText, Bookmark, MessageSquare, User,
-  Edit, Wallet, CreditCard, Briefcase,
+  Bell, Search, MapPin, Clock, Star,
 } from 'lucide-react';
 
 const PROFESSIONAL_TYPES = ['Child Care', 'Aged Care', 'Nurse', 'Physiotherapist'];
@@ -18,6 +16,28 @@ const TYPE_COLORS = {
   'Nurse': { bg: '#DCFCE7', text: '#15803D' },
   'Physiotherapist': { bg: '#FFF7ED', text: '#C2410C' },
 };
+
+const CUSTOMER_LINKS = [
+  { emoji: '📋', label: 'My Bookings', to: '/my-bookings' },
+  { emoji: '📝', label: 'Post a Job', to: '/create-job-post' },
+  { emoji: '📌', label: 'My Job Posts', to: '/my-posts' },
+  { emoji: '💬', label: 'Chat Inbox', to: '/chat-inbox' },
+  { emoji: '👤', label: 'Edit Profile', to: '/edit-profile' },
+];
+
+const PROFESSIONAL_LINKS = [
+  { emoji: '📋', label: 'My Bookings', to: '/my-bookings' },
+  { emoji: '✏️', label: 'Edit Profile', to: '/edit-profile' },
+  { emoji: '📄', label: 'Documents', to: '/upload-documents' },
+  { emoji: '💰', label: 'Earnings', to: '/earnings' },
+  { emoji: '💳', label: 'My Credits', to: '/my-credits' },
+  { emoji: '📢', label: 'Job Posts', to: '/job-posts' },
+  { emoji: '💬', label: 'Chat Inbox', to: '/chat-inbox' },
+];
+
+const ADMIN_LINKS = [
+  { emoji: '🛡️', label: 'Admin Dashboard', to: '/admin' },
+];
 
 const fileUrl = (p) => {
   if (!p) return null;
@@ -54,14 +74,46 @@ const Stars = ({ rating = 0 }) => (
   </span>
 );
 
-function Navbar({ unreadCount }) {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+function ProfileDropdown({ user, role, onLogout, onClose }) {
+  const links = role === 'professional' ? PROFESSIONAL_LINKS : role === 'admin' ? ADMIN_LINKS : CUSTOMER_LINKS;
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
+  return (
+    <div className="profile-dropdown">
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '8px 8px 12px' }}>
+        <Avatar name={user?.name} size={48} />
+        <div style={{ fontWeight: 700, marginTop: 8 }}>{user?.name}</div>
+        <span className="badge badge-blue" style={{ marginTop: 6, textTransform: 'capitalize' }}>{role}</span>
+      </div>
+      <div style={{ borderTop: '1px solid #E2E8F0', margin: '4px 0' }} />
+      {links.map((l) => (
+        <Link key={l.label} to={l.to} className="dropdown-item" onClick={onClose}>
+          <span>{l.emoji}</span> {l.label}
+        </Link>
+      ))}
+      <div style={{ borderTop: '1px solid #E2E8F0', margin: '4px 0' }} />
+      <button
+        className="dropdown-item dropdown-item-danger"
+        onClick={() => { onClose(); onLogout(); }}
+      >
+        <span>🚪</span> Logout
+      </button>
+    </div>
+  );
+}
+
+function Navbar({ user, role, unreadCount, onLogout }) {
+  const [open, setOpen] = useState(false);
+  const wrapperRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <div className="navbar">
@@ -81,10 +133,14 @@ function Navbar({ unreadCount }) {
           )}
         </Link>
         <span style={{ fontWeight: 600, fontSize: 14 }}>{user?.name}</span>
-        <Avatar name={user?.name} size={36} />
-        <button onClick={handleLogout} className="btn-danger">
-          <LogOut size={14} /> Logout
-        </button>
+        <div ref={wrapperRef} style={{ position: 'relative' }}>
+          <div onClick={() => setOpen((o) => !o)} style={{ cursor: 'pointer' }}>
+            <Avatar name={user?.name} size={36} />
+          </div>
+          {open && (
+            <ProfileDropdown user={user} role={role} onLogout={onLogout} onClose={() => setOpen(false)} />
+          )}
+        </div>
       </div>
     </div>
   );
@@ -150,7 +206,7 @@ function ProfessionalsSearch() {
           <p className="text-muted">No professionals found. Try a different search or location.</p>
         </div>
       ) : (
-        <div className="grid-3">
+        <div className="pros-grid">
           {professionals.map((p) => {
             const typeColor = TYPE_COLORS[p.professionalType] || { bg: '#F1F5F9', text: '#475569' };
             return (
@@ -205,54 +261,15 @@ function ProfessionalsSearch() {
   );
 }
 
-function Sidebar() {
-  const { user } = useAuth();
-  const isProfessional = user.role === 'professional';
-
-  const customerLinks = [
-    { icon: ClipboardList, label: 'My Bookings', to: '/my-bookings' },
-    { icon: FileText, label: 'Post a Job', to: '/create-job-post' },
-    { icon: Bookmark, label: 'My Job Posts', to: '/my-posts' },
-    { icon: MessageSquare, label: 'Chat Inbox', to: '/chat-inbox' },
-    { icon: User, label: 'My Profile', to: '/edit-profile' },
-  ];
-
-  const professionalLinks = [
-    { icon: ClipboardList, label: 'My Bookings', to: '/my-bookings' },
-    { icon: Edit, label: 'Edit Profile', to: '/edit-profile' },
-    { icon: FileText, label: 'Documents', to: '/upload-documents' },
-    { icon: Wallet, label: 'Earnings', to: '/earnings' },
-    { icon: CreditCard, label: 'My Credits', to: '/my-credits' },
-    { icon: Briefcase, label: 'Job Posts', to: '/job-posts' },
-    { icon: MessageSquare, label: 'Chat Inbox', to: '/chat-inbox' },
-  ];
-
-  const links = isProfessional ? professionalLinks : customerLinks;
-
-  return (
-    <div className="sidebar-card">
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: 20 }}>
-        <Avatar name={user.name} size={64} />
-        <div style={{ fontWeight: 700, marginTop: 10, fontSize: 16 }}>{user.name}</div>
-        <span className="badge badge-blue" style={{ marginTop: 6, textTransform: 'capitalize' }}>{user.role}</span>
-      </div>
-
-      <h3 style={{ marginBottom: 12, fontSize: 15 }}>{isProfessional ? 'Professional Menu' : 'Customer Menu'}</h3>
-      <div>
-        {links.map((l) => (
-          <Link key={l.label} to={l.to} className="sidebar-menu-btn">
-            <l.icon size={16} /> {l.label}
-          </Link>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export default function HomePage() {
-  const { user } = useAuth();
+  const { user: contextUser, logout } = useAuth();
   const navigate = useNavigate();
   const [unreadCount, setUnreadCount] = useState(0);
+
+  const storedUser = localStorage.getItem('carelyUser');
+  const localUser = storedUser ? JSON.parse(storedUser) : null;
+  const user = contextUser || localUser;
+  const role = contextUser?.role || localUser?.role || null;
 
   useEffect(() => {
     if (!user) {
@@ -278,16 +295,18 @@ export default function HomePage() {
     return () => socket.off('newNotification', refreshUnreadCount);
   }, [user, refreshUnreadCount]);
 
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
   if (!user) return null;
 
   return (
     <div>
-      <Navbar unreadCount={unreadCount} />
+      <Navbar user={user} role={role} unreadCount={unreadCount} onLogout={handleLogout} />
       <div className="page">
-        <div className="dashboard-layout">
-          <div><ProfessionalsSearch /></div>
-          <div><Sidebar /></div>
-        </div>
+        <ProfessionalsSearch />
       </div>
     </div>
   );
