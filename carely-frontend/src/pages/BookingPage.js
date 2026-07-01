@@ -351,7 +351,7 @@ export default function BookingPage() {
               rows={3}
               value={address}
               onChange={(e) => setAddress(e.target.value)}
-              placeholder="Full address where service is needed"
+              placeholder="Your full address, Dhaka"
               required
             />
           </div>
@@ -368,12 +368,12 @@ export default function BookingPage() {
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderTop: '1px solid #f3f4f6' }}>
-            <span className="text-muted">Estimated Total</span>
-            <span style={{ fontSize: 20, fontWeight: 700, color: '#16a34a' }}>{formatBDT(estimatedPrice)}</span>
+            <span className="text-muted">Total Price</span>
+            <span style={{ fontSize: 20, fontWeight: 700, color: '#2563EB' }}>{formatBDT(estimatedPrice)}</span>
           </div>
 
           <button type="submit" className="btn btn-primary" disabled={submitting} style={{ width: '100%', marginTop: 8 }}>
-            {submitting ? 'Submitting...' : 'Confirm Booking Request'}
+            {submitting ? 'Submitting...' : 'Submit Booking Request'}
           </button>
         </div>
       </form>

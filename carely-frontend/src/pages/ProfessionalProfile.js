@@ -100,18 +100,19 @@ export default function ProfessionalProfile() {
       {creditsEnabled && (
         <div className="card" style={{ marginTop: 16 }}>
           <div className="text-muted">Credit Balance</div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: '#16a34a' }}>{profile.credits ?? 0}</div>
-          <Link to="/my-credits" className="btn btn-secondary" style={{ marginTop: 10 }}>Manage Credits</Link>
+          <div style={{ fontSize: 28, fontWeight: 700, color: '#2563EB' }}>{profile.credits ?? 0}</div>
+          <Link to="/my-credits" className="btn btn-primary" style={{ marginTop: 10 }}>Manage Credits</Link>
         </div>
       )}
 
       <div className="card" style={{ marginTop: 16 }}>
         <h3 style={{ marginBottom: 12 }}>Quick Links</h3>
-        <div className="grid-2">
-          <Link to="/edit-profile" className="btn btn-secondary" style={{ width: '100%' }}>Edit Profile</Link>
-          <Link to="/upload-documents" className="btn btn-secondary" style={{ width: '100%' }}>Upload Documents</Link>
-          <Link to="/my-bookings" className="btn btn-secondary" style={{ width: '100%' }}>My Bookings</Link>
-          <Link to="/earnings" className="btn btn-secondary" style={{ width: '100%' }}>Earnings</Link>
+        <div className="sidebar-btn-list">
+          <Link to="/edit-profile" className="btn btn-primary btn-block">Edit Profile</Link>
+          <Link to="/my-bookings" className="btn btn-primary btn-block">My Bookings</Link>
+          <Link to="/earnings" className="btn btn-primary btn-block">Earnings</Link>
+          <Link to="/earnings" className="btn btn-primary btn-block">Payout Details</Link>
+          <Link to="/upload-documents" className="btn btn-primary btn-block">Upload Documents</Link>
         </div>
       </div>
     </div>

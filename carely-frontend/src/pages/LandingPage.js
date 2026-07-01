@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import SafetyDisclaimer from '../components/SafetyDisclaimer';
-import { Baby, HeartHandshake, Stethoscope, Activity, Search, UserCheck, CheckCircle2 } from 'lucide-react';
+import { Heart, Baby, HeartHandshake, Stethoscope, Activity, Search, UserCheck, CheckCircle2, ShieldCheck } from 'lucide-react';
 
 const SERVICES = [
   { icon: Baby, title: 'Child Care', desc: 'Trusted babysitters and nannies for your children, verified and background-checked.' },
@@ -11,9 +11,9 @@ const SERVICES = [
 ];
 
 const STEPS = [
-  { icon: Search, title: 'Post or Search', desc: 'Search for a professional near you or post a job describing what you need.' },
-  { icon: UserCheck, title: 'Choose Professional', desc: 'Compare profiles, ratings, and rates, then pick the professional that fits.' },
-  { icon: CheckCircle2, title: 'Confirm and Pay', desc: 'Confirm your booking and pay the professional directly in BDT.' },
+  { icon: Search, title: 'Search', desc: 'Search for a professional near you or post a job describing what you need.' },
+  { icon: UserCheck, title: 'Choose', desc: 'Compare profiles, ratings, and rates, then pick the professional that fits.' },
+  { icon: CheckCircle2, title: 'Confirm', desc: 'Confirm booking and pay professional directly' },
 ];
 
 export default function LandingPage() {
@@ -21,10 +21,12 @@ export default function LandingPage() {
     <div>
       <div className="nav">
         <div className="nav-inner">
-          <Link to="/" className="nav-logo">Carely</Link>
+          <Link to="/" className="nav-logo">
+            <Heart size={22} color="#2563EB" fill="#2563EB" /> Carely
+          </Link>
           <div className="nav-links">
+            <Link to="/">Home</Link>
             <Link to="/login">Login</Link>
-            <Link to="/register" className="btn btn-primary" style={{ padding: '8px 16px' }}>Get Started</Link>
           </div>
         </div>
       </div>
@@ -37,7 +39,10 @@ export default function LandingPage() {
         </p>
         <div className="hero-actions">
           <Link to="/register" className="btn btn-primary" style={{ padding: '12px 28px', fontSize: 15 }}>Get Started</Link>
-          <Link to="/login" className="btn btn-secondary" style={{ padding: '12px 28px', fontSize: 15 }}>Login</Link>
+          <Link to="/login" className="btn btn-outline" style={{ padding: '12px 28px', fontSize: 15 }}>Login</Link>
+        </div>
+        <div style={{ marginTop: 24, display: 'inline-flex', alignItems: 'center', gap: 8, color: '#2563EB', fontWeight: 500, fontSize: 14 }}>
+          <ShieldCheck size={18} /> Safe & Verified
         </div>
       </div>
 

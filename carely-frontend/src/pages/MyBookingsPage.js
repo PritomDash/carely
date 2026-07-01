@@ -117,18 +117,18 @@ export default function MyBookingsPage() {
                 <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 4 }}>
                   <div><span className="text-muted">Address:</span> {b.address}</div>
                   <div><span className="text-muted">Work:</span> {b.workDescription}</div>
-                  <div style={{ fontWeight: 600, color: '#16a34a' }}>{formatBDT(b.amount)}</div>
+                  <div style={{ fontWeight: 600, color: '#2563EB' }}>{formatBDT(b.amount)}</div>
                 </div>
 
                 <div style={{ marginTop: 14, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {isCustomer && (b.status === 'AwaitingAcceptance' || b.status === 'Confirmed') && (
-                    <button className="btn btn-danger" disabled={busy} onClick={() => handleCancel(b._id)}>Cancel</button>
+                    <button className="btn btn-danger" disabled={busy} onClick={() => handleCancel(b._id)}>Cancel Booking</button>
                   )}
 
                   {isCustomer && b.status === 'Completed' && (
                     <>
-                      <button className="btn btn-primary" disabled={busy} onClick={() => handleConfirm(b._id)}>Confirm</button>
-                      <button className="btn btn-outline" disabled={busy} onClick={() => openDispute(b._id)}>Dispute</button>
+                      <button className="btn btn-success" disabled={busy} onClick={() => handleConfirm(b._id)}>Confirm Task</button>
+                      <button className="btn btn-warning" disabled={busy} onClick={() => openDispute(b._id)}>Request Refund</button>
                     </>
                   )}
 
@@ -144,7 +144,7 @@ export default function MyBookingsPage() {
                   )}
 
                   {!isCustomer && b.status === 'Confirmed' && (
-                    <button className="btn btn-primary" disabled={busy} onClick={() => handleMarkDone(b._id)}>Mark as Done</button>
+                    <button className="btn btn-success" disabled={busy} onClick={() => handleMarkDone(b._id)}>Mark as Done</button>
                   )}
 
                   {b.status === 'Confirmed' && otherParty?._id && (
@@ -155,7 +155,7 @@ export default function MyBookingsPage() {
                 {disputingId === b._id && (
                   <div style={{ marginTop: 12, borderTop: '1px solid #f3f4f6', paddingTop: 12 }}>
                     <div className="form-group">
-                      <label>Reason for dispute</label>
+                      <label>Reason for refund request</label>
                       <textarea
                         rows={3}
                         value={disputeReason}
@@ -164,7 +164,7 @@ export default function MyBookingsPage() {
                       />
                     </div>
                     <div style={{ display: 'flex', gap: 8 }}>
-                      <button className="btn btn-danger" onClick={() => submitDispute(b._id)}>Submit Dispute</button>
+                      <button className="btn btn-warning" onClick={() => submitDispute(b._id)}>Submit Refund Request</button>
                       <button className="btn btn-secondary" onClick={() => setDisputingId(null)}>Cancel</button>
                     </div>
                   </div>

@@ -293,7 +293,7 @@ function PayoutsTab() {
                   <div style={{ fontWeight: 600 }}>{b.professional?.name || 'Unknown'}</div>
                   <div className="text-muted">Customer: {b.customer?.name || '—'}</div>
                 </div>
-                <div style={{ fontWeight: 700, color: '#16a34a' }}>{formatBDT(b.proNet ?? b.amount)}</div>
+                <div style={{ fontWeight: 700, color: '#2563EB' }}>{formatBDT(b.proNet ?? b.amount)}</div>
               </div>
 
               <div className="grid-2" style={{ marginTop: 12 }}>
@@ -640,7 +640,7 @@ function ChatTab({ adminId }) {
                   key={u._id}
                   onClick={() => openChat(u)}
                   className="btn btn-secondary"
-                  style={{ justifyContent: 'flex-start', background: selectedUser?._id === u._id ? '#dcfce7' : undefined }}
+                  style={{ justifyContent: 'flex-start', background: selectedUser?._id === u._id ? '#dbeafe' : undefined }}
                 >
                   {u.name} <span className="text-muted" style={{ marginLeft: 6 }}>({u.role})</span>
                 </button>
