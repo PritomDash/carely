@@ -1,0 +1,17 @@
+node_modules/
+*/node_modules/
+.env
+*/.env
+carely-backend/.env
+carely-frontend/.env
+carely-frontend/build/
+carely-backend/uploads/ads/*
+carely-backend/uploads/branding/*
+carely-backend/uploads/documents/*
+!carely-backend/uploads/ads/.gitkeep
+!carely-backend/uploads/branding/.gitkeep
+!carely-backend/uploads/documents/.gitkeep
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
