@@ -6,7 +6,7 @@ import { formatBDT } from '../utils/currency';
 import LocationSelector from '../components/LocationSelector';
 import socket from '../socket';
 import {
-  Heart, Bell, LogOut, Search, MapPin, Clock, Star,
+  Bell, LogOut, Search, MapPin, Clock, Star,
   ClipboardList, FileText, Bookmark, MessageSquare, User,
   Edit, Wallet, CreditCard, Briefcase,
 } from 'lucide-react';
@@ -64,33 +64,27 @@ function Navbar({ unreadCount }) {
   };
 
   return (
-    <div className="nav" style={{ borderBottom: '2px solid var(--primary-light)' }}>
-      <div className="nav-inner">
-        <Link to="/home" className="nav-logo">
-          <Heart size={22} color="var(--primary)" fill="var(--primary)" /> Carely
+    <div className="navbar">
+      <Link to="/home" className="navbar-brand">
+        <span className="heart">💙</span> Carely
+      </Link>
+      <div className="navbar-links">
+        <Link to="/chat-inbox" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+          <Bell size={20} />
+          {unreadCount > 0 && (
+            <span className="badge badge-red" style={{
+              position: 'absolute', top: -8, right: -10, borderRadius: '999px',
+              padding: '0 6px', fontSize: 11, lineHeight: '16px'
+            }}>
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+          )}
         </Link>
-        <div className="nav-links">
-          <Link to="/chat-inbox" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-            <Bell size={20} color="#334155" />
-            {unreadCount > 0 && (
-              <span className="badge badge-red" style={{
-                position: 'absolute', top: -8, right: -10, borderRadius: '999px',
-                padding: '0 6px', fontSize: 11, lineHeight: '16px'
-              }}>
-                {unreadCount > 9 ? '9+' : unreadCount}
-              </span>
-            )}
-          </Link>
-          <span style={{ fontWeight: 600, color: '#334155', fontSize: 14 }}>{user?.name}</span>
-          <Avatar name={user?.name} size={36} />
-          <button
-            onClick={handleLogout}
-            className="btn btn-outline"
-            style={{ padding: '8px 16px', borderColor: 'var(--danger)', color: 'var(--danger)' }}
-          >
-            <LogOut size={14} /> Logout
-          </button>
-        </div>
+        <span style={{ fontWeight: 600, fontSize: 14 }}>{user?.name}</span>
+        <Avatar name={user?.name} size={36} />
+        <button onClick={handleLogout} className="btn-danger">
+          <LogOut size={14} /> Logout
+        </button>
       </div>
     </div>
   );
@@ -131,36 +125,23 @@ function ProfessionalsSearch() {
 
   return (
     <div>
-      <div className="card" style={{ marginBottom: 24 }}>
-        <h2 style={{ marginBottom: 16 }}>Find Care Professionals Near You</h2>
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <input
-              type="text"
-              value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
-              placeholder="Search by name..."
-              style={{ fontSize: 15, padding: 14 }}
-            />
-          </div>
-
-          <div className="form-group">
-            <LocationSelector value={location} onChange={setLocation} />
-          </div>
-
-          <div className="grid-2">
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <select value={serviceType} onChange={(e) => setServiceType(e.target.value)}>
-                <option value="">All Types</option>
-                {PROFESSIONAL_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-              </select>
-            </div>
-            <button type="submit" className="btn btn-primary btn-block">
-              <Search size={16} /> Search
-            </button>
-          </div>
-        </form>
-      </div>
+      <form className="search-bar" onSubmit={handleSubmit}>
+        <input
+          className="search-input"
+          type="text"
+          value={keyword}
+          onChange={(e) => setKeyword(e.target.value)}
+          placeholder="Search by name..."
+        />
+        <LocationSelector value={location} onChange={setLocation} />
+        <select className="search-select" value={serviceType} onChange={(e) => setServiceType(e.target.value)}>
+          <option value="">All Types</option>
+          {PROFESSIONAL_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+        </select>
+        <button type="submit" className="btn-primary">
+          <Search size={16} style={{ verticalAlign: 'middle', marginRight: 6 }} /> Search
+        </button>
+      </form>
 
       {loading ? (
         <p className="text-muted">Loading professionals...</p>
@@ -173,46 +154,47 @@ function ProfessionalsSearch() {
           {professionals.map((p) => {
             const typeColor = TYPE_COLORS[p.professionalType] || { bg: '#F1F5F9', text: '#475569' };
             return (
-              <div key={p._id} className="card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <Avatar src={fileUrl(p.profilePhoto)} name={p.name} size={80} />
-                  {p.isVerified && <span className="badge badge-blue">Verified</span>}
+              <div key={p._id} className="pro-card">
+                <div className="pro-card-header">
+                  {p.profilePhoto ? (
+                    <img className="pro-avatar" src={fileUrl(p.profilePhoto)} alt={p.name} />
+                  ) : (
+                    <div className="pro-avatar">{getInitials(p.name)}</div>
+                  )}
+                  <div>
+                    <div className="pro-name">{p.name}</div>
+                    <div className="pro-meta">
+                      <MapPin size={12} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                      {formatLocation(p.location)}
+                    </div>
+                  </div>
+                  {p.isVerified && <span className="badge badge-blue" style={{ marginLeft: 'auto' }}>Verified</span>}
                 </div>
 
-                <div style={{ marginTop: 12 }}>
+                <div>
                   <span className="badge" style={{ background: typeColor.bg, color: typeColor.text }}>
                     {p.professionalType}
                   </span>
                 </div>
 
-                <div style={{ fontWeight: 700, fontSize: 17, marginTop: 8 }}>{p.name}</div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, color: 'var(--text-muted)', fontSize: 13 }}>
-                  <MapPin size={13} /> {formatLocation(p.location)}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, color: 'var(--text-muted)', fontSize: 13 }}>
-                  <Clock size={13} /> {p.experience || 'Experience not specified'}
+                <div className="pro-meta">
+                  <Clock size={12} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                  {p.experience || 'Experience not specified'}
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <Stars rating={p.rating} />
-                  <span className="text-muted">({p.ratings?.length || 0} reviews)</span>
+                  <span className="pro-meta">({p.ratings?.length || 0} reviews)</span>
                 </div>
 
-                <div style={{ fontWeight: 800, color: 'var(--primary)', marginTop: 8, fontSize: 16 }}>
+                <div style={{ fontWeight: 800, color: '#2B7FFF', fontSize: 16 }}>
                   {formatBDT(p.weekdayRate || p.hourlyRate)}/hr
                 </div>
 
-                <div style={{ marginTop: 14, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  <button className="btn btn-outline" style={{ flex: '1 1 90px' }} onClick={() => navigate(`/view-profile/${p._id}`)}>
-                    View Profile
-                  </button>
-                  <button className="btn btn-primary" style={{ flex: '1 1 80px' }} onClick={() => navigate(`/book/${p._id}`)}>
-                    Book
-                  </button>
-                  <button className="btn btn-secondary" style={{ flex: '1 1 70px' }} onClick={() => navigate(`/chat/${p._id}`)}>
-                    Chat
-                  </button>
+                <div className="pro-card-buttons">
+                  <button className="btn-primary" onClick={() => navigate(`/view-profile/${p._id}`)}>View Profile</button>
+                  <button className="btn-primary" onClick={() => navigate(`/book/${p._id}`)}>Book</button>
+                  <button className="btn-gray" onClick={() => navigate(`/chat/${p._id}`)}>Chat</button>
                 </div>
               </div>
             );
@@ -248,7 +230,7 @@ function Sidebar() {
   const links = isProfessional ? professionalLinks : customerLinks;
 
   return (
-    <div className="card">
+    <div className="sidebar-card">
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: 20 }}>
         <Avatar name={user.name} size={64} />
         <div style={{ fontWeight: 700, marginTop: 10, fontSize: 16 }}>{user.name}</div>
@@ -256,9 +238,9 @@ function Sidebar() {
       </div>
 
       <h3 style={{ marginBottom: 12, fontSize: 15 }}>{isProfessional ? 'Professional Menu' : 'Customer Menu'}</h3>
-      <div className="sidebar-btn-list">
+      <div>
         {links.map((l) => (
-          <Link key={l.label} to={l.to} className="btn btn-primary btn-block" style={{ justifyContent: 'flex-start', gap: 10 }}>
+          <Link key={l.label} to={l.to} className="sidebar-menu-btn">
             <l.icon size={16} /> {l.label}
           </Link>
         ))}

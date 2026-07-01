@@ -28,15 +28,13 @@ const TRUST_BADGES = [
 export default function LandingPage() {
   return (
     <div>
-      <div className="nav">
-        <div className="nav-inner">
-          <Link to="/" className="nav-logo">
-            <Heart size={22} color="var(--primary)" fill="var(--primary)" /> Carely
-          </Link>
-          <div className="nav-links">
-            <Link to="/login" className="btn btn-outline" style={{ padding: '8px 18px' }}>Sign In</Link>
-            <Link to="/register" className="btn btn-primary" style={{ padding: '8px 18px' }}>Get Started</Link>
-          </div>
+      <div className="navbar">
+        <Link to="/" className="navbar-brand">
+          <span className="heart">💙</span> Carely
+        </Link>
+        <div className="navbar-links">
+          <Link to="/login">Sign In</Link>
+          <Link to="/register">Get Started</Link>
         </div>
       </div>
 
@@ -46,18 +44,14 @@ export default function LandingPage() {
           Connect with verified child care, aged care, nursing, and physiotherapy professionals.
           Book with confidence.
         </p>
-        <div className="hero-actions">
-          <Link to="/register" className="btn" style={{ padding: '14px 30px', fontSize: 15, background: '#fff', color: 'var(--primary)' }}>
-            Get Started
-          </Link>
-          <Link to="/login" className="btn" style={{ padding: '14px 30px', fontSize: 15, background: 'transparent', color: '#fff', border: '1.5px solid #fff' }}>
-            Sign In
-          </Link>
+        <div className="hero-buttons">
+          <Link to="/register" className="hero-btn-white">Get Started</Link>
+          <Link to="/login" className="hero-btn-outline">Sign In</Link>
         </div>
 
         <div style={{ marginTop: 40, display: 'flex', gap: 28, justifyContent: 'center', flexWrap: 'wrap' }}>
           {TRUST_BADGES.map((b) => (
-            <div key={b.label} style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#fff', fontWeight: 500, fontSize: 14 }}>
+            <div key={b.label} style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 500, fontSize: 14 }}>
               <b.icon size={18} /> {b.label}
             </div>
           ))}

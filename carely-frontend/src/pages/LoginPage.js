@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api, { API_BASE } from '../services/api';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { Heart } from 'lucide-react';
 
 const GoogleIcon = () => (
   <svg width="18" height="18" viewBox="0 0 48 48">
@@ -69,42 +68,35 @@ export default function LoginPage() {
     <div className="page" style={{ maxWidth: 420 }}>
       <div className="card">
         <div style={{ textAlign: 'center', marginBottom: 20 }}>
-          <Link to="/" className="nav-logo" style={{ justifyContent: 'center', fontSize: 22 }}>
-            <Heart size={24} color="var(--primary)" fill="var(--primary)" /> Carely
+          <Link to="/" className="navbar-brand" style={{ justifyContent: 'center', fontSize: 22 }}>
+            <span className="heart">💙</span> Carely
           </Link>
         </div>
         <h2 style={{ marginBottom: 20, textAlign: 'center' }}>Welcome Back</h2>
 
-        {error && (
-          <div className="badge badge-red" style={{ display: 'block', marginBottom: 16, padding: '10px 14px' }}>
-            {error}
-          </div>
-        )}
-        {success && (
-          <div className="badge badge-green" style={{ display: 'block', marginBottom: 16, padding: '10px 14px' }}>
-            {success}
-          </div>
-        )}
+        {error && <div className="msg-error">{error}</div>}
+        {success && <div className="msg-success">{success}</div>}
 
         <button
           type="button"
           onClick={handleGoogleLogin}
-          className="btn btn-block"
-          style={{ background: '#fff', border: '1px solid var(--border)', color: 'var(--text-dark)', gap: 10, marginBottom: 20 }}
+          className="btn-gray"
+          style={{ width: '100%', background: '#fff', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 20 }}
         >
           <GoogleIcon /> Continue with Google
         </button>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-          <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+          <div style={{ flex: 1, height: 1, background: '#E8EDF3' }} />
           <span className="text-muted">or</span>
-          <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+          <div style={{ flex: 1, height: 1, background: '#E8EDF3' }} />
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>Email</label>
+          <div style={{ marginBottom: 16 }}>
+            <label className="form-label">Email</label>
             <input
+              className="form-input"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -113,10 +105,11 @@ export default function LoginPage() {
             />
           </div>
 
-          <div className="form-group">
-            <label>Password</label>
+          <div style={{ marginBottom: 16 }}>
+            <label className="form-label">Password</label>
             <div style={{ position: 'relative' }}>
               <input
+                className="form-input"
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -138,7 +131,7 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
             <input
               type="checkbox"
               id="isAdmin"
@@ -149,7 +142,7 @@ export default function LoginPage() {
             <label htmlFor="isAdmin" style={{ margin: 0 }}>Admin Login</label>
           </div>
 
-          <button type="submit" className="btn btn-primary btn-block" disabled={loading} style={{ marginTop: 8 }}>
+          <button type="submit" className="btn-primary" disabled={loading} style={{ width: '100%', marginTop: 8 }}>
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>

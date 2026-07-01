@@ -132,51 +132,48 @@ export default function EditProfilePage() {
   return (
     <div className="page" style={{ maxWidth: 720 }}>
       <div className="card">
-        <h2 style={{ marginBottom: 20 }}>Edit Profile</h2>
+        <h2 className="page-title">Edit Profile</h2>
 
-        {error && (
-          <div className="badge badge-red" style={{ display: 'block', marginBottom: 16, padding: '10px 14px' }}>{error}</div>
-        )}
-        {success && (
-          <div className="badge badge-green" style={{ display: 'block', marginBottom: 16, padding: '10px 14px' }}>{success}</div>
-        )}
+        {error && <div className="msg-error">{error}</div>}
+        {success && <div className="msg-success">{success}</div>}
 
         <form onSubmit={handleSubmit}>
           {role === 'professional' && (
-            <div className="form-group" style={{ textAlign: 'center' }}>
+            <div style={{ marginBottom: 16, textAlign: 'center' }}>
               <div style={{
                 width: 96, height: 96, borderRadius: '50%', overflow: 'hidden',
-                background: 'var(--primary-light)', margin: '0 auto 12px'
+                background: '#EBF3FF', margin: '0 auto 12px'
               }}>
                 {photoPreview && (
                   <img src={photoPreview} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 )}
               </div>
-              <label style={{ display: 'block', textAlign: 'center' }}>Profile Photo</label>
+              <label className="form-label" style={{ display: 'block', textAlign: 'center' }}>Profile Photo</label>
               <input type="file" accept="image/*" onChange={handlePhotoChange} />
             </div>
           )}
 
-          <div className="form-group">
-            <label>Name</label>
-            <input type="text" value={form.name} onChange={(e) => setField('name', e.target.value)} required />
+          <div style={{ marginBottom: 16 }}>
+            <label className="form-label">Name</label>
+            <input className="form-input" type="text" value={form.name} onChange={(e) => setField('name', e.target.value)} required />
           </div>
 
-          <div className="form-group">
-            <label>Phone</label>
-            <input type="tel" value={form.phone} onChange={(e) => setField('phone', e.target.value)} placeholder="01XXXXXXXXX" required />
+          <div style={{ marginBottom: 16 }}>
+            <label className="form-label">Phone</label>
+            <input className="form-input" type="tel" value={form.phone} onChange={(e) => setField('phone', e.target.value)} placeholder="01XXXXXXXXX" required />
           </div>
 
           {role === 'professional' && (
             <>
-              <div className="form-group">
-                <label>Professional Type</label>
-                <input type="text" value={form.professionalType} disabled style={{ background: 'var(--bg-page)', color: 'var(--text-muted)' }} />
+              <div style={{ marginBottom: 16 }}>
+                <label className="form-label">Professional Type</label>
+                <input className="form-input" type="text" value={form.professionalType} disabled style={{ background: '#F5F7FA', color: '#64748B' }} />
               </div>
 
-              <div className="form-group">
-                <label>About / Bio</label>
+              <div style={{ marginBottom: 16 }}>
+                <label className="form-label">About / Bio</label>
                 <textarea
+                  className="form-input"
                   rows={4}
                   value={form.about}
                   onChange={(e) => setField('about', e.target.value)}
@@ -184,9 +181,10 @@ export default function EditProfilePage() {
                 />
               </div>
 
-              <div className="form-group">
-                <label>Experience</label>
+              <div style={{ marginBottom: 16 }}>
+                <label className="form-label">Experience</label>
                 <input
+                  className="form-input"
                   type="text"
                   value={form.experience}
                   onChange={(e) => setField('experience', e.target.value)}
@@ -194,24 +192,26 @@ export default function EditProfilePage() {
                 />
               </div>
 
-              <div className="form-group">
-                <label>Location</label>
+              <div style={{ marginBottom: 16 }}>
+                <label className="form-label">Location</label>
                 <LocationSelector value={form.location} onChange={(loc) => setField('location', loc)} />
               </div>
 
-              <div className="form-group">
-                <label>Availability</label>
+              <div style={{ marginBottom: 16 }}>
+                <label className="form-label">Availability</label>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {DAYS.map((day) => (
                     <div key={day} style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
                       <span style={{ width: 90, flexShrink: 0 }}>{day}</span>
                       <input
+                        className="form-input"
                         type="time"
                         style={{ flex: '1 1 110px', minWidth: 0 }}
                         value={form.availability[day]?.start || ''}
                         onChange={(e) => setAvailability(day, 'start', e.target.value)}
                       />
                       <input
+                        className="form-input"
                         type="time"
                         style={{ flex: '1 1 110px', minWidth: 0 }}
                         value={form.availability[day]?.end || ''}
@@ -223,34 +223,34 @@ export default function EditProfilePage() {
               </div>
 
               <div className="grid-3">
-                <div className="form-group">
-                  <label>Weekday Rate (BDT/hr)</label>
-                  <input type="number" min="0" value={form.weekdayRate} onChange={(e) => setField('weekdayRate', e.target.value)} />
+                <div style={{ marginBottom: 16 }}>
+                  <label className="form-label">Weekday Rate (BDT/hr)</label>
+                  <input className="form-input" type="number" min="0" value={form.weekdayRate} onChange={(e) => setField('weekdayRate', e.target.value)} />
                 </div>
-                <div className="form-group">
-                  <label>Saturday Rate (BDT/hr)</label>
-                  <input type="number" min="0" value={form.saturdayRate} onChange={(e) => setField('saturdayRate', e.target.value)} />
+                <div style={{ marginBottom: 16 }}>
+                  <label className="form-label">Saturday Rate (BDT/hr)</label>
+                  <input className="form-input" type="number" min="0" value={form.saturdayRate} onChange={(e) => setField('saturdayRate', e.target.value)} />
                 </div>
-                <div className="form-group">
-                  <label>Sunday Rate (BDT/hr)</label>
-                  <input type="number" min="0" value={form.sundayRate} onChange={(e) => setField('sundayRate', e.target.value)} />
+                <div style={{ marginBottom: 16 }}>
+                  <label className="form-label">Sunday Rate (BDT/hr)</label>
+                  <input className="form-input" type="number" min="0" value={form.sundayRate} onChange={(e) => setField('sundayRate', e.target.value)} />
                 </div>
               </div>
 
               <div className="grid-2">
-                <div className="form-group">
-                  <label>bKash Number</label>
-                  <input type="text" value={form.bkashNumber} onChange={(e) => setField('bkashNumber', e.target.value)} placeholder="01XXXXXXXXX" />
+                <div style={{ marginBottom: 16 }}>
+                  <label className="form-label">bKash Number</label>
+                  <input className="form-input" type="text" value={form.bkashNumber} onChange={(e) => setField('bkashNumber', e.target.value)} placeholder="01XXXXXXXXX" />
                 </div>
-                <div className="form-group">
-                  <label>Nagad Number</label>
-                  <input type="text" value={form.nagadNumber} onChange={(e) => setField('nagadNumber', e.target.value)} placeholder="01XXXXXXXXX" />
+                <div style={{ marginBottom: 16 }}>
+                  <label className="form-label">Nagad Number</label>
+                  <input className="form-input" type="text" value={form.nagadNumber} onChange={(e) => setField('nagadNumber', e.target.value)} placeholder="01XXXXXXXXX" />
                 </div>
               </div>
 
-              <div className="form-group">
-                <label>Payout Method</label>
-                <select value={form.payoutMethod} onChange={(e) => setField('payoutMethod', e.target.value)}>
+              <div style={{ marginBottom: 16 }}>
+                <label className="form-label">Payout Method</label>
+                <select className="form-input" value={form.payoutMethod} onChange={(e) => setField('payoutMethod', e.target.value)}>
                   <option value="">Not set</option>
                   <option value="bkash">bKash</option>
                   <option value="nagad">Nagad</option>
@@ -260,7 +260,7 @@ export default function EditProfilePage() {
             </>
           )}
 
-          <button type="submit" className="btn btn-primary btn-block" disabled={saving} style={{ marginTop: 8 }}>
+          <button type="submit" className="btn-primary" disabled={saving} style={{ width: '100%', marginTop: 8 }}>
             {saving ? 'Saving...' : 'Save Changes'}
           </button>
         </form>

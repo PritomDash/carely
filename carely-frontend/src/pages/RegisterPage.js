@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api, { API_BASE } from '../services/api';
 import { useNavigate, Link } from 'react-router-dom';
 import LocationSelector from '../components/LocationSelector';
-import { Heart, User, Briefcase } from 'lucide-react';
+import { User, Briefcase } from 'lucide-react';
 
 const PROFESSIONAL_TYPES = ['Child Care', 'Aged Care', 'Nurse', 'Physiotherapist'];
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -131,31 +131,27 @@ export default function RegisterPage() {
     <div className="page" style={{ maxWidth: 720 }}>
       <div className="card">
         <div style={{ textAlign: 'center', marginBottom: 20 }}>
-          <Link to="/" className="nav-logo" style={{ justifyContent: 'center', fontSize: 22 }}>
-            <Heart size={24} color="var(--primary)" fill="var(--primary)" /> Carely
+          <Link to="/" className="navbar-brand" style={{ justifyContent: 'center', fontSize: 22 }}>
+            <span className="heart">💙</span> Carely
           </Link>
         </div>
         <h2 style={{ marginBottom: 20, textAlign: 'center' }}>Create Account</h2>
 
-        {error && (
-          <div className="badge badge-red" style={{ display: 'block', marginBottom: 16, padding: '10px 14px' }}>
-            {error}
-          </div>
-        )}
+        {error && <div className="msg-error">{error}</div>}
 
         <button
           type="button"
           onClick={handleGoogleSignup}
-          className="btn btn-block"
-          style={{ background: '#fff', border: '1px solid var(--border)', color: 'var(--text-dark)', gap: 10, marginBottom: 20 }}
+          className="btn-gray"
+          style={{ width: '100%', background: '#fff', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 20 }}
         >
           <GoogleIcon /> Sign up with Google
         </button>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-          <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+          <div style={{ flex: 1, height: 1, background: '#E8EDF3' }} />
           <span className="text-muted">or</span>
-          <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+          <div style={{ flex: 1, height: 1, background: '#E8EDF3' }} />
         </div>
 
         <div className="grid-2" style={{ marginBottom: 24 }}>
@@ -164,12 +160,12 @@ export default function RegisterPage() {
             className="card"
             style={{
               cursor: 'pointer', textAlign: 'center', padding: 20,
-              border: role === 'customer' ? '2px solid var(--primary)' : '1px solid var(--border)',
-              background: role === 'customer' ? 'var(--primary-light)' : '#fff',
-              boxShadow: role === 'customer' ? 'var(--card-shadow)' : 'none',
+              border: role === 'customer' ? '2px solid #2B7FFF' : '1px solid #E8EDF0',
+              background: role === 'customer' ? '#EBF3FF' : '#fff',
+              boxShadow: role === 'customer' ? '0 4px 16px rgba(43,127,255,0.12)' : 'none',
             }}
           >
-            <User size={30} color="var(--primary)" style={{ marginBottom: 10 }} />
+            <User size={30} color="#2B7FFF" style={{ marginBottom: 10 }} />
             <div style={{ fontWeight: 700, fontSize: 16 }}>I need care</div>
             <div className="text-muted" style={{ marginTop: 4 }}>Find and book care professionals</div>
           </div>
@@ -179,91 +175,91 @@ export default function RegisterPage() {
             className="card"
             style={{
               cursor: 'pointer', textAlign: 'center', padding: 20,
-              border: role === 'professional' ? '2px solid var(--primary)' : '1px solid var(--border)',
-              background: role === 'professional' ? 'var(--primary-light)' : '#fff',
-              boxShadow: role === 'professional' ? 'var(--card-shadow)' : 'none',
+              border: role === 'professional' ? '2px solid #2B7FFF' : '1px solid #E8EDF0',
+              background: role === 'professional' ? '#EBF3FF' : '#fff',
+              boxShadow: role === 'professional' ? '0 4px 16px rgba(43,127,255,0.12)' : 'none',
             }}
           >
-            <Briefcase size={30} color="var(--primary)" style={{ marginBottom: 10 }} />
+            <Briefcase size={30} color="#2B7FFF" style={{ marginBottom: 10 }} />
             <div style={{ fontWeight: 700, fontSize: 16 }}>I am a professional</div>
             <div className="text-muted" style={{ marginTop: 4 }}>Offer your care services</div>
           </div>
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>Full Name</label>
-            <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your full name" required />
+          <div style={{ marginBottom: 16 }}>
+            <label className="form-label">Full Name</label>
+            <input className="form-input" type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your full name" required />
           </div>
 
-          <div className="form-group">
-            <label>Email</label>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required />
+          <div style={{ marginBottom: 16 }}>
+            <label className="form-label">Email</label>
+            <input className="form-input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required />
           </div>
 
-          <div className="form-group">
-            <label>Password</label>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Choose a password" required />
+          <div style={{ marginBottom: 16 }}>
+            <label className="form-label">Password</label>
+            <input className="form-input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Choose a password" required />
           </div>
 
-          <div className="form-group">
-            <label>Phone Number</label>
-            <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="01XXXXXXXXX" required />
+          <div style={{ marginBottom: 16 }}>
+            <label className="form-label">Phone Number</label>
+            <input className="form-input" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="01XXXXXXXXX" required />
           </div>
 
           {role === 'professional' && (
             <>
-              <div className="form-group">
-                <label>Professional Type</label>
-                <select value={professionalType} onChange={(e) => setProfessionalType(e.target.value)} required>
+              <div style={{ marginBottom: 16 }}>
+                <label className="form-label">Professional Type</label>
+                <select className="form-input" value={professionalType} onChange={(e) => setProfessionalType(e.target.value)} required>
                   <option value="">Select a type</option>
                   {PROFESSIONAL_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
 
-              <div className="form-group">
-                <label>Experience (years)</label>
-                <input type="text" value={experience} onChange={(e) => setExperience(e.target.value)} placeholder="e.g. 3 years" />
+              <div style={{ marginBottom: 16 }}>
+                <label className="form-label">Experience (years)</label>
+                <input className="form-input" type="text" value={experience} onChange={(e) => setExperience(e.target.value)} placeholder="e.g. 3 years" />
               </div>
 
-              <div className="form-group">
-                <label>About / Bio</label>
-                <textarea rows={4} value={about} onChange={(e) => setAbout(e.target.value)} placeholder="Tell customers about yourself" />
+              <div style={{ marginBottom: 16 }}>
+                <label className="form-label">About / Bio</label>
+                <textarea className="form-input" rows={4} value={about} onChange={(e) => setAbout(e.target.value)} placeholder="Tell customers about yourself" />
               </div>
 
               <div className="grid-2">
-                <div className="form-group">
-                  <label>Hourly Rate (৳ BDT)</label>
-                  <input type="number" min="0" value={hourlyRate} onChange={(e) => setHourlyRate(e.target.value)} placeholder="e.g. 500" />
+                <div style={{ marginBottom: 16 }}>
+                  <label className="form-label">Hourly Rate (৳ BDT)</label>
+                  <input className="form-input" type="number" min="0" value={hourlyRate} onChange={(e) => setHourlyRate(e.target.value)} placeholder="e.g. 500" />
                 </div>
-                <div className="form-group">
-                  <label>Weekday Rate (৳ BDT)</label>
-                  <input type="number" min="0" value={weekdayRate} onChange={(e) => setWeekdayRate(e.target.value)} placeholder="e.g. 500" />
+                <div style={{ marginBottom: 16 }}>
+                  <label className="form-label">Weekday Rate (৳ BDT)</label>
+                  <input className="form-input" type="number" min="0" value={weekdayRate} onChange={(e) => setWeekdayRate(e.target.value)} placeholder="e.g. 500" />
                 </div>
               </div>
               <div className="grid-2">
-                <div className="form-group">
-                  <label>Saturday Rate (৳ BDT)</label>
-                  <input type="number" min="0" value={saturdayRate} onChange={(e) => setSaturdayRate(e.target.value)} placeholder="e.g. 600" />
+                <div style={{ marginBottom: 16 }}>
+                  <label className="form-label">Saturday Rate (৳ BDT)</label>
+                  <input className="form-input" type="number" min="0" value={saturdayRate} onChange={(e) => setSaturdayRate(e.target.value)} placeholder="e.g. 600" />
                 </div>
-                <div className="form-group">
-                  <label>Sunday Rate (৳ BDT)</label>
-                  <input type="number" min="0" value={sundayRate} onChange={(e) => setSundayRate(e.target.value)} placeholder="e.g. 600" />
+                <div style={{ marginBottom: 16 }}>
+                  <label className="form-label">Sunday Rate (৳ BDT)</label>
+                  <input className="form-input" type="number" min="0" value={sundayRate} onChange={(e) => setSundayRate(e.target.value)} placeholder="e.g. 600" />
                 </div>
               </div>
 
-              <div className="form-group">
-                <label>Location</label>
+              <div style={{ marginBottom: 16 }}>
+                <label className="form-label">Location</label>
                 <LocationSelector value={location} onChange={setLocation} required />
               </div>
 
-              <div className="form-group">
-                <label>Area (optional)</label>
-                <input type="text" value={area} onChange={(e) => setArea(e.target.value)} placeholder="e.g. Road 5, House 12" />
+              <div style={{ marginBottom: 16 }}>
+                <label className="form-label">Area (optional)</label>
+                <input className="form-input" type="text" value={area} onChange={(e) => setArea(e.target.value)} placeholder="e.g. Road 5, House 12" />
               </div>
 
-              <div className="form-group">
-                <label>Availability</label>
+              <div style={{ marginBottom: 16 }}>
+                <label className="form-label">Availability</label>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {DAYS.map((day) => (
                     <div key={day} style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
@@ -275,16 +271,18 @@ export default function RegisterPage() {
                       {availability[day].enabled && (
                         <>
                           <input
+                            className="form-input"
                             type="time"
                             value={availability[day].start}
                             onChange={(e) => setDayTime(day, 'start', e.target.value)}
-                            style={{ flex: '1 1 110px', minWidth: 0, padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8 }}
+                            style={{ flex: '1 1 110px', minWidth: 0 }}
                           />
                           <input
+                            className="form-input"
                             type="time"
                             value={availability[day].end}
                             onChange={(e) => setDayTime(day, 'end', e.target.value)}
-                            style={{ flex: '1 1 110px', minWidth: 0, padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8 }}
+                            style={{ flex: '1 1 110px', minWidth: 0 }}
                           />
                         </>
                       )}
@@ -293,56 +291,56 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              <div className="form-group">
-                <label>Profile Photo</label>
+              <div style={{ marginBottom: 16 }}>
+                <label className="form-label">Profile Photo</label>
                 <input type="file" accept="image/*" onChange={(e) => setProfilePhoto(e.target.files[0])} />
               </div>
 
-              <div className="form-group">
-                <label>
-                  ID Document <span style={{ color: '#DC2626' }}>*</span>{' '}
+              <div style={{ marginBottom: 16 }}>
+                <label className="form-label">
+                  ID Document <span style={{ color: '#EF4444' }}>*</span>{' '}
                   <span className="text-muted">(Required)</span>
                 </label>
                 <input type="file" accept="image/*,application/pdf" onChange={(e) => setIdDocument(e.target.files[0])} required />
               </div>
 
-              <div className="form-group">
-                <label>Police Clearance <span className="text-muted">(Optional)</span></label>
+              <div style={{ marginBottom: 16 }}>
+                <label className="form-label">Police Clearance <span className="text-muted">(Optional)</span></label>
                 <input type="file" accept="image/*,application/pdf" onChange={(e) => setPoliceClearance(e.target.files[0])} />
               </div>
 
-              <div className="form-group">
-                <label>Course Certificate <span className="text-muted">(Optional)</span></label>
+              <div style={{ marginBottom: 16 }}>
+                <label className="form-label">Course Certificate <span className="text-muted">(Optional)</span></label>
                 <input type="file" accept="image/*,application/pdf" onChange={(e) => setCourseCertificate(e.target.files[0])} />
               </div>
 
               {isNurseOrPhysio && (
-                <div className="form-group">
-                  <label>BMDC Registration Number</label>
-                  <input type="text" value={bmdc} onChange={(e) => setBmdc(e.target.value)} placeholder="BMDC registration number" />
+                <div style={{ marginBottom: 16 }}>
+                  <label className="form-label">BMDC Registration Number</label>
+                  <input className="form-input" type="text" value={bmdc} onChange={(e) => setBmdc(e.target.value)} placeholder="BMDC registration number" />
                 </div>
               )}
 
               {isNurse && (
-                <div className="form-group">
-                  <label>BNMC Registration Number</label>
-                  <input type="text" value={bnmc} onChange={(e) => setBnmc(e.target.value)} placeholder="BNMC registration number" />
+                <div style={{ marginBottom: 16 }}>
+                  <label className="form-label">BNMC Registration Number</label>
+                  <input className="form-input" type="text" value={bnmc} onChange={(e) => setBnmc(e.target.value)} placeholder="BNMC registration number" />
                 </div>
               )}
 
-              <div className="form-group">
-                <label>NID Number</label>
-                <input type="text" value={nidNumber} onChange={(e) => setNidNumber(e.target.value)} placeholder="National ID number" />
+              <div style={{ marginBottom: 16 }}>
+                <label className="form-label">NID Number</label>
+                <input className="form-input" type="text" value={nidNumber} onChange={(e) => setNidNumber(e.target.value)} placeholder="National ID number" />
               </div>
 
               <div className="grid-2">
-                <div className="form-group">
-                  <label>bKash Number</label>
-                  <input type="text" value={bkashNumber} onChange={(e) => setBkashNumber(e.target.value)} placeholder="01XXXXXXXXX" />
+                <div style={{ marginBottom: 16 }}>
+                  <label className="form-label">bKash Number</label>
+                  <input className="form-input" type="text" value={bkashNumber} onChange={(e) => setBkashNumber(e.target.value)} placeholder="01XXXXXXXXX" />
                 </div>
-                <div className="form-group">
-                  <label>Nagad Number</label>
-                  <input type="text" value={nagadNumber} onChange={(e) => setNagadNumber(e.target.value)} placeholder="01XXXXXXXXX" />
+                <div style={{ marginBottom: 16 }}>
+                  <label className="form-label">Nagad Number</label>
+                  <input className="form-input" type="text" value={nagadNumber} onChange={(e) => setNagadNumber(e.target.value)} placeholder="01XXXXXXXXX" />
                 </div>
               </div>
             </>
@@ -350,9 +348,9 @@ export default function RegisterPage() {
 
           <button
             type="submit"
-            className={`btn btn-block ${role === 'professional' ? 'btn-primary' : 'btn-success'}`}
+            className="btn-primary"
             disabled={loading}
-            style={{ marginTop: 8 }}
+            style={{ width: '100%', marginTop: 8 }}
           >
             {loading ? 'Creating account...' : role === 'professional' ? 'Create Professional Account' : 'Register'}
           </button>

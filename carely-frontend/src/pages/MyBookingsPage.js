@@ -4,13 +4,13 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { formatBDT } from '../utils/currency';
 
-const STATUS_BADGE = {
-  AwaitingAcceptance: 'badge-yellow',
-  Confirmed: 'badge-green',
-  Completed: 'badge-blue',
-  Cancelled: 'badge-gray',
-  Declined: 'badge-red',
-  'Auto-Declined': 'badge-red',
+const STATUS_CLASS = {
+  AwaitingAcceptance: 'status-awaiting',
+  Confirmed: 'status-confirmed',
+  Completed: 'status-completed',
+  Cancelled: 'status-cancelled',
+  Declined: 'status-declined',
+  'Auto-Declined': 'status-declined',
 };
 
 const FILTER_TABS = [
@@ -102,14 +102,13 @@ export default function MyBookingsPage() {
 
   return (
     <div className="page" style={{ maxWidth: 800 }}>
-      <h2 style={{ marginBottom: 16 }}>My Bookings</h2>
+      <h2 className="page-title">My Bookings</h2>
 
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
         {FILTER_TABS.map((t) => (
           <button
             key={t.key}
-            className={`btn ${activeTab === t.key ? 'btn-primary' : 'btn-secondary'}`}
-            style={{ padding: '8px 18px' }}
+            className={activeTab === t.key ? 'btn-primary' : 'btn-gray'}
             onClick={() => setActiveTab(t.key)}
           >
             {t.label}
@@ -117,12 +116,8 @@ export default function MyBookingsPage() {
         ))}
       </div>
 
-      {error && (
-        <div className="badge badge-red" style={{ display: 'block', marginBottom: 16, padding: '10px 14px' }}>{error}</div>
-      )}
-      {success && (
-        <div className="badge badge-green" style={{ display: 'block', marginBottom: 16, padding: '10px 14px' }}>{success}</div>
-      )}
+      {error && <div className="msg-error">{error}</div>}
+      {success && <div className="msg-success">{success}</div>}
 
       {filtered.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: 40 }}>
@@ -150,17 +145,17 @@ export default function MyBookingsPage() {
                       )}
                     </div>
                   </div>
-                  <span className={`badge ${STATUS_BADGE[b.status] || 'badge-gray'}`}>{b.status}</span>
+                  <span className={`badge ${STATUS_CLASS[b.status] || 'status-cancelled'}`}>{b.status}</span>
                 </div>
 
                 <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 4 }}>
                   <div><span className="text-muted">Address:</span> {b.address}</div>
                   <div><span className="text-muted">Work:</span> {b.workDescription}</div>
-                  <div style={{ fontWeight: 700, color: 'var(--primary)' }}>{formatBDT(b.amount)}</div>
+                  <div style={{ fontWeight: 700, color: '#2B7FFF' }}>{formatBDT(b.amount)}</div>
                 </div>
 
                 {isExpanded && (
-                  <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid #E8EDF3', display: 'flex', flexDirection: 'column', gap: 4 }}>
                     <div><span className="text-muted">Booking Type:</span> {b.type === 'long' ? 'Long-term' : 'Short-term'}</div>
                     {b.type === 'long' && b.recurringDays?.length > 0 && (
                       <div><span className="text-muted">Repeats On:</span> {b.recurringDays.join(', ')}</div>
@@ -170,46 +165,46 @@ export default function MyBookingsPage() {
 
                 <div style={{ marginTop: 14, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {isCustomer && b.status === 'AwaitingAcceptance' && (
-                    <button className="btn btn-danger" disabled={busy} onClick={() => handleCancel(b._id)}>Cancel</button>
+                    <button className="btn-danger" disabled={busy} onClick={() => handleCancel(b._id)}>Cancel</button>
                   )}
 
                   {isCustomer && b.status === 'Confirmed' && (
                     <>
-                      <button className="btn btn-danger" disabled={busy} onClick={() => handleCancel(b._id)}>Cancel</button>
-                      <button className="btn btn-secondary" onClick={() => navigate(`/chat/${otherParty._id}`)}>Chat</button>
+                      <button className="btn-danger" disabled={busy} onClick={() => handleCancel(b._id)}>Cancel</button>
+                      <button className="btn-outline" onClick={() => navigate(`/chat/${otherParty._id}`)}>Chat</button>
                     </>
                   )}
 
                   {isCustomer && b.status === 'Completed' && !b.rated && (
-                    <button className="btn btn-primary" onClick={() => navigate(`/rate/${b._id}`)}>Rate</button>
+                    <button className="btn-outline" onClick={() => navigate(`/rate/${b._id}`)}>Rate</button>
                   )}
 
                   {isCustomer && terminalStatuses.includes(b.status) && (
-                    <button className="btn btn-secondary" onClick={() => setExpandedId(isExpanded ? null : b._id)}>
+                    <button className="btn-gray" onClick={() => setExpandedId(isExpanded ? null : b._id)}>
                       {isExpanded ? 'Hide Details' : 'View Details'}
                     </button>
                   )}
 
                   {!isCustomer && b.status === 'AwaitingAcceptance' && (
                     <>
-                      <button className="btn btn-success" disabled={busy} onClick={() => handleAccept(b._id)}>Accept</button>
-                      <button className="btn btn-danger" disabled={busy} onClick={() => handleDecline(b._id)}>Decline</button>
+                      <button className="btn-success" disabled={busy} onClick={() => handleAccept(b._id)}>Accept</button>
+                      <button className="btn-danger" disabled={busy} onClick={() => handleDecline(b._id)}>Decline</button>
                     </>
                   )}
 
                   {!isCustomer && b.status === 'Confirmed' && (
                     <>
-                      <button className="btn btn-success" disabled={busy} onClick={() => handleMarkDone(b._id)}>Mark as Done</button>
-                      <button className="btn btn-secondary" onClick={() => navigate(`/chat/${otherParty._id}`)}>Chat</button>
+                      <button className="btn-primary" disabled={busy} onClick={() => handleMarkDone(b._id)}>Mark as Done</button>
+                      <button className="btn-outline" onClick={() => navigate(`/chat/${otherParty._id}`)}>Chat</button>
                     </>
                   )}
 
                   {!isCustomer && b.status === 'Completed' && (
-                    <span className="badge badge-gray">Completed</span>
+                    <span className="badge status-completed">Completed</span>
                   )}
 
                   {!isCustomer && (b.status === 'Cancelled' || b.status === 'Declined' || b.status === 'Auto-Declined') && (
-                    <span className="badge badge-gray">{b.status}</span>
+                    <span className={`badge ${STATUS_CLASS[b.status] || 'status-cancelled'}`}>{b.status}</span>
                   )}
                 </div>
               </div>
