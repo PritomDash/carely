@@ -4,6 +4,7 @@ const User = require('../models/user');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
+const { upload } = require('../middlewares/uploadMiddleware');
 
 const generateToken = (user) =>
   jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
@@ -13,20 +14,61 @@ const transporter = nodemailer.createTransport({
   auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
 });
 
-router.post('/register', async (req, res) => {
+router.post('/register', upload.fields([
+  { name: 'profilePhoto' },
+  { name: 'idDocument' },
+  { name: 'policeClearance' },
+  { name: 'courseCertificate' },
+]), async (req, res) => {
   try {
-    const { name, email, password, phone, role } = req.body;
+    const {
+      name, email, password, phone, role,
+      professionalType, experience, about,
+      hourlyRate, weekdayRate, saturdayRate, sundayRate,
+      location, availability,
+      nidNumber, bmdc, bnmc, bkashNumber, nagadNumber,
+    } = req.body;
+
     if (!name || !email || !password || !phone || !role)
       return res.status(400).json({ message: 'All fields are required' });
 
     const existing = await User.findOne({ email });
     if (existing) return res.status(400).json({ message: 'Email already exists' });
 
-    const user = new User({ name, email, password, phone, role: role.toLowerCase() });
+    const userData = { name, email, password, phone, role: role.toLowerCase() };
+
+    if (userData.role === 'professional') {
+      if (professionalType) userData.professionalType = professionalType;
+      if (experience) userData.experience = experience;
+      if (about) userData.about = about;
+      if (hourlyRate)   userData.hourlyRate   = Number(hourlyRate);
+      if (weekdayRate)  userData.weekdayRate  = Number(weekdayRate);
+      if (saturdayRate) userData.saturdayRate = Number(saturdayRate);
+      if (sundayRate)   userData.sundayRate   = Number(sundayRate);
+      if (nidNumber) userData.nidNumber = nidNumber;
+      if (bmdc) userData.bmdc = bmdc;
+      if (bnmc) userData.bnmc = bnmc;
+      if (bkashNumber) userData.bkashNumber = bkashNumber;
+      if (nagadNumber) userData.nagadNumber = nagadNumber;
+
+      if (location) {
+        try { userData.location = JSON.parse(location); } catch { /* ignore malformed location */ }
+      }
+      if (availability) {
+        try { userData.availability = JSON.parse(availability); } catch { /* ignore malformed availability */ }
+      }
+
+      const files = req.files || {};
+      if (files.profilePhoto)      userData.profilePhoto      = files.profilePhoto[0].path;
+      if (files.idDocument)        userData.idDocument        = files.idDocument[0].path;
+      if (files.policeClearance)   userData.policeClearance   = files.policeClearance[0].path;
+      if (files.courseCertificate) userData.courseCertificate = files.courseCertificate[0].path;
+    }
+
+    const user = new User(userData);
     await user.save();
 
     const token = generateToken(user);
-    localStorage_note = "Saved as carelyToken and carelyUser on frontend";
     res.status(201).json({ token, user });
   } catch (err) {
     res.status(500).json({ message: 'Registration failed', error: err.message });

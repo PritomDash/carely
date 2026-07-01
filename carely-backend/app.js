@@ -33,6 +33,68 @@ app.use('/api/assets',        require('./routes/assetRoutes'));
 
 app.get('/', (req, res) => res.send('🚀 Carely API running'));
 
+// ── Seed fake professionals (only runs if fewer than 5 exist) ──────────────────
+const seedProfessionals = async () => {
+  const User = require('./models/user');
+  try {
+    const count = await User.countDocuments({ role: 'professional' });
+    if (count >= 5) return;
+
+    const fakeProfessionals = [
+      {
+        name: 'Fatima Rahman', email: 'pro1@carely.com', password: 'Test@1234', phone: '01700000001',
+        role: 'professional', professionalType: 'Child Care',
+        location: { division: 'Dhaka', district: 'Dhaka', thana: 'Gulshan' },
+        experience: '4 years', hourlyRate: 800, weekdayRate: 800, saturdayRate: 800, sundayRate: 800,
+        about: 'Experienced child care specialist with 4 years caring for children aged 1-12. CPR certified and very patient.',
+        rating: 4.8, isVerified: true, profileApproved: true,
+      },
+      {
+        name: 'Dr Karim Hossain', email: 'pro2@carely.com', password: 'Test@1234', phone: '01700000002',
+        role: 'professional', professionalType: 'Nurse',
+        location: { division: 'Dhaka', district: 'Dhaka', thana: 'Dhanmondi' },
+        experience: '6 years', hourlyRate: 1200, weekdayRate: 1200, saturdayRate: 1200, sundayRate: 1200,
+        about: 'Qualified nurse with hospital experience. Specializes in elderly home care and post-surgery recovery.',
+        rating: 4.9, isVerified: true, profileApproved: true,
+      },
+      {
+        name: 'Nasrin Akter', email: 'pro3@carely.com', password: 'Test@1234', phone: '01700000003',
+        role: 'professional', professionalType: 'Aged Care',
+        location: { division: 'Chittagong', district: 'Chittagong', thana: 'Panchlaish' },
+        experience: '3 years', hourlyRate: 700, weekdayRate: 700, saturdayRate: 700, sundayRate: 700,
+        about: 'Compassionate aged care worker. Gentle and respectful with elderly patients.',
+        rating: 4.7, isVerified: true, profileApproved: true,
+      },
+      {
+        name: 'Rahim Physiotherapy', email: 'pro4@carely.com', password: 'Test@1234', phone: '01700000004',
+        role: 'professional', professionalType: 'Physiotherapist',
+        location: { division: 'Dhaka', district: 'Dhaka', thana: 'Mirpur' },
+        experience: '5 years', hourlyRate: 1500, weekdayRate: 1500, saturdayRate: 1500, sundayRate: 1500,
+        about: 'Licensed physiotherapist. Expert in rehabilitation, mobility improvement and pain management.',
+        rating: 4.6, isVerified: true, profileApproved: true,
+      },
+      {
+        name: 'Sumaiya Begum', email: 'pro5@carely.com', password: 'Test@1234', phone: '01700000005',
+        role: 'professional', professionalType: 'Child Care',
+        location: { division: 'Sylhet', district: 'Sylhet', thana: 'Sylhet Sadar' },
+        experience: '2 years', hourlyRate: 600, weekdayRate: 600, saturdayRate: 600, sundayRate: 600,
+        about: 'Loving and energetic child care provider. Great with toddlers and school-age children.',
+        rating: 4.5, isVerified: true, profileApproved: true,
+      },
+    ];
+
+    for (const data of fakeProfessionals) {
+      const exists = await User.findOne({ email: data.email });
+      if (!exists) {
+        await new User(data).save();
+      }
+    }
+    console.log('✅ Seeded fake professionals');
+  } catch (err) {
+    console.error('❌ Seed error:', err.message);
+  }
+};
+
 // ── MongoDB ────────────────────────────────────────────────────────────────────
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
@@ -41,6 +103,7 @@ mongoose.connect(process.env.MONGODB_URI, {
 .then(() => {
   console.log('✅ MongoDB connected');
   require('./cronJobs')();
+  seedProfessionals();
 })
 .catch(err => console.error('❌ MongoDB error:', err));
 

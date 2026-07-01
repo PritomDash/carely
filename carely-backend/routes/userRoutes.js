@@ -17,7 +17,7 @@ router.get('/me', authMiddleware, async (req, res) => {
 
 router.put('/update-profile', authMiddleware, async (req, res) => {
   try {
-    const { name, experience, availability, location, about,
+    const { name, phone, experience, availability, location, about,
             weekdayRate, saturdayRate, sundayRate, hourlyRate,
             bkashNumber, nagadNumber, payoutMethod, bankDetails } = req.body;
 
@@ -25,6 +25,7 @@ router.put('/update-profile', authMiddleware, async (req, res) => {
 
     const updateData = {
       ...(name !== undefined && { name }),
+      ...(phone !== undefined && { phone }),
       ...(experience !== undefined && { experience }),
       ...(about !== undefined && { about }),
       ...(location !== undefined && { location }),

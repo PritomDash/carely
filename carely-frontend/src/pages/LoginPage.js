@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import api from '../services/api';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { Heart } from 'lucide-react';
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const routerLocation = useLocation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [error, setError] = useState('');
+  const [success] = useState(routerLocation.state?.success || '');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -26,8 +29,6 @@ export default function LoginPage() {
 
       if (loggedUser.role === 'admin') {
         navigate('/admin');
-      } else if (loggedUser.role === 'professional') {
-        navigate('/professional-profile');
       } else {
         navigate('/home');
       }
@@ -41,11 +42,21 @@ export default function LoginPage() {
   return (
     <div className="page" style={{ maxWidth: 420 }}>
       <div className="card">
-        <h2 style={{ marginBottom: 20, textAlign: 'center' }}>Log In</h2>
+        <div style={{ textAlign: 'center', marginBottom: 20 }}>
+          <Link to="/" className="nav-logo" style={{ justifyContent: 'center', fontSize: 22 }}>
+            <Heart size={24} color="#1E40AF" fill="#1E40AF" /> Carely
+          </Link>
+        </div>
+        <h2 style={{ marginBottom: 20, textAlign: 'center' }}>Welcome Back</h2>
 
         {error && (
-          <div className="badge badge-red" style={{ display: 'block', marginBottom: 16, padding: '8px 12px' }}>
+          <div className="badge badge-red" style={{ display: 'block', marginBottom: 16, padding: '10px 14px' }}>
             {error}
+          </div>
+        )}
+        {success && (
+          <div className="badge badge-green" style={{ display: 'block', marginBottom: 16, padding: '10px 14px' }}>
+            {success}
           </div>
         )}
 
@@ -94,18 +105,18 @@ export default function LoginPage() {
               onChange={(e) => setIsAdmin(e.target.checked)}
               style={{ width: 'auto' }}
             />
-            <label htmlFor="isAdmin" style={{ margin: 0 }}>Login as admin</label>
+            <label htmlFor="isAdmin" style={{ margin: 0 }}>Admin Login</label>
           </div>
 
-          <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: '100%', marginTop: 8 }}>
-            {loading ? 'Logging in...' : 'Log In'}
+          <button type="submit" className="btn btn-primary btn-block" disabled={loading} style={{ marginTop: 8 }}>
+            {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
 
         <div style={{ marginTop: 20, textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 8 }}>
           <Link to="/forgot-password" className="text-muted">Forgot password?</Link>
           <span className="text-muted">
-            Don't have an account? <Link to="/register" className="text-green">Register</Link>
+            Don't have an account? <Link to="/register" className="text-primary">Register</Link>
           </span>
         </div>
       </div>

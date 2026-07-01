@@ -1,14 +1,33 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import api from '../services/api';
+import api, { API_BASE } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { formatBDT } from '../utils/currency';
 import SafetyDisclaimer from '../components/SafetyDisclaimer';
+import { MapPin, Star } from 'lucide-react';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const DAY_ABBR = { Monday: 'Mon', Tuesday: 'Tue', Wednesday: 'Wed', Thursday: 'Thu', Friday: 'Fri', Saturday: 'Sat', Sunday: 'Sun' };
 const DAY_BY_INDEX = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+const fileUrl = (p) => {
+  if (!p) return null;
+  const name = String(p).split(/[\\/]/).pop();
+  return `${API_BASE}/uploads/documents/${name}`;
+};
+
+const formatLocation = (loc) => {
+  if (!loc) return 'Location not set';
+  return [loc.thana, loc.district].filter(Boolean).join(', ') || 'Location not set';
+};
+
+const formatAvailability = (avail) => {
+  if (!avail) return 'Not specified';
+  const days = Object.entries(avail).filter(([, v]) => v?.start && v?.end).map(([k]) => DAY_ABBR[k] || k);
+  return days.length ? days.join(', ') : 'Not specified';
+};
 
 const toDateStr = (d) => {
   const y = d.getFullYear();
@@ -230,7 +249,7 @@ export default function BookingPage() {
     return (
       <div className="page" style={{ maxWidth: 480 }}>
         <div className="card" style={{ textAlign: 'center', padding: 40 }}>
-          <h2 style={{ color: '#16a34a', marginBottom: 12 }}>Booking Requested!</h2>
+          <h2 style={{ color: '#16A34A', marginBottom: 12 }}>Booking Requested!</h2>
           <p className="text-muted" style={{ marginBottom: 8 }}>
             Your booking request has been sent to {pro.name}.
           </p>
@@ -244,141 +263,186 @@ export default function BookingPage() {
   }
 
   return (
-    <div className="page" style={{ maxWidth: 640 }}>
-      <div className="card">
-        <h2>Book {pro.name}</h2>
-        <div className="grid-3" style={{ marginTop: 12 }}>
-          <div>
-            <div className="text-muted">Weekday</div>
-            <div style={{ fontWeight: 600 }}>{formatBDT(pro.weekdayRate)}/hr</div>
+    <div className="page" style={{ maxWidth: 1000 }}>
+      <div className="booking-layout">
+        <div className="card">
+          <div style={{
+            width: 88, height: 88, borderRadius: '50%', overflow: 'hidden',
+            background: '#EFF6FF', margin: '0 auto 14px'
+          }}>
+            {pro.profilePhoto && (
+              <img src={fileUrl(pro.profilePhoto)} alt={pro.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            )}
           </div>
-          <div>
-            <div className="text-muted">Saturday</div>
-            <div style={{ fontWeight: 600 }}>{formatBDT(pro.saturdayRate)}/hr</div>
+          <div style={{ textAlign: 'center', fontWeight: 700, fontSize: 18 }}>{pro.name}</div>
+          <div style={{ textAlign: 'center', marginTop: 6 }}>
+            <span className="badge badge-blue">{pro.professionalType}</span>
           </div>
-          <div>
-            <div className="text-muted">Sunday</div>
-            <div style={{ fontWeight: 600 }}>{formatBDT(pro.sundayRate)}/hr</div>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 4, marginTop: 8 }}>
+            <Star size={14} className="star" fill="#f59e0b" strokeWidth={1.5} />
+            <span className="text-muted">{pro.rating ? pro.rating.toFixed(1) : 'New'}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 6, marginTop: 8, color: '#64748B', fontSize: 13 }}>
+            <MapPin size={13} /> {formatLocation(pro.location)}
+          </div>
+
+          <div style={{ marginTop: 20, borderTop: '1px solid #E2E8F0', paddingTop: 16 }}>
+            <div className="text-muted">Rate</div>
+            <div style={{ fontWeight: 800, color: '#1E40AF', fontSize: 20 }}>
+              {formatBDT(pro.weekdayRate || pro.hourlyRate)}/hr
+            </div>
+          </div>
+
+          <div style={{ marginTop: 16 }}>
+            <div className="text-muted">Available Days</div>
+            <div style={{ marginTop: 4, fontWeight: 500 }}>{formatAvailability(pro.availability)}</div>
           </div>
         </div>
-      </div>
 
-      {error && (
-        <div className="badge badge-red" style={{ display: 'block', marginTop: 16, padding: '8px 12px' }}>{error}</div>
-      )}
+        <div>
+          <div className="card">
+            <h2 style={{ marginBottom: 20 }}>Book {pro.name}</h2>
 
-      <form onSubmit={handleSubmit}>
-        <div className="card" style={{ marginTop: 16 }}>
-          <div className="form-group">
-            <label>Date</label>
-            <DatePicker
-              selected={selectedDate}
-              onChange={setSelectedDate}
-              filterDate={filterDate}
-              dayClassName={dayClassName}
-              minDate={new Date()}
-              placeholderText="Select a date"
-              dateFormat="yyyy-MM-dd"
-            />
-            <p className="text-muted" style={{ marginTop: 6 }}>
-              Greyed-out dates are fully booked. Dates with an orange dot are partially booked.
-            </p>
-          </div>
+            {error && (
+              <div className="badge badge-red" style={{ display: 'block', marginBottom: 16, padding: '10px 14px' }}>{error}</div>
+            )}
 
-          {selectedDate && (
-            <div className="form-group">
-              <label>Available Time Slots</label>
-              {slotsLoading ? (
-                <p className="text-muted">Loading time slots...</p>
-              ) : timeSlots.length === 0 ? (
-                <p className="text-muted">No available time slots on this date.</p>
-              ) : (
-                <div className="time-slot-grid">
-                  {timeSlots.map((slot) => (
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label>Date</label>
+                <DatePicker
+                  selected={selectedDate}
+                  onChange={setSelectedDate}
+                  filterDate={filterDate}
+                  dayClassName={dayClassName}
+                  minDate={new Date()}
+                  placeholderText="Select a date"
+                  dateFormat="yyyy-MM-dd"
+                />
+                <p className="text-muted" style={{ marginTop: 6 }}>
+                  Greyed-out dates are fully booked. Dates with an orange dot are partially booked.
+                </p>
+              </div>
+
+              {selectedDate && (
+                <div className="form-group">
+                  <label>Available Time Slots</label>
+                  {slotsLoading ? (
+                    <p className="text-muted">Loading time slots...</p>
+                  ) : timeSlots.length === 0 ? (
+                    <p className="text-muted">No available time slots on this date.</p>
+                  ) : (
+                    <div className="time-slot-grid">
+                      {timeSlots.map((slot) => (
+                        <button
+                          key={slot.time}
+                          type="button"
+                          disabled={slot.disabled}
+                          className={`time-slot ${selectedTime === slot.time ? 'selected' : ''}`}
+                          onClick={() => setSelectedTime(slot.time)}
+                        >
+                          {slot.time}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="form-group">
+                <label>Duration</label>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {[1, 2, 3, 4, 5, 6].map((h) => (
                     <button
-                      key={slot.time}
+                      key={h}
                       type="button"
-                      disabled={slot.disabled}
-                      className={`time-slot ${selectedTime === slot.time ? 'selected' : ''}`}
-                      onClick={() => setSelectedTime(slot.time)}
+                      className={`btn ${duration === h ? 'btn-primary' : 'btn-secondary'}`}
+                      style={{ flex: '1 1 60px' }}
+                      onClick={() => setDuration(h)}
                     >
-                      {slot.time}
+                      {h}h
                     </button>
                   ))}
                 </div>
-              )}
-            </div>
-          )}
-
-          <div className="grid-2">
-            <div className="form-group">
-              <label>Duration (hours)</label>
-              <select value={duration} onChange={(e) => setDuration(Number(e.target.value))}>
-                {[1, 2, 3, 4, 5, 6, 7, 8].map((h) => <option key={h} value={h}>{h} hour{h > 1 ? 's' : ''}</option>)}
-              </select>
-            </div>
-            <div className="form-group">
-              <label>Booking Type</label>
-              <select value={type} onChange={(e) => setType(e.target.value)}>
-                <option value="short">Short-term</option>
-                <option value="long">Long-term (recurring)</option>
-              </select>
-            </div>
-          </div>
-
-          {type === 'long' && (
-            <div className="form-group">
-              <label>Repeat On</label>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-                {DAYS.map((day) => (
-                  <label key={day} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13 }}>
-                    <input
-                      type="checkbox"
-                      style={{ width: 'auto' }}
-                      checked={recurringDays.includes(day)}
-                      onChange={() => toggleDay(day)}
-                    />
-                    {day}
-                  </label>
-                ))}
               </div>
-            </div>
-          )}
 
-          <div className="form-group">
-            <label>Address</label>
-            <textarea
-              rows={3}
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder="Your full address, Dhaka"
-              required
-            />
+              <div className="form-group">
+                <label>Booking Type</label>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    type="button"
+                    className={`btn ${type === 'short' ? 'btn-primary' : 'btn-secondary'}`}
+                    style={{ flex: 1 }}
+                    onClick={() => setType('short')}
+                  >
+                    Short
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn ${type === 'long' ? 'btn-primary' : 'btn-secondary'}`}
+                    style={{ flex: 1 }}
+                    onClick={() => setType('long')}
+                  >
+                    Long
+                  </button>
+                </div>
+              </div>
+
+              {type === 'long' && (
+                <div className="form-group">
+                  <label>Repeat On</label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                    {DAYS.map((day) => (
+                      <label key={day} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13 }}>
+                        <input
+                          type="checkbox"
+                          style={{ width: 'auto' }}
+                          checked={recurringDays.includes(day)}
+                          onChange={() => toggleDay(day)}
+                        />
+                        {day}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="form-group">
+                <label>Address</label>
+                <textarea
+                  rows={3}
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="Your full address in Bangladesh"
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Work Description</label>
+                <textarea
+                  rows={3}
+                  value={workDescription}
+                  onChange={(e) => setWorkDescription(e.target.value)}
+                  placeholder="Describe the work needed"
+                  required
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0', borderTop: '1px solid #E2E8F0' }}>
+                <span className="text-muted">Total</span>
+                <span style={{ fontSize: 22, fontWeight: 800, color: '#1E40AF' }}>{formatBDT(estimatedPrice)}</span>
+              </div>
+
+              <button type="submit" className="btn btn-primary btn-block" disabled={submitting} style={{ marginTop: 8 }}>
+                {submitting ? 'Submitting...' : 'Submit Booking Request'}
+              </button>
+            </form>
           </div>
 
-          <div className="form-group">
-            <label>Work Description</label>
-            <textarea
-              rows={3}
-              value={workDescription}
-              onChange={(e) => setWorkDescription(e.target.value)}
-              placeholder="Describe the work needed"
-              required
-            />
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderTop: '1px solid #f3f4f6' }}>
-            <span className="text-muted">Total Price</span>
-            <span style={{ fontSize: 20, fontWeight: 700, color: '#2563EB' }}>{formatBDT(estimatedPrice)}</span>
-          </div>
-
-          <button type="submit" className="btn btn-primary" disabled={submitting} style={{ width: '100%', marginTop: 8 }}>
-            {submitting ? 'Submitting...' : 'Submit Booking Request'}
-          </button>
+          <SafetyDisclaimer />
         </div>
-      </form>
-
-      <SafetyDisclaimer />
+      </div>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import api from '../services/api';
+import api, { API_BASE } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { formatBDT } from '../utils/currency';
@@ -15,6 +15,29 @@ const STATUS_BADGE = {
   Refunded: 'badge-gray',
 };
 
+const FILTER_TABS = [
+  { key: 'All', label: 'All' },
+  { key: 'Pending', label: 'Pending' },
+  { key: 'Confirmed', label: 'Confirmed' },
+  { key: 'Completed', label: 'Completed' },
+  { key: 'Cancelled', label: 'Cancelled' },
+];
+
+const fileUrl = (p) => {
+  if (!p) return null;
+  const name = String(p).split(/[\\/]/).pop();
+  return `${API_BASE}/uploads/documents/${name}`;
+};
+
+const getInitials = (name = '') =>
+  name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase()).join('') || '?';
+
+const Avatar = ({ src, name, size = 48 }) => (
+  <div className="avatar" style={{ width: size, height: size, fontSize: size * 0.35 }}>
+    {src ? <img src={src} alt={name} /> : <span>{getInitials(name)}</span>}
+  </div>
+);
+
 export default function MyBookingsPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -27,6 +50,7 @@ export default function MyBookingsPage() {
   const [actionLoadingId, setActionLoadingId] = useState(null);
   const [disputingId, setDisputingId] = useState(null);
   const [disputeReason, setDisputeReason] = useState('');
+  const [activeTab, setActiveTab] = useState('All');
 
   const fetchBookings = useCallback(() => {
     setLoading(true);
@@ -83,79 +107,111 @@ export default function MyBookingsPage() {
   const sorted = [...bookings].sort((a, b) => new Date(b.date) - new Date(a.date));
   const isCustomer = user.role === 'customer';
 
+  const filtered = sorted.filter((b) => {
+    if (activeTab === 'All') return true;
+    if (activeTab === 'Pending') return b.status === 'AwaitingAcceptance';
+    return b.status === activeTab;
+  });
+
   return (
-    <div className="page" style={{ maxWidth: 720 }}>
+    <div className="page" style={{ maxWidth: 800 }}>
       <h2 style={{ marginBottom: 16 }}>My Bookings</h2>
 
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
+        {FILTER_TABS.map((t) => (
+          <button
+            key={t.key}
+            className={`btn ${activeTab === t.key ? 'btn-primary' : 'btn-secondary'}`}
+            style={{ padding: '8px 18px' }}
+            onClick={() => setActiveTab(t.key)}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
       {error && (
-        <div className="badge badge-red" style={{ display: 'block', marginBottom: 16, padding: '8px 12px' }}>{error}</div>
+        <div className="badge badge-red" style={{ display: 'block', marginBottom: 16, padding: '10px 14px' }}>{error}</div>
       )}
       {success && (
-        <div className="badge badge-green" style={{ display: 'block', marginBottom: 16, padding: '8px 12px' }}>{success}</div>
+        <div className="badge badge-green" style={{ display: 'block', marginBottom: 16, padding: '10px 14px' }}>{success}</div>
       )}
 
-      {sorted.length === 0 ? (
+      {filtered.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: 40 }}>
-          <p className="text-muted">No bookings yet.</p>
+          <p className="text-muted">No bookings in this category.</p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {sorted.map((b) => {
+          {filtered.map((b) => {
             const otherParty = isCustomer ? b.professional : b.customer;
             const busy = actionLoadingId === b._id;
 
             return (
               <div key={b._id} className="card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8 }}>
-                  <div>
-                    <div style={{ fontWeight: 600 }}>{otherParty?.name || 'Unknown'}</div>
-                    <div className="text-muted">{b.date?.slice(0, 10)} at {b.time} &middot; {b.duration}h</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                    <Avatar src={fileUrl(otherParty?.profilePhoto)} name={otherParty?.name} size={48} />
+                    <div>
+                      <div style={{ fontWeight: 700 }}>{otherParty?.name || 'Unknown'}</div>
+                      <div className="text-muted">{b.date?.slice(0, 10)} at {b.time} &middot; {b.duration}h</div>
+                      {b.professional?.professionalType && (
+                        <span className="badge badge-blue" style={{ marginTop: 4, display: 'inline-block' }}>
+                          {b.professional.professionalType}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <span className={`badge ${STATUS_BADGE[b.status] || 'badge-gray'}`}>{b.status}</span>
                 </div>
 
-                <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 4 }}>
                   <div><span className="text-muted">Address:</span> {b.address}</div>
                   <div><span className="text-muted">Work:</span> {b.workDescription}</div>
-                  <div style={{ fontWeight: 600, color: '#2563EB' }}>{formatBDT(b.amount)}</div>
+                  <div style={{ fontWeight: 700, color: '#1E40AF' }}>{formatBDT(b.amount)}</div>
                 </div>
 
                 <div style={{ marginTop: 14, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  {isCustomer && (b.status === 'AwaitingAcceptance' || b.status === 'Confirmed') && (
-                    <button className="btn btn-danger" disabled={busy} onClick={() => handleCancel(b._id)}>Cancel Booking</button>
+                  {isCustomer && b.status === 'AwaitingAcceptance' && (
+                    <button className="btn btn-danger" disabled={busy} onClick={() => handleCancel(b._id)}>Cancel</button>
+                  )}
+
+                  {isCustomer && b.status === 'Confirmed' && (
+                    <>
+                      <button className="btn btn-danger" disabled={busy} onClick={() => handleCancel(b._id)}>Cancel</button>
+                      <button className="btn btn-secondary" onClick={() => navigate(`/chat/${otherParty._id}`)}>Chat</button>
+                    </>
                   )}
 
                   {isCustomer && b.status === 'Completed' && (
                     <>
-                      <button className="btn btn-success" disabled={busy} onClick={() => handleConfirm(b._id)}>Confirm Task</button>
-                      <button className="btn btn-warning" disabled={busy} onClick={() => openDispute(b._id)}>Request Refund</button>
+                      <button className="btn btn-success" disabled={busy} onClick={() => handleConfirm(b._id)}>Confirm Done</button>
+                      <button className="btn btn-warning" disabled={busy} onClick={() => openDispute(b._id)}>Dispute</button>
+                      {!b.rated && (
+                        <button className="btn btn-primary" onClick={() => navigate(`/rate/${b._id}`)}>Rate</button>
+                      )}
                     </>
-                  )}
-
-                  {isCustomer && b.status === 'Completed' && !b.rated && (
-                    <button className="btn btn-secondary" onClick={() => navigate(`/rate/${b._id}`)}>Rate</button>
                   )}
 
                   {!isCustomer && b.status === 'AwaitingAcceptance' && (
                     <>
-                      <button className="btn btn-primary" disabled={busy} onClick={() => handleAccept(b._id)}>Accept</button>
+                      <button className="btn btn-success" disabled={busy} onClick={() => handleAccept(b._id)}>Accept</button>
                       <button className="btn btn-danger" disabled={busy} onClick={() => handleDecline(b._id)}>Decline</button>
                     </>
                   )}
 
                   {!isCustomer && b.status === 'Confirmed' && (
-                    <button className="btn btn-success" disabled={busy} onClick={() => handleMarkDone(b._id)}>Mark as Done</button>
-                  )}
-
-                  {b.status === 'Confirmed' && otherParty?._id && (
-                    <button className="btn btn-secondary" onClick={() => navigate(`/chat/${otherParty._id}`)}>Chat</button>
+                    <>
+                      <button className="btn btn-secondary" onClick={() => navigate(`/chat/${otherParty._id}`)}>Chat</button>
+                      <button className="btn btn-success" disabled={busy} onClick={() => handleMarkDone(b._id)}>Mark as Done</button>
+                    </>
                   )}
                 </div>
 
                 {disputingId === b._id && (
-                  <div style={{ marginTop: 12, borderTop: '1px solid #f3f4f6', paddingTop: 12 }}>
+                  <div style={{ marginTop: 12, borderTop: '1px solid #E2E8F0', paddingTop: 12 }}>
                     <div className="form-group">
-                      <label>Reason for refund request</label>
+                      <label>Reason for dispute</label>
                       <textarea
                         rows={3}
                         value={disputeReason}
@@ -164,7 +220,7 @@ export default function MyBookingsPage() {
                       />
                     </div>
                     <div style={{ display: 'flex', gap: 8 }}>
-                      <button className="btn btn-warning" onClick={() => submitDispute(b._id)}>Submit Refund Request</button>
+                      <button className="btn btn-warning" onClick={() => submitDispute(b._id)}>Submit Dispute</button>
                       <button className="btn btn-secondary" onClick={() => setDisputingId(null)}>Cancel</button>
                     </div>
                   </div>

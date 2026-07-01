@@ -592,8 +592,8 @@ router.get('/my-bookings', authMiddleware, async (req, res) => {
     else return res.status(403).json({ message: 'Unauthorized' });
 
     const bookings = await Booking.find(filter)
-      .populate('customer', 'name email phone')
-      .populate('professional', 'name email phone')
+      .populate('customer', 'name email phone profilePhoto')
+      .populate('professional', 'name email phone profilePhoto professionalType')
       .sort({ createdAt: -1 });
 
     res.json(bookings);
