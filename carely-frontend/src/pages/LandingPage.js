@@ -31,7 +31,7 @@ export default function LandingPage() {
       <div className="nav">
         <div className="nav-inner">
           <Link to="/" className="nav-logo">
-            <Heart size={22} color="#1E40AF" fill="#1E40AF" /> Carely
+            <Heart size={22} color="var(--primary)" fill="var(--primary)" /> Carely
           </Link>
           <div className="nav-links">
             <Link to="/login" className="btn btn-outline" style={{ padding: '8px 18px' }}>Sign In</Link>
@@ -47,7 +47,7 @@ export default function LandingPage() {
           Book with confidence.
         </p>
         <div className="hero-actions">
-          <Link to="/register" className="btn" style={{ padding: '14px 30px', fontSize: 15, background: '#fff', color: '#1E40AF' }}>
+          <Link to="/register" className="btn" style={{ padding: '14px 30px', fontSize: 15, background: '#fff', color: 'var(--primary)' }}>
             Get Started
           </Link>
           <Link to="/login" className="btn" style={{ padding: '14px 30px', fontSize: 15, background: 'transparent', color: '#fff', border: '1.5px solid #fff' }}>
@@ -78,7 +78,7 @@ export default function LandingPage() {
         </div>
       </div>
 
-      <div className="section" style={{ background: '#EFF6FF', maxWidth: 'none', paddingLeft: 0, paddingRight: 0 }}>
+      <div className="section" style={{ background: 'var(--primary-light)', maxWidth: 'none', paddingLeft: 0, paddingRight: 0 }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 20px' }}>
           <h2 className="section-title">How It Works</h2>
           <p className="section-subtitle">Getting the right care takes three simple steps</p>

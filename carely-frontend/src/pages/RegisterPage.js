@@ -132,7 +132,7 @@ export default function RegisterPage() {
       <div className="card">
         <div style={{ textAlign: 'center', marginBottom: 20 }}>
           <Link to="/" className="nav-logo" style={{ justifyContent: 'center', fontSize: 22 }}>
-            <Heart size={24} color="#1E40AF" fill="#1E40AF" /> Carely
+            <Heart size={24} color="var(--primary)" fill="var(--primary)" /> Carely
           </Link>
         </div>
         <h2 style={{ marginBottom: 20, textAlign: 'center' }}>Create Account</h2>
@@ -147,15 +147,15 @@ export default function RegisterPage() {
           type="button"
           onClick={handleGoogleSignup}
           className="btn btn-block"
-          style={{ background: '#fff', border: '1px solid #E2E8F0', color: '#0F172A', gap: 10, marginBottom: 20 }}
+          style={{ background: '#fff', border: '1px solid var(--border)', color: 'var(--text-dark)', gap: 10, marginBottom: 20 }}
         >
           <GoogleIcon /> Sign up with Google
         </button>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-          <div style={{ flex: 1, height: 1, background: '#E2E8F0' }} />
+          <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
           <span className="text-muted">or</span>
-          <div style={{ flex: 1, height: 1, background: '#E2E8F0' }} />
+          <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
         </div>
 
         <div className="grid-2" style={{ marginBottom: 24 }}>
@@ -164,12 +164,12 @@ export default function RegisterPage() {
             className="card"
             style={{
               cursor: 'pointer', textAlign: 'center', padding: 20,
-              border: role === 'customer' ? '2px solid #1E40AF' : '1px solid #E2E8F0',
-              background: role === 'customer' ? '#EFF6FF' : '#fff',
+              border: role === 'customer' ? '2px solid var(--primary)' : '1px solid var(--border)',
+              background: role === 'customer' ? 'var(--primary-light)' : '#fff',
               boxShadow: role === 'customer' ? 'var(--card-shadow)' : 'none',
             }}
           >
-            <User size={30} color="#1E40AF" style={{ marginBottom: 10 }} />
+            <User size={30} color="var(--primary)" style={{ marginBottom: 10 }} />
             <div style={{ fontWeight: 700, fontSize: 16 }}>I need care</div>
             <div className="text-muted" style={{ marginTop: 4 }}>Find and book care professionals</div>
           </div>
@@ -179,12 +179,12 @@ export default function RegisterPage() {
             className="card"
             style={{
               cursor: 'pointer', textAlign: 'center', padding: 20,
-              border: role === 'professional' ? '2px solid #1E40AF' : '1px solid #E2E8F0',
-              background: role === 'professional' ? '#EFF6FF' : '#fff',
+              border: role === 'professional' ? '2px solid var(--primary)' : '1px solid var(--border)',
+              background: role === 'professional' ? 'var(--primary-light)' : '#fff',
               boxShadow: role === 'professional' ? 'var(--card-shadow)' : 'none',
             }}
           >
-            <Briefcase size={30} color="#1E40AF" style={{ marginBottom: 10 }} />
+            <Briefcase size={30} color="var(--primary)" style={{ marginBottom: 10 }} />
             <div style={{ fontWeight: 700, fontSize: 16 }}>I am a professional</div>
             <div className="text-muted" style={{ marginTop: 4 }}>Offer your care services</div>
           </div>
@@ -278,13 +278,13 @@ export default function RegisterPage() {
                             type="time"
                             value={availability[day].start}
                             onChange={(e) => setDayTime(day, 'start', e.target.value)}
-                            style={{ flex: '1 1 110px', minWidth: 0, padding: '8px 10px', border: '1px solid #E2E8F0', borderRadius: 8 }}
+                            style={{ flex: '1 1 110px', minWidth: 0, padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8 }}
                           />
                           <input
                             type="time"
                             value={availability[day].end}
                             onChange={(e) => setDayTime(day, 'end', e.target.value)}
-                            style={{ flex: '1 1 110px', minWidth: 0, padding: '8px 10px', border: '1px solid #E2E8F0', borderRadius: 8 }}
+                            style={{ flex: '1 1 110px', minWidth: 0, padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8 }}
                           />
                         </>
                       )}

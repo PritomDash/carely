@@ -96,7 +96,7 @@ export default function ViewProfilePage() {
         <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', alignItems: 'center' }}>
           <div style={{
             width: 110, height: 110, borderRadius: '50%', overflow: 'hidden',
-            background: '#EFF6FF', flexShrink: 0
+            background: 'var(--primary-light)', flexShrink: 0
           }}>
             {pro.profilePhoto && (
               <img src={fileUrl(pro.profilePhoto)} alt={pro.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -109,7 +109,7 @@ export default function ViewProfilePage() {
               {pro.isVerified && <span className="badge badge-green">Verified</span>}
             </div>
             <div style={{ marginTop: 8 }}><Stars rating={pro.rating} /></div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, color: '#64748B', fontSize: 13 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, color: 'var(--text-muted)', fontSize: 13 }}>
               <MapPin size={13} /> {formatLocation(pro.location)}
             </div>
           </div>
@@ -142,15 +142,15 @@ export default function ViewProfilePage() {
                 <div className="grid-3">
                   <div>
                     <div className="text-muted">Weekday</div>
-                    <div style={{ fontWeight: 700, color: '#1E40AF' }}>{formatBDT(pro.weekdayRate)}/hr</div>
+                    <div style={{ fontWeight: 700, color: 'var(--primary)' }}>{formatBDT(pro.weekdayRate)}/hr</div>
                   </div>
                   <div>
                     <div className="text-muted">Saturday</div>
-                    <div style={{ fontWeight: 700, color: '#1E40AF' }}>{formatBDT(pro.saturdayRate)}/hr</div>
+                    <div style={{ fontWeight: 700, color: 'var(--primary)' }}>{formatBDT(pro.saturdayRate)}/hr</div>
                   </div>
                   <div>
                     <div className="text-muted">Sunday</div>
-                    <div style={{ fontWeight: 700, color: '#1E40AF' }}>{formatBDT(pro.sundayRate)}/hr</div>
+                    <div style={{ fontWeight: 700, color: 'var(--primary)' }}>{formatBDT(pro.sundayRate)}/hr</div>
                   </div>
                 </div>
               </div>
@@ -202,7 +202,7 @@ export default function ViewProfilePage() {
         <div style={{ position: 'sticky', top: 80 }}>
           <div className="card">
             <div className="text-muted">Rate</div>
-            <div style={{ fontWeight: 800, color: '#1E40AF', fontSize: 22, marginBottom: 16 }}>
+            <div style={{ fontWeight: 800, color: 'var(--primary)', fontSize: 22, marginBottom: 16 }}>
               {formatBDT(pro.weekdayRate || pro.hourlyRate)}/hr
             </div>
 

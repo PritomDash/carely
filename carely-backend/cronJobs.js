@@ -36,48 +36,21 @@ function setupCronJobs() {
 
         await Notification.create({
           user: b.customer._id, type: 'booking',
-          message: 'Your booking was not accepted in time and has been auto-declined.',
+          message: 'Your booking was auto-declined. ' + (b.professional?.name || 'The professional') + ' did not respond within 24 hours. Please try another professional.',
           link: '/my-bookings'
         });
 
         await sendEmail({
           to: b.customer?.email,
           subject: 'Booking Auto-Declined - Carely',
-          html: '<p>Hi ' + (b.customer?.name || '') + ',</p><p>Your booking request with <b>' + (b.professional?.name || '') + '</b> was not accepted within 24 hours and has been automatically declined.</p><p>Please try booking another professional.</p>'
+          html:
+            '<p>' + (b.professional?.name || 'The professional') + ' did not respond to your booking request within 24 hours.</p>' +
+            '<p>Your booking has been automatically declined.</p>' +
+            '<p>Please try booking another professional.</p>'
         });
       }
       if (bookings.length > 0) console.log('Auto-declined ' + bookings.length + ' bookings');
     } catch (err) { console.error('Auto-decline cron error:', err.message); }
-  });
-
-  // Every hour: Auto-release payout after 24h if no dispute
-  cron.schedule('30 * * * *', async () => {
-    try {
-      const threshold = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      const bookings = await Booking.find({
-        status: 'Completed',
-        taskCompletedEmailSent: true,
-        taskConfirmedByCustomer: false,
-        refundRequested: false,
-        payoutStatus: 'Pending',
-        taskEmailSentTime: { $lte: threshold }
-      }).populate('professional');
-
-      for (const b of bookings) {
-        b.payoutStatus = 'Released';
-        b.taskConfirmedByCustomer = true;
-        b.isActive = false;
-        b.sessions = [];
-        await b.save();
-
-        await Notification.create({
-          user: b.professional._id, type: 'payment',
-          message: 'Payout for your booking has been approved. Admin will process it shortly.',
-          link: '/earnings'
-        });
-      }
-      if (bookings.length > 0) console.log('Auto-released ' + bookings.length + ' payouts');
-    } catch (err) { console.error('Auto-release cron error:', err.message); }
   });
 
   // Every hour: Expire job posts older than 7 days

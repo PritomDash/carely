@@ -4,15 +4,14 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { formatBDT } from '../utils/currency';
 import {
-  LayoutDashboard, Users, Calendar, Wallet, Briefcase, CreditCard,
-  Settings as SettingsIcon, MessageSquare, LogOut, AlertTriangle, UserCheck,
+  LayoutDashboard, Users, Calendar, Briefcase, CreditCard,
+  Settings as SettingsIcon, MessageSquare, LogOut, XCircle, UserCheck,
 } from 'lucide-react';
 
 const TABS = [
   { key: 'overview', label: 'Overview', icon: LayoutDashboard },
   { key: 'users', label: 'Users', icon: Users },
   { key: 'bookings', label: 'Bookings', icon: Calendar },
-  { key: 'payouts', label: 'Payouts', icon: Wallet },
   { key: 'jobposts', label: 'Job Posts', icon: Briefcase },
   { key: 'credits', label: 'Credits', icon: CreditCard },
   { key: 'settings', label: 'Settings', icon: SettingsIcon },
@@ -22,7 +21,7 @@ const TABS = [
 const STATUS_BADGE = {
   Open: 'badge-green', InProgress: 'badge-blue', Completed: 'badge-blue', Expired: 'badge-gray',
   Cancelled: 'badge-red', AwaitingAcceptance: 'badge-yellow', Confirmed: 'badge-green',
-  Disputed: 'badge-orange', Declined: 'badge-red', 'Auto-Declined': 'badge-red', Refunded: 'badge-gray',
+  Declined: 'badge-red', 'Auto-Declined': 'badge-red',
 };
 
 const formatLocation = (loc) => (loc ? [loc.thana, loc.district, loc.division].filter(Boolean).join(', ') || '—' : '—');
@@ -47,7 +46,7 @@ function OverviewTab() {
     { label: 'Professionals', value: data.totalPros, icon: Briefcase },
     { label: 'Customers', value: data.totalCustomers, icon: UserCheck },
     { label: 'Bookings', value: data.totalBookings, icon: Calendar },
-    { label: 'Disputes', value: data.disputes, icon: AlertTriangle },
+    { label: 'Cancelled', value: data.cancelledBookings, icon: XCircle },
   ];
 
   return (
@@ -172,7 +171,6 @@ function BookingsTab() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [busyId, setBusyId] = useState(null);
 
   const fetchBookings = useCallback(() => {
     setLoading(true);
@@ -184,20 +182,6 @@ function BookingsTab() {
 
   useEffect(() => { fetchBookings(); }, [fetchBookings]);
 
-  const handleApprove = async (id) => {
-    setBusyId(id); setError('');
-    try { await api.post(`/api/bookings/admin-approve-refund/${id}`); fetchBookings(); }
-    catch (err) { setError(err.response?.data?.message || 'Failed to approve refund.'); }
-    finally { setBusyId(null); }
-  };
-
-  const handleReject = async (id) => {
-    setBusyId(id); setError('');
-    try { await api.post(`/api/bookings/admin-reject-refund/${id}`); fetchBookings(); }
-    catch (err) { setError(err.response?.data?.message || 'Failed to reject refund.'); }
-    finally { setBusyId(null); }
-  };
-
   if (loading) return <p className="text-muted">Loading bookings...</p>;
 
   return (
@@ -207,7 +191,7 @@ function BookingsTab() {
       <div className="card table-scroll">
         <table className="data-table">
           <thead>
-            <tr><th>Customer</th><th>Professional</th><th>Date</th><th>Status</th><th>Amount</th><th>Actions</th></tr>
+            <tr><th>Customer</th><th>Professional</th><th>Date</th><th>Status</th><th>Amount</th></tr>
           </thead>
           <tbody>
             {bookings.map((b) => (
@@ -217,120 +201,11 @@ function BookingsTab() {
                 <td>{b.date?.slice(0, 10)}</td>
                 <td><span className={`badge ${STATUS_BADGE[b.status] || 'badge-gray'}`}>{b.status}</span></td>
                 <td>{formatBDT(b.amount)}</td>
-                <td>
-                  {b.status === 'Disputed' && (
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      <button className="btn btn-primary" style={{ padding: '6px 10px', fontSize: 12 }} disabled={busyId === b._id} onClick={() => handleApprove(b._id)}>
-                        Approve Refund
-                      </button>
-                      <button className="btn btn-outline" style={{ padding: '6px 10px', fontSize: 12 }} disabled={busyId === b._id} onClick={() => handleReject(b._id)}>
-                        Reject Refund
-                      </button>
-                    </div>
-                  )}
-                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-    </div>
-  );
-}
-
-function PayoutsTab() {
-  const [payouts, setPayouts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [busyId, setBusyId] = useState(null);
-  const [refs, setRefs] = useState({});
-  const [methods, setMethods] = useState({});
-
-  useEffect(() => {
-    api.get('/api/admin/payouts/pending')
-      .then((res) => setPayouts((res.data || []).filter((b) => !b.payoutReleasedAt)))
-      .catch(() => setError('Failed to load payouts'))
-      .finally(() => setLoading(false));
-  }, []);
-
-  const handleRelease = async (id) => {
-    setError('');
-    const payoutReference = (refs[id] || '').trim();
-    if (!payoutReference) {
-      setError('Please enter a transaction reference.');
-      return;
-    }
-    const payoutMethod = methods[id] || payouts.find((p) => p._id === id)?.professional?.payoutMethod || 'bkash';
-
-    setBusyId(id);
-    try {
-      await api.post(`/api/admin/payouts/${id}/release`, { payoutMethod, payoutReference });
-      setPayouts((prev) => prev.filter((p) => p._id !== id));
-    } catch (err) {
-      setError(err.response?.data?.error || 'Failed to release payout.');
-    } finally {
-      setBusyId(null);
-    }
-  };
-
-  if (loading) return <p className="text-muted">Loading payouts...</p>;
-
-  return (
-    <div>
-      <h2 style={{ marginBottom: 16 }}>Pending Payouts</h2>
-      {error && <div className="badge badge-red" style={{ display: 'block', marginBottom: 16, padding: '8px 12px' }}>{error}</div>}
-
-      {payouts.length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', padding: 40 }}>
-          <p className="text-muted">No pending payouts.</p>
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {payouts.map((b) => (
-            <div key={b._id} className="card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-                <div>
-                  <div style={{ fontWeight: 600 }}>{b.professional?.name || 'Unknown'}</div>
-                  <div className="text-muted">Customer: {b.customer?.name || '—'}</div>
-                </div>
-                <div style={{ fontWeight: 700, color: '#2563EB' }}>{formatBDT(b.proNet ?? b.amount)}</div>
-              </div>
-
-              <div className="grid-2" style={{ marginTop: 12 }}>
-                <div><span className="text-muted">bKash: </span>{b.professional?.bkashNumber || 'Not set'}</div>
-                <div><span className="text-muted">Nagad: </span>{b.professional?.nagadNumber || 'Not set'}</div>
-              </div>
-
-              <div className="grid-2" style={{ marginTop: 12 }}>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label>Payout Method</label>
-                  <select
-                    value={methods[b._id] || b.professional?.payoutMethod || 'bkash'}
-                    onChange={(e) => setMethods((m) => ({ ...m, [b._id]: e.target.value }))}
-                  >
-                    <option value="bkash">bKash</option>
-                    <option value="nagad">Nagad</option>
-                    <option value="bank">Bank</option>
-                  </select>
-                </div>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label>Transaction Reference</label>
-                  <input
-                    type="text"
-                    value={refs[b._id] || ''}
-                    onChange={(e) => setRefs((r) => ({ ...r, [b._id]: e.target.value }))}
-                    placeholder="Transaction ID"
-                  />
-                </div>
-              </div>
-
-              <button className="btn btn-primary" style={{ marginTop: 12 }} disabled={busyId === b._id} onClick={() => handleRelease(b._id)}>
-                {busyId === b._id ? 'Releasing...' : 'Release Payout'}
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
@@ -640,7 +515,7 @@ function ChatTab({ adminId }) {
                   key={u._id}
                   onClick={() => openChat(u)}
                   className="btn btn-secondary"
-                  style={{ justifyContent: 'flex-start', background: selectedUser?._id === u._id ? '#dbeafe' : undefined }}
+                  style={{ justifyContent: 'flex-start', background: selectedUser?._id === u._id ? 'var(--primary-light)' : undefined }}
                 >
                   {u.name} <span className="text-muted" style={{ marginLeft: 6 }}>({u.role})</span>
                 </button>
@@ -667,7 +542,7 @@ function ChatTab({ adminId }) {
                       <div key={m._id} style={{ display: 'flex', justifyContent: isMine ? 'flex-end' : 'flex-start' }}>
                         <div style={{
                           maxWidth: '75%', padding: '8px 12px', borderRadius: 12,
-                          background: isMine ? '#2563eb' : '#f3f4f6', color: isMine ? '#fff' : '#111827',
+                          background: isMine ? 'var(--primary)' : '#f3f4f6', color: isMine ? '#fff' : '#111827',
                         }}>
                           {m.message}
                         </div>
@@ -734,7 +609,6 @@ export default function AdminDashboard() {
         {activeTab === 'overview' && <OverviewTab />}
         {activeTab === 'users' && <UsersTab />}
         {activeTab === 'bookings' && <BookingsTab />}
-        {activeTab === 'payouts' && <PayoutsTab />}
         {activeTab === 'jobposts' && <JobPostsTab />}
         {activeTab === 'credits' && <CreditsTab />}
         {activeTab === 'settings' && <SettingsTab />}

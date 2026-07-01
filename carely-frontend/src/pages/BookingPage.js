@@ -268,7 +268,7 @@ export default function BookingPage() {
         <div className="card">
           <div style={{
             width: 88, height: 88, borderRadius: '50%', overflow: 'hidden',
-            background: '#EFF6FF', margin: '0 auto 14px'
+            background: 'var(--primary-light)', margin: '0 auto 14px'
           }}>
             {pro.profilePhoto && (
               <img src={fileUrl(pro.profilePhoto)} alt={pro.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -282,13 +282,13 @@ export default function BookingPage() {
             <Star size={14} className="star" fill="#f59e0b" strokeWidth={1.5} />
             <span className="text-muted">{pro.rating ? pro.rating.toFixed(1) : 'New'}</span>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 6, marginTop: 8, color: '#64748B', fontSize: 13 }}>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 6, marginTop: 8, color: 'var(--text-muted)', fontSize: 13 }}>
             <MapPin size={13} /> {formatLocation(pro.location)}
           </div>
 
-          <div style={{ marginTop: 20, borderTop: '1px solid #E2E8F0', paddingTop: 16 }}>
+          <div style={{ marginTop: 20, borderTop: '1px solid var(--border)', paddingTop: 16 }}>
             <div className="text-muted">Rate</div>
-            <div style={{ fontWeight: 800, color: '#1E40AF', fontSize: 20 }}>
+            <div style={{ fontWeight: 800, color: 'var(--primary)', fontSize: 20 }}>
               {formatBDT(pro.weekdayRate || pro.hourlyRate)}/hr
             </div>
           </div>
@@ -429,9 +429,9 @@ export default function BookingPage() {
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0', borderTop: '1px solid #E2E8F0' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0', borderTop: '1px solid var(--border)' }}>
                 <span className="text-muted">Total</span>
-                <span style={{ fontSize: 22, fontWeight: 800, color: '#1E40AF' }}>{formatBDT(estimatedPrice)}</span>
+                <span style={{ fontSize: 22, fontWeight: 800, color: 'var(--primary)' }}>{formatBDT(estimatedPrice)}</span>
               </div>
 
               <button type="submit" className="btn btn-primary btn-block" disabled={submitting} style={{ marginTop: 8 }}>

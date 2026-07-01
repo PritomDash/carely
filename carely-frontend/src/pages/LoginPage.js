@@ -70,7 +70,7 @@ export default function LoginPage() {
       <div className="card">
         <div style={{ textAlign: 'center', marginBottom: 20 }}>
           <Link to="/" className="nav-logo" style={{ justifyContent: 'center', fontSize: 22 }}>
-            <Heart size={24} color="#1E40AF" fill="#1E40AF" /> Carely
+            <Heart size={24} color="var(--primary)" fill="var(--primary)" /> Carely
           </Link>
         </div>
         <h2 style={{ marginBottom: 20, textAlign: 'center' }}>Welcome Back</h2>
@@ -90,15 +90,15 @@ export default function LoginPage() {
           type="button"
           onClick={handleGoogleLogin}
           className="btn btn-block"
-          style={{ background: '#fff', border: '1px solid #E2E8F0', color: '#0F172A', gap: 10, marginBottom: 20 }}
+          style={{ background: '#fff', border: '1px solid var(--border)', color: 'var(--text-dark)', gap: 10, marginBottom: 20 }}
         >
           <GoogleIcon /> Continue with Google
         </button>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-          <div style={{ flex: 1, height: 1, background: '#E2E8F0' }} />
+          <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
           <span className="text-muted">or</span>
-          <div style={{ flex: 1, height: 1, background: '#E2E8F0' }} />
+          <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
         </div>
 
         <form onSubmit={handleSubmit}>

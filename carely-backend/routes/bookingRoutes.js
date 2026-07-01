@@ -6,7 +6,6 @@ const User = require('../models/user');
 const Settings = require('../models/Settings');
 const CreditTransaction = require('../models/CreditTransaction');
 const authMiddleware = require('../middlewares/authMiddleware');
-const adminAuthMiddleware = require('../middlewares/adminAuthMiddleware');
 const nodemailer = require('nodemailer');
 const { getAppliedRate, computeProNet } = require('../utils/pricing');
 
@@ -19,6 +18,10 @@ const sendEmail = async ({ to, subject, html }) => {
   if (!to) return;
   try { await transporter.sendMail({ from: process.env.EMAIL_USER, to, subject, html }); }
   catch (e) { console.error('Email failed:', e.message); }
+};
+
+const notifyRealtime = (req, userId, notification) => {
+  if (req.io) req.io.to(String(userId)).emit('newNotification', notification);
 };
 
 const ymd = (d) => new Date(d).toISOString().slice(0, 10);
@@ -214,7 +217,7 @@ router.post('/create', authMiddleware, async (req, res) => {
       return res.status(400).json({ message: 'Missing required fields' });
 
     const pro = await User.findById(professionalId)
-      .select('weekdayRate saturdayRate sundayRate hourlyRate availability isVerified').lean();
+      .select('weekdayRate saturdayRate sundayRate hourlyRate availability isVerified name email phone professionalType').lean();
     if (!pro) return res.status(404).json({ message: 'Professional not found' });
     if (!pro.isVerified) return res.status(400).json({ message: 'Professional is not verified' });
 
@@ -311,14 +314,23 @@ router.post('/create', authMiddleware, async (req, res) => {
     // Notify professional
     await Notification.create({
       user: professionalId, type: 'booking',
-      message: 'New booking request from ' + req.user.name,
+      message: 'New booking request from ' + req.user.name + ' for ' + date + ' at ' + time + '. Respond within 24 hours.',
       link: '/my-bookings'
     });
+    notifyRealtime(req, professionalId, { type: 'booking', message: 'New booking request received.' });
 
     await sendEmail({
       to: pro.email,
       subject: 'New Booking Request - Carely',
-      html: '<h3>Hi,</h3><p>You have a new booking request from <b>' + req.user.name + '</b>.</p><p>Date: ' + date + '</p><p>Time: ' + time + '</p><p>Please log in to accept or decline within 24 hours.</p>'
+      html:
+        '<p>Hi ' + pro.name + ', you have a new booking request from <b>' + req.user.name + '</b>.</p>' +
+        '<p>Date: ' + date + '</p>' +
+        '<p>Time: ' + time + '</p>' +
+        '<p>Duration: ' + hours + ' hours</p>' +
+        '<p>Work: ' + workDescription + '</p>' +
+        '<p>Address: ' + address + '</p>' +
+        '<p>Please log in and accept or decline within 24 hours.</p>' +
+        '<p>If no response the booking will be auto-declined.</p>'
     });
 
     res.json({ message: 'Booking request sent', bookingId: booking._id });
@@ -415,20 +427,48 @@ router.post('/accept/:id', authMiddleware, async (req, res) => {
     // Notifications + emails
     await Notification.create({
       user: booking.customer._id, type: 'booking',
-      message: 'Your booking with ' + booking.professional.name + ' is confirmed!',
+      message: 'Booking confirmed with ' + booking.professional.name + '. Phone: ' + booking.professional.phone + '. Date: ' + booking.date.toISOString().slice(0, 10) + ' at ' + booking.time + '. You can now chat.',
       link: '/my-bookings'
     });
+    await Notification.create({
+      user: booking.professional._id, type: 'booking',
+      message: 'Booking confirmed with ' + booking.customer.name + '. Phone: ' + booking.customer.phone + '. Address: ' + booking.address + '. Date: ' + booking.date.toISOString().slice(0, 10) + '.',
+      link: '/my-bookings'
+    });
+
+    notifyRealtime(req, booking.customer._id, { type: 'booking', message: 'Your booking has been confirmed!' });
+    notifyRealtime(req, booking.professional._id, { type: 'booking', message: 'You confirmed a booking.' });
 
     await sendEmail({
       to: booking.customer.email,
       subject: 'Booking Confirmed - Carely',
-      html: '<h3>Hi ' + booking.customer.name + ',</h3><p>Your booking with <b>' + booking.professional.name + '</b> is confirmed.</p><p>Date: ' + booking.date + '</p><p>Time: ' + booking.time + '</p><p>Address: ' + booking.address + '</p><br><p><b>Professional contact:</b> ' + booking.professional.phone + '</p>'
+      html:
+        '<p>Your booking with <b>' + booking.professional.name + '</b> is confirmed!</p>' +
+        '<p>Professional Name: ' + booking.professional.name + '</p>' +
+        '<p>Professional Phone: ' + booking.professional.phone + '</p>' +
+        '<p>Professional Type: ' + (booking.professional.professionalType || '') + '</p>' +
+        '<p>Date: ' + booking.date.toISOString().slice(0, 10) + '</p>' +
+        '<p>Time: ' + booking.time + '</p>' +
+        '<p>Duration: ' + hours + ' hours</p>' +
+        '<p>Address: ' + booking.address + '</p>' +
+        '<p>Work: ' + booking.workDescription + '</p>' +
+        '<p>Please arrange payment directly with the professional in cash or bKash.</p>' +
+        '<p>You can chat with them through the Carely app.</p>'
     });
 
     await sendEmail({
       to: booking.professional.email,
       subject: 'Booking Confirmed - Carely',
-      html: '<h3>Hi ' + booking.professional.name + ',</h3><p>Your booking with <b>' + booking.customer.name + '</b> is confirmed.</p><p>Date: ' + booking.date + '</p><p>Time: ' + booking.time + '</p><p>Address: ' + booking.address + '</p><br><p><b>Customer contact:</b> ' + booking.customer.phone + '</p>'
+      html:
+        '<p>You accepted a booking!</p>' +
+        '<p>Customer Name: ' + booking.customer.name + '</p>' +
+        '<p>Customer Phone: ' + booking.customer.phone + '</p>' +
+        '<p>Date: ' + booking.date.toISOString().slice(0, 10) + '</p>' +
+        '<p>Time: ' + booking.time + '</p>' +
+        '<p>Duration: ' + hours + ' hours</p>' +
+        '<p>Work Address: ' + booking.address + '</p>' +
+        '<p>Work: ' + booking.workDescription + '</p>' +
+        '<p>Please arrive on time. Payment will be arranged directly with the customer.</p>'
     });
 
     res.json({ message: 'Booking accepted and confirmed', booking });
@@ -440,7 +480,7 @@ router.post('/accept/:id', authMiddleware, async (req, res) => {
 // POST /api/bookings/decline/:id
 router.post('/decline/:id', authMiddleware, async (req, res) => {
   try {
-    const booking = await Booking.findById(req.params.id).populate('customer');
+    const booking = await Booking.findById(req.params.id).populate('customer professional');
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
 
     booking.status = 'Declined';
@@ -449,8 +489,16 @@ router.post('/decline/:id', authMiddleware, async (req, res) => {
 
     await Notification.create({
       user: booking.customer._id, type: 'booking',
-      message: 'Your booking request was declined. Please try another professional.',
+      message: booking.professional.name + ' has declined your booking. Please try another professional.',
       link: '/my-bookings'
+    });
+
+    await sendEmail({
+      to: booking.customer.email,
+      subject: 'Booking Declined - Carely',
+      html:
+        '<p>Unfortunately ' + booking.professional.name + ' has declined your booking request.</p>' +
+        '<p>Please search for another professional on Carely.</p>'
     });
 
     res.json({ message: 'Booking declined' });
@@ -474,14 +522,29 @@ router.post('/cancel/:id', authMiddleware, async (req, res) => {
     booking.status = 'Cancelled';
     await releaseCalendar(booking);
 
-    const otherUser = isCustomer ? booking.professional : booking.customer;
-    const cancelBy  = isCustomer ? 'Customer' : 'Professional';
+    const dateStr = booking.date.toISOString().slice(0, 10);
 
-    await Notification.create({
-      user: otherUser._id, type: 'booking',
-      message: 'Booking on ' + booking.date + ' was cancelled by ' + cancelBy,
-      link: '/my-bookings'
-    });
+    if (isCustomer) {
+      await Notification.create({
+        user: booking.professional._id, type: 'booking',
+        message: 'Booking on ' + dateStr + ' was cancelled by the customer.',
+        link: '/my-bookings'
+      });
+    } else {
+      await Notification.create({
+        user: booking.customer._id, type: 'booking',
+        message: booking.professional.name + ' cancelled your booking on ' + dateStr + '. Please try another professional.',
+        link: '/my-bookings'
+      });
+
+      await sendEmail({
+        to: booking.customer.email,
+        subject: 'Booking Cancelled - Carely',
+        html:
+          '<p>' + booking.professional.name + ' has cancelled your booking on ' + dateStr + '.</p>' +
+          '<p>Please search for another professional on Carely.</p>'
+      });
+    }
 
     res.json({ message: 'Booking cancelled' });
   } catch (err) {
@@ -500,83 +563,17 @@ router.post('/mark-done/:id', authMiddleware, async (req, res) => {
       return res.status(403).json({ message: 'Not authorized' });
 
     booking.status = 'Completed';
-    booking.taskCompletedEmailSent = true;
-    booking.taskEmailSentTime = new Date();
-    await booking.save();
+    await releaseCalendar(booking);
 
     await Notification.create({
       user: booking.customer._id, type: 'booking',
-      message: booking.professional.name + ' has marked your job as done. Please confirm or dispute within 24 hours.',
+      message: booking.professional.name + ' marked your job as complete. Please rate your experience.',
       link: '/my-bookings'
-    });
-
-    await sendEmail({
-      to: booking.customer.email,
-      subject: 'Job Completed - Please Confirm - Carely',
-      html: '<h3>Hi ' + booking.customer.name + ',</h3><p><b>' + booking.professional.name + '</b> has marked your booking as completed.</p><p>Please log in and confirm or dispute within <b>24 hours</b>. If you do nothing, payment will be released automatically.</p>'
     });
 
     res.json({ message: 'Job marked as done' });
   } catch (err) {
     res.status(500).json({ message: 'Failed to mark done' });
-  }
-});
-
-// POST /api/bookings/action/:id - Customer confirms or disputes
-router.post('/action/:id', authMiddleware, async (req, res) => {
-  try {
-    const { action, reason } = req.body;
-    const booking = await Booking.findById(req.params.id).populate('customer professional');
-    if (!booking) return res.status(404).json({ message: 'Booking not found' });
-
-    if (action === 'confirm') {
-      if (booking.payoutStatus === 'Released')
-        return res.json({ message: 'Already confirmed' });
-
-      booking.taskConfirmedByCustomer = true;
-      booking.payoutStatus = 'Released';
-      await releaseCalendar(booking);
-
-      await Notification.create({
-        user: booking.professional._id, type: 'payment',
-        message: 'Customer confirmed job completion. Payout will be processed by admin.',
-        link: '/earnings'
-      });
-
-      return res.json({ message: 'Confirmed. Payout will be released.' });
-    }
-
-    if (action === 'dispute') {
-      if (booking.status === 'Disputed')
-        return res.json({ message: 'Already disputed' });
-
-      booking.status = 'Disputed';
-      booking.refundRequested = true;
-      booking.refundReason = reason || 'Work not completed satisfactorily';
-      booking.disputeRaisedAt = new Date();
-      await booking.save();
-
-      await Notification.create({
-        user: booking.professional._id, type: 'dispute',
-        message: 'Customer has disputed the booking. Admin will review.',
-        link: '/my-bookings'
-      });
-
-      const admins = await User.find({ role: 'admin' }).select('_id');
-      for (const admin of admins) {
-        await Notification.create({
-          user: admin._id, type: 'dispute',
-          message: 'Dispute raised for booking ' + booking._id + ' - ' + booking.refundReason,
-          link: '/admin'
-        });
-      }
-
-      return res.json({ message: 'Dispute raised. Admin will review.' });
-    }
-
-    return res.status(400).json({ message: 'Invalid action' });
-  } catch (err) {
-    res.status(500).json({ message: 'Server error' });
   }
 });
 
@@ -612,56 +609,6 @@ router.get('/:id', authMiddleware, async (req, res) => {
     res.json({ success: true, booking });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// Admin - approve refund
-router.post('/admin-approve-refund/:id', adminAuthMiddleware, async (req, res) => {
-  try {
-    const booking = await Booking.findById(req.params.id).populate('customer professional');
-    if (!booking) return res.status(404).json({ message: 'Booking not found' });
-
-    booking.status = 'Refunded';
-    booking.payoutStatus = 'Pending';
-    await releaseCalendar(booking);
-
-    await Notification.create({
-      user: booking.customer._id, type: 'payment',
-      message: 'Your refund for booking on ' + booking.date + ' has been approved.',
-      link: '/my-bookings'
-    });
-
-    await sendEmail({
-      to: booking.customer?.email,
-      subject: 'Refund Approved - Carely',
-      html: '<p>Hi ' + (booking.customer?.name || '') + ',</p><p>Your refund for the booking with <b>' + (booking.professional?.name || '') + '</b> has been approved. Admin will process the refund shortly.</p>'
-    });
-
-    res.json({ message: 'Refund approved' });
-  } catch (err) {
-    res.status(500).json({ message: 'Failed to approve refund' });
-  }
-});
-
-// Admin - reject refund
-router.post('/admin-reject-refund/:id', adminAuthMiddleware, async (req, res) => {
-  try {
-    const booking = await Booking.findById(req.params.id).populate('customer professional');
-    if (!booking) return res.status(404).json({ message: 'Booking not found' });
-
-    booking.status = 'Confirmed';
-    booking.refundRequested = false;
-    await booking.save();
-
-    await Notification.create({
-      user: booking.customer._id, type: 'dispute',
-      message: 'Your dispute for booking on ' + booking.date + ' was reviewed. Payout will proceed to professional.',
-      link: '/my-bookings'
-    });
-
-    res.json({ message: 'Refund rejected' });
-  } catch (err) {
-    res.status(500).json({ message: 'Failed to reject refund' });
   }
 });
 

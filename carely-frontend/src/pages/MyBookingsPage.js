@@ -8,11 +8,9 @@ const STATUS_BADGE = {
   AwaitingAcceptance: 'badge-yellow',
   Confirmed: 'badge-green',
   Completed: 'badge-blue',
-  Disputed: 'badge-orange',
   Cancelled: 'badge-gray',
   Declined: 'badge-red',
   'Auto-Declined': 'badge-red',
-  Refunded: 'badge-gray',
 };
 
 const FILTER_TABS = [
@@ -48,9 +46,8 @@ export default function MyBookingsPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(location.state?.success || '');
   const [actionLoadingId, setActionLoadingId] = useState(null);
-  const [disputingId, setDisputingId] = useState(null);
-  const [disputeReason, setDisputeReason] = useState('');
   const [activeTab, setActiveTab] = useState('All');
+  const [expandedId, setExpandedId] = useState(null);
 
   const fetchBookings = useCallback(() => {
     setLoading(true);
@@ -86,17 +83,6 @@ export default function MyBookingsPage() {
   const handleAccept = (id) => runAction(id, () => api.post(`/api/bookings/accept/${id}`));
   const handleDecline = (id) => runAction(id, () => api.post(`/api/bookings/decline/${id}`));
   const handleMarkDone = (id) => runAction(id, () => api.post(`/api/bookings/mark-done/${id}`));
-  const handleConfirm = (id) => runAction(id, () => api.post(`/api/bookings/action/${id}`, { action: 'confirm' }));
-
-  const openDispute = (id) => {
-    setDisputingId(id);
-    setDisputeReason('');
-  };
-
-  const submitDispute = (id) => {
-    runAction(id, () => api.post(`/api/bookings/action/${id}`, { action: 'dispute', reason: disputeReason }));
-    setDisputingId(null);
-  };
 
   if (!user) return null;
 
@@ -106,6 +92,7 @@ export default function MyBookingsPage() {
 
   const sorted = [...bookings].sort((a, b) => new Date(b.date) - new Date(a.date));
   const isCustomer = user.role === 'customer';
+  const terminalStatuses = ['Completed', 'Cancelled', 'Declined', 'Auto-Declined'];
 
   const filtered = sorted.filter((b) => {
     if (activeTab === 'All') return true;
@@ -146,6 +133,7 @@ export default function MyBookingsPage() {
           {filtered.map((b) => {
             const otherParty = isCustomer ? b.professional : b.customer;
             const busy = actionLoadingId === b._id;
+            const isExpanded = expandedId === b._id;
 
             return (
               <div key={b._id} className="card">
@@ -168,8 +156,17 @@ export default function MyBookingsPage() {
                 <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 4 }}>
                   <div><span className="text-muted">Address:</span> {b.address}</div>
                   <div><span className="text-muted">Work:</span> {b.workDescription}</div>
-                  <div style={{ fontWeight: 700, color: '#1E40AF' }}>{formatBDT(b.amount)}</div>
+                  <div style={{ fontWeight: 700, color: 'var(--primary)' }}>{formatBDT(b.amount)}</div>
                 </div>
+
+                {isExpanded && (
+                  <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <div><span className="text-muted">Booking Type:</span> {b.type === 'long' ? 'Long-term' : 'Short-term'}</div>
+                    {b.type === 'long' && b.recurringDays?.length > 0 && (
+                      <div><span className="text-muted">Repeats On:</span> {b.recurringDays.join(', ')}</div>
+                    )}
+                  </div>
+                )}
 
                 <div style={{ marginTop: 14, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {isCustomer && b.status === 'AwaitingAcceptance' && (
@@ -183,14 +180,14 @@ export default function MyBookingsPage() {
                     </>
                   )}
 
-                  {isCustomer && b.status === 'Completed' && (
-                    <>
-                      <button className="btn btn-success" disabled={busy} onClick={() => handleConfirm(b._id)}>Confirm Done</button>
-                      <button className="btn btn-warning" disabled={busy} onClick={() => openDispute(b._id)}>Dispute</button>
-                      {!b.rated && (
-                        <button className="btn btn-primary" onClick={() => navigate(`/rate/${b._id}`)}>Rate</button>
-                      )}
-                    </>
+                  {isCustomer && b.status === 'Completed' && !b.rated && (
+                    <button className="btn btn-primary" onClick={() => navigate(`/rate/${b._id}`)}>Rate</button>
+                  )}
+
+                  {isCustomer && terminalStatuses.includes(b.status) && (
+                    <button className="btn btn-secondary" onClick={() => setExpandedId(isExpanded ? null : b._id)}>
+                      {isExpanded ? 'Hide Details' : 'View Details'}
+                    </button>
                   )}
 
                   {!isCustomer && b.status === 'AwaitingAcceptance' && (
@@ -202,29 +199,19 @@ export default function MyBookingsPage() {
 
                   {!isCustomer && b.status === 'Confirmed' && (
                     <>
-                      <button className="btn btn-secondary" onClick={() => navigate(`/chat/${otherParty._id}`)}>Chat</button>
                       <button className="btn btn-success" disabled={busy} onClick={() => handleMarkDone(b._id)}>Mark as Done</button>
+                      <button className="btn btn-secondary" onClick={() => navigate(`/chat/${otherParty._id}`)}>Chat</button>
                     </>
                   )}
-                </div>
 
-                {disputingId === b._id && (
-                  <div style={{ marginTop: 12, borderTop: '1px solid #E2E8F0', paddingTop: 12 }}>
-                    <div className="form-group">
-                      <label>Reason for dispute</label>
-                      <textarea
-                        rows={3}
-                        value={disputeReason}
-                        onChange={(e) => setDisputeReason(e.target.value)}
-                        placeholder="Explain what went wrong"
-                      />
-                    </div>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <button className="btn btn-warning" onClick={() => submitDispute(b._id)}>Submit Dispute</button>
-                      <button className="btn btn-secondary" onClick={() => setDisputingId(null)}>Cancel</button>
-                    </div>
-                  </div>
-                )}
+                  {!isCustomer && b.status === 'Completed' && (
+                    <span className="badge badge-gray">Completed</span>
+                  )}
+
+                  {!isCustomer && (b.status === 'Cancelled' || b.status === 'Declined' || b.status === 'Auto-Declined') && (
+                    <span className="badge badge-gray">{b.status}</span>
+                  )}
+                </div>
               </div>
             );
           })}

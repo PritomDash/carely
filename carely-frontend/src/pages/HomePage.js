@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { formatBDT } from '../utils/currency';
 import LocationSelector from '../components/LocationSelector';
+import socket from '../socket';
 import {
   Heart, Bell, LogOut, Search, MapPin, Clock, Star,
   ClipboardList, FileText, Bookmark, MessageSquare, User,
@@ -12,10 +13,10 @@ import {
 
 const PROFESSIONAL_TYPES = ['Child Care', 'Aged Care', 'Nurse', 'Physiotherapist'];
 const TYPE_COLORS = {
-  'Child Care': { bg: '#DBEAFE', text: '#1E40AF' },
-  'Aged Care': { bg: '#EDE9FE', text: '#6D28D9' },
-  'Nurse': { bg: '#DCFCE7', text: '#16A34A' },
-  'Physiotherapist': { bg: '#FFEDD5', text: '#D97706' },
+  'Child Care': { bg: '#EBF5FF', text: '#1A56DB' },
+  'Aged Care': { bg: '#F3E8FF', text: '#7E22CE' },
+  'Nurse': { bg: '#DCFCE7', text: '#15803D' },
+  'Physiotherapist': { bg: '#FFF7ED', text: '#C2410C' },
 };
 
 const fileUrl = (p) => {
@@ -63,10 +64,10 @@ function Navbar({ unreadCount }) {
   };
 
   return (
-    <div className="nav" style={{ borderBottom: '2px solid #EFF6FF' }}>
+    <div className="nav" style={{ borderBottom: '2px solid var(--primary-light)' }}>
       <div className="nav-inner">
         <Link to="/home" className="nav-logo">
-          <Heart size={22} color="#1E40AF" fill="#1E40AF" /> Carely
+          <Heart size={22} color="var(--primary)" fill="var(--primary)" /> Carely
         </Link>
         <div className="nav-links">
           <Link to="/chat-inbox" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
@@ -85,7 +86,7 @@ function Navbar({ unreadCount }) {
           <button
             onClick={handleLogout}
             className="btn btn-outline"
-            style={{ padding: '8px 16px', borderColor: '#DC2626', color: '#DC2626' }}
+            style={{ padding: '8px 16px', borderColor: 'var(--danger)', color: 'var(--danger)' }}
           >
             <LogOut size={14} /> Logout
           </button>
@@ -186,10 +187,10 @@ function ProfessionalsSearch() {
 
                 <div style={{ fontWeight: 700, fontSize: 17, marginTop: 8 }}>{p.name}</div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, color: '#64748B', fontSize: 13 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, color: 'var(--text-muted)', fontSize: 13 }}>
                   <MapPin size={13} /> {formatLocation(p.location)}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, color: '#64748B', fontSize: 13 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, color: 'var(--text-muted)', fontSize: 13 }}>
                   <Clock size={13} /> {p.experience || 'Experience not specified'}
                 </div>
 
@@ -198,7 +199,7 @@ function ProfessionalsSearch() {
                   <span className="text-muted">({p.ratings?.length || 0} reviews)</span>
                 </div>
 
-                <div style={{ fontWeight: 800, color: '#1E40AF', marginTop: 8, fontSize: 16 }}>
+                <div style={{ fontWeight: 800, color: 'var(--primary)', marginTop: 8, fontSize: 16 }}>
                   {formatBDT(p.weekdayRate || p.hourlyRate)}/hr
                 </div>
 
@@ -277,12 +278,23 @@ export default function HomePage() {
     }
   }, [user, navigate]);
 
-  useEffect(() => {
-    if (!user) return;
+  const refreshUnreadCount = useCallback(() => {
     api.get('/api/notifications/count-unread')
       .then((res) => setUnreadCount(res.data?.unreadCount || 0))
       .catch(() => {});
-  }, [user]);
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    refreshUnreadCount();
+  }, [user, refreshUnreadCount]);
+
+  useEffect(() => {
+    if (!user?._id) return;
+    socket.emit('joinRoom', user._id);
+    socket.on('newNotification', refreshUnreadCount);
+    return () => socket.off('newNotification', refreshUnreadCount);
+  }, [user, refreshUnreadCount]);
 
   if (!user) return null;
 

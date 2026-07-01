@@ -3,6 +3,7 @@ const router = express.Router();
 const authMiddleware = require('../middlewares/authMiddleware');
 const Rating = require('../models/Rating');
 const Booking = require('../models/Booking');
+const Notification = require('../models/Notification');
 const User = require('../models/user');
 
 router.post('/', authMiddleware, async (req, res) => {
@@ -31,6 +32,13 @@ router.post('/', authMiddleware, async (req, res) => {
 
     booking.rated = true;
     await booking.save();
+
+    await Notification.create({
+      user: booking.professional, type: 'booking',
+      message: req.user.name + ' gave you a ' + rating + '-star rating. Well done!',
+      link: '/my-bookings'
+    });
+
     res.json({ message: 'Rating submitted', rating: r });
   } catch (err) {
     res.status(500).json({ message: 'Failed to submit rating' });

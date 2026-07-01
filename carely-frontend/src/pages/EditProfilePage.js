@@ -146,7 +146,7 @@ export default function EditProfilePage() {
             <div className="form-group" style={{ textAlign: 'center' }}>
               <div style={{
                 width: 96, height: 96, borderRadius: '50%', overflow: 'hidden',
-                background: '#EFF6FF', margin: '0 auto 12px'
+                background: 'var(--primary-light)', margin: '0 auto 12px'
               }}>
                 {photoPreview && (
                   <img src={photoPreview} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -171,7 +171,7 @@ export default function EditProfilePage() {
             <>
               <div className="form-group">
                 <label>Professional Type</label>
-                <input type="text" value={form.professionalType} disabled style={{ background: '#F8FAFC', color: '#64748B' }} />
+                <input type="text" value={form.professionalType} disabled style={{ background: 'var(--bg-page)', color: 'var(--text-muted)' }} />
               </div>
 
               <div className="form-group">

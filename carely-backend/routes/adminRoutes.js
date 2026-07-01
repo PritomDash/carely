@@ -90,43 +90,6 @@ router.get('/bookings', adminAuth, async (req, res) => {
   }
 });
 
-// Get pending payouts
-router.get('/payouts/pending', adminAuth, async (req, res) => {
-  try {
-    const bookings = await Booking.find({ payoutStatus: 'Released', status: 'Completed' })
-      .populate('professional', 'name bkashNumber nagadNumber payoutMethod')
-      .populate('customer', 'name')
-      .sort({ updatedAt: -1 });
-    res.json(bookings);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch payouts' });
-  }
-});
-
-// Record payout released
-router.post('/payouts/:bookingId/release', adminAuth, async (req, res) => {
-  try {
-    const { payoutMethod, payoutReference } = req.body;
-    const booking = await Booking.findById(req.params.bookingId).populate('professional');
-    if (!booking) return res.status(404).json({ error: 'Booking not found' });
-
-    booking.payoutMethod    = payoutMethod;
-    booking.payoutReference = payoutReference;
-    booking.payoutReleasedAt = new Date();
-    await booking.save();
-
-    await Notification.create({
-      user: booking.professional._id, type: 'payment',
-      message: 'Your payout of BDT ' + booking.proNet + ' has been sent via ' + payoutMethod,
-      link: '/earnings'
-    });
-
-    res.json({ message: 'Payout recorded' });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to record payout' });
-  }
-});
-
 // Get all job posts
 router.get('/job-posts', adminAuth, async (req, res) => {
   try {
@@ -224,14 +187,14 @@ router.put('/credits/:professionalId', adminAuth, async (req, res) => {
 router.get('/analytics', adminAuth, async (req, res) => {
   try {
     const [totalUsers, totalPros, totalCustomers, totalBookings, confirmedBookings,
-           completedBookings, disputes, topPros] = await Promise.all([
+           completedBookings, cancelledBookings, topPros] = await Promise.all([
       User.countDocuments(),
       User.countDocuments({ role: 'professional' }),
       User.countDocuments({ role: 'customer' }),
       Booking.countDocuments(),
       Booking.countDocuments({ status: 'Confirmed' }),
       Booking.countDocuments({ status: 'Completed' }),
-      Booking.countDocuments({ status: 'Disputed' }),
+      Booking.countDocuments({ status: 'Cancelled' }),
       Booking.aggregate([
         { $match: { status: 'Confirmed' } },
         { $group: { _id: '$professional', totalBookings: { $sum: 1 } } },
@@ -250,7 +213,7 @@ router.get('/analytics', adminAuth, async (req, res) => {
 
     res.json({
       totalUsers, totalPros, totalCustomers, totalBookings,
-      confirmedBookings, completedBookings, disputes, topProfessionals: topProsData
+      confirmedBookings, completedBookings, cancelledBookings, topProfessionals: topProsData
     });
   } catch (err) {
     res.status(500).json({ error: 'Failed to load analytics' });

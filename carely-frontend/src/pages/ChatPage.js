@@ -112,7 +112,7 @@ export default function ChatPage() {
                 <div key={m._id} style={{ display: 'flex', justifyContent: isMine ? 'flex-end' : 'flex-start' }}>
                   <div style={{
                     maxWidth: '75%', padding: '8px 12px', borderRadius: 12,
-                    background: isMine ? '#2563eb' : '#f3f4f6',
+                    background: isMine ? 'var(--primary)' : '#f3f4f6',
                     color: isMine ? '#fff' : '#111827',
                   }}>
                     <div style={{ fontSize: 11, opacity: 0.8, marginBottom: 2 }}>

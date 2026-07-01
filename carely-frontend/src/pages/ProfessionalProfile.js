@@ -100,7 +100,7 @@ export default function ProfessionalProfile() {
       {creditsEnabled && (
         <div className="card" style={{ marginTop: 16 }}>
           <div className="text-muted">Credit Balance</div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: '#2563EB' }}>{profile.credits ?? 0}</div>
+          <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--primary)' }}>{profile.credits ?? 0}</div>
           <Link to="/my-credits" className="btn btn-primary" style={{ marginTop: 10 }}>Manage Credits</Link>
         </div>
       )}

@@ -21,23 +21,12 @@ const bookingSchema = new mongoose.Schema({
   proNet:     { type: Number },
   status: {
     type: String,
-    enum: ['Pending','AwaitingAcceptance','Confirmed','Completed','Disputed','Refunded','Cancelled','Declined','Auto-Declined'],
-    default: 'Pending'
+    enum: ['AwaitingAcceptance', 'Confirmed', 'Completed', 'Cancelled', 'Declined', 'Auto-Declined'],
+    default: 'AwaitingAcceptance'
   },
   sessions: { type: [SessionSchema], default: [] },
   isActive: { type: Boolean, default: false },
-  taskConfirmedByCustomer:     { type: Boolean, default: false },
-  taskConfirmedByProfessional: { type: Boolean, default: false },
-  refundRequested: { type: Boolean, default: false },
-  refundReason:    { type: String },
-  disputeRaisedAt: { type: Date },
-  taskCompletedEmailSent: { type: Boolean, default: false },
-  taskEmailSentTime:      { type: Date },
   rated: { type: Boolean, default: false },
-  payoutStatus:     { type: String, enum: ['Pending', 'Released'], default: 'Pending' },
-  payoutMethod:     { type: String },
-  payoutReference:  { type: String },
-  payoutReleasedAt: { type: Date },
 }, { timestamps: true });
 
 bookingSchema.index({ professional: 1, 'sessions.date': 1, isActive: 1, status: 1 });
