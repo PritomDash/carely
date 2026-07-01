@@ -75,6 +75,18 @@ io.on('connection', (socket) => {
   });
 });
 
+if (process.env.NODE_ENV === 'production') {
+  const https = require('https');
+  setInterval(() => {
+    const url = process.env.RENDER_EXTERNAL_URL || process.env.APP_BASE_URL;
+    if (url) {
+      https.get(url, (res) => {
+        console.log('Self-ping:', res.statusCode);
+      }).on('error', () => {});
+    }
+  }, 14 * 60 * 1000);
+}
+
 server.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });

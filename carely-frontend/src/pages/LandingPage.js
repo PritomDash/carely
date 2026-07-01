@@ -1,30 +1,88 @@
-import React, { useState, useEffect } from 'react';
-import api, { API_BASE } from '../services/api';
-import { useAuth } from '../context/AuthContext';
-import { useNavigate, useParams, Link } from 'react-router-dom';
-import { formatBDT } from '../utils/currency';
+import React from 'react';
+import { Link } from 'react-router-dom';
+import SafetyDisclaimer from '../components/SafetyDisclaimer';
+import { Baby, HeartHandshake, Stethoscope, Activity, Search, UserCheck, CheckCircle2 } from 'lucide-react';
 
-// Landing page with logo, features, ads, CTA buttons
-// TODO: Full implementation via Claude Code
+const SERVICES = [
+  { icon: Baby, title: 'Child Care', desc: 'Trusted babysitters and nannies for your children, verified and background-checked.' },
+  { icon: HeartHandshake, title: 'Aged Care', desc: 'Compassionate caregivers to support elderly family members at home.' },
+  { icon: Stethoscope, title: 'Nurse', desc: 'Qualified nurses for home visits, post-surgery care, and ongoing treatment.' },
+  { icon: Activity, title: 'Physiotherapist', desc: 'Licensed physiotherapists for rehabilitation and mobility support at home.' },
+];
+
+const STEPS = [
+  { icon: Search, title: 'Post or Search', desc: 'Search for a professional near you or post a job describing what you need.' },
+  { icon: UserCheck, title: 'Choose Professional', desc: 'Compare profiles, ratings, and rates, then pick the professional that fits.' },
+  { icon: CheckCircle2, title: 'Confirm and Pay', desc: 'Confirm your booking and pay the professional directly in BDT.' },
+];
 
 export default function LandingPage() {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-
   return (
-    <div className="page">
-      <div className="card" style={{ textAlign: 'center', padding: 40 }}>
-        <h2>LandingPage</h2>
-        <p className="text-muted" style={{ marginTop: 8 }}>
-          Landing page with logo, features, ads, CTA buttons
-        </p>
-        <p style={{ marginTop: 20, color: '#16a34a' }}>
-          ✅ Route registered — implement with Claude Code
-        </p>
-        <div style={{ marginTop: 20, display: 'flex', gap: 12, justifyContent: 'center' }}>
-          <Link to="/" className="btn btn-secondary">Home</Link>
-          <Link to="/login" className="btn btn-primary">Login</Link>
+    <div>
+      <div className="nav">
+        <div className="nav-inner">
+          <Link to="/" className="nav-logo">Carely</Link>
+          <div className="nav-links">
+            <Link to="/login">Login</Link>
+            <Link to="/register" className="btn btn-primary" style={{ padding: '8px 16px' }}>Get Started</Link>
+          </div>
         </div>
+      </div>
+
+      <div className="hero">
+        <h1>Find Trusted Care Professionals in Bangladesh</h1>
+        <p>
+          Carely connects you with verified child care, aged care, nursing, and physiotherapy
+          professionals across Bangladesh — book with confidence, pay in BDT.
+        </p>
+        <div className="hero-actions">
+          <Link to="/register" className="btn btn-primary" style={{ padding: '12px 28px', fontSize: 15 }}>Get Started</Link>
+          <Link to="/login" className="btn btn-secondary" style={{ padding: '12px 28px', fontSize: 15 }}>Login</Link>
+        </div>
+      </div>
+
+      <div className="section">
+        <h2 className="section-title">Our Services</h2>
+        <p className="section-subtitle">Professionals across four essential care categories</p>
+        <div className="grid-4">
+          {SERVICES.map((s) => (
+            <div key={s.title} className="feature-card">
+              <div className="feature-icon"><s.icon size={26} /></div>
+              <h3 style={{ marginBottom: 8 }}>{s.title}</h3>
+              <p className="text-muted">{s.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="section" style={{ background: '#fff' }}>
+        <h2 className="section-title">How It Works</h2>
+        <p className="section-subtitle">Getting the right care takes three simple steps</p>
+        <div className="grid-3">
+          {STEPS.map((step, i) => (
+            <div key={step.title} className="step-card">
+              <div className="step-number">{i + 1}</div>
+              <div className="feature-icon" style={{ marginBottom: 12 }}><step.icon size={22} /></div>
+              <h3 style={{ marginBottom: 8 }}>{step.title}</h3>
+              <p className="text-muted">{step.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="section" style={{ maxWidth: 720 }}>
+        <SafetyDisclaimer />
+      </div>
+
+      <div className="site-footer">
+        <div style={{ marginBottom: 12, fontWeight: 700, fontSize: 16, color: '#fff' }}>Carely</div>
+        <div>
+          <Link to="/terms">Terms & Conditions</Link>
+          <Link to="/privacy">Privacy Policy</Link>
+        </div>
+        <p style={{ marginTop: 16, fontSize: 12, color: '#9ca3af' }}>
+          &copy; {new Date().getFullYear()} Carely. A care marketplace for Bangladesh.
+        </p>
       </div>
     </div>
   );
