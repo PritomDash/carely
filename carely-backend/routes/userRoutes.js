@@ -71,6 +71,10 @@ router.post('/documents', authMiddleware, upload.fields([
     if (req.body.bmdc)      update.bmdc      = req.body.bmdc;
     if (req.body.bnmc)      update.bnmc      = req.body.bnmc;
 
+    const docFieldsUploaded = ['idDocument', 'passport', 'policeClearance', 'courseCertificate', 'studentID']
+      .some((field) => files[field]);
+    if (docFieldsUploaded) update.documentUploadedAt = new Date();
+
     const user = await User.findByIdAndUpdate(req.user._id, update, { new: true });
     res.json({ message: 'Documents uploaded', user });
   } catch (err) {
@@ -81,7 +85,7 @@ router.post('/documents', authMiddleware, upload.fields([
 router.get('/professionals', async (req, res) => {
   try {
     const { division, district, thana, serviceType, search } = req.query;
-    let query = { role: 'professional', isVerified: true };
+    let query = { role: 'professional' };
 
     if (serviceType) query.professionalType = serviceType;
 
@@ -112,7 +116,7 @@ router.get('/professionals', async (req, res) => {
 
 router.get('/all-professionals', async (req, res) => {
   try {
-    const pros = await User.find({ role: 'professional', isVerified: true }).select('-password');
+    const pros = await User.find({ role: 'professional' }).select('-password');
     res.json(pros);
   } catch (err) {
     res.status(500).json({ message: 'Failed to fetch professionals' });

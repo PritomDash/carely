@@ -11,7 +11,6 @@ const findNearbyProfessionals = (professionals, customerLocation, serviceType) =
 
   return professionals
     .filter(p => !serviceType || p.professionalType === serviceType)
-    .filter(p => p.isVerified === true)
     .filter(p => score(p) > 0)
     .sort((a, b) => score(b) - score(a));
 };

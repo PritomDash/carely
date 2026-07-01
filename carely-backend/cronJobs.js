@@ -117,6 +117,84 @@ function setupCronJobs() {
       }
     } catch (err) { console.error('Credit warning cron error:', err.message); }
   });
+
+  const DOC_FIELDS = ['idDocument', 'passport', 'policeClearance', 'courseCertificate', 'studentID'];
+
+  const deleteDocFiles = async (user) => {
+    const path = require('path');
+    const fs = require('fs');
+    for (const field of DOC_FIELDS) {
+      if (user[field]) {
+        const filePath = path.join(__dirname, 'uploads', 'documents', path.basename(user[field]));
+        fs.promises.unlink(filePath).catch(() => {});
+        user[field] = null;
+      }
+    }
+    await user.save();
+  };
+
+  // Every day at 2am: Delete verification documents older than 15 days (profile photos kept)
+  cron.schedule('0 2 * * *', async () => {
+    try {
+      const fifteenDaysAgo = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000);
+      const users = await User.find({
+        documentUploadedAt: { $lt: fifteenDaysAgo },
+        $or: DOC_FIELDS.map((field) => ({ [field]: { $ne: null } }))
+      });
+
+      for (const user of users) {
+        await deleteDocFiles(user);
+      }
+      console.log('Old documents cleaned - profile photos kept');
+    } catch (err) {
+      console.error('Document cleanup error:', err.message);
+    }
+  });
+
+  // Every Sunday at 3am: Delete inactive professional accounts (3+ months since last update)
+  cron.schedule('0 3 * * 0', async () => {
+    try {
+      const threeMonthsAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+      const inactiveUsers = await User.find({
+        role: 'professional',
+        updatedAt: { $lt: threeMonthsAgo },
+        isVerified: true
+      });
+
+      for (const user of inactiveUsers) {
+        await Booking.deleteMany({ $or: [{ customer: user._id }, { professional: user._id }] });
+        await Notification.deleteMany({ user: user._id });
+        await User.findByIdAndDelete(user._id);
+      }
+      if (inactiveUsers.length > 0) {
+        console.log('Deleted ' + inactiveUsers.length + ' inactive professionals');
+      }
+    } catch (err) {
+      console.error('Inactive user cleanup error:', err.message);
+    }
+  });
+
+  // Every day at 4am: Check disk usage and clean oldest documents if storage getting full
+  cron.schedule('0 4 * * *', async () => {
+    try {
+      const { execSync } = require('child_process');
+      const result = execSync("df / | tail -1 | awk '{print $5}'").toString().trim().replace('%', '');
+      const usagePercent = parseInt(result, 10);
+
+      if (usagePercent > 80) {
+        console.log('Disk usage ' + usagePercent + '% - cleaning old documents');
+        const users = await User.find({
+          $or: ['idDocument', 'passport', 'policeClearance'].map((field) => ({ [field]: { $ne: null } }))
+        }).sort({ documentUploadedAt: 1 }).limit(20);
+
+        for (const user of users) {
+          await deleteDocFiles(user);
+        }
+      }
+    } catch (err) {
+      console.error('Disk check error:', err.message);
+    }
+  });
 }
 
 module.exports = setupCronJobs;

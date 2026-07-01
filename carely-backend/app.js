@@ -17,6 +17,12 @@ app.use(cors({
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+const session = require('express-session');
+const passport = require('passport');
+app.use(session({ secret: process.env.JWT_SECRET, resave: false, saveUninitialized: false }));
+app.use(passport.initialize());
+app.use('/api/auth', require('./routes/googleAuthRoutes'));
+
 // ── Routes ─────────────────────────────────────────────────────────────────────
 app.use('/api/auth',          require('./routes/authRoutes'));
 app.use('/api/users',         require('./routes/userRoutes'));
