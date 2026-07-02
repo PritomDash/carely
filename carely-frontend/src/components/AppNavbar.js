@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
+import socket from '../socket';
 
 export default function AppNavbar() {
   const { user, logout } = useAuth();
@@ -17,6 +18,18 @@ export default function AppNavbar() {
       .then(r => setUnread(r.data.unreadCount || 0))
       .catch(() => {});
   }, [user, location.pathname]);
+
+  useEffect(() => {
+    if (!user) return;
+    socket.emit('joinRoom', user._id);
+
+    const handleNewNotification = () => {
+      setUnread(prev => prev + 1);
+    };
+
+    socket.on('newNotification', handleNewNotification);
+    return () => socket.off('newNotification', handleNewNotification);
+  }, [user]);
 
   useEffect(() => {
     const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
@@ -75,7 +88,7 @@ export default function AppNavbar() {
 
         {user ? (
           <div style={{ display:'flex', alignItems:'center', gap:20 }}>
-            <div style={{ position:'relative', cursor:'pointer' }} onClick={() => navigate('/home')}>
+            <div style={{ position:'relative', cursor:'pointer' }} onClick={() => navigate('/notifications')}>
               <span style={{ fontSize:22 }}>🔔</span>
               {unread > 0 && (
                 <span style={{ position:'absolute', top:-5, right:-5, background:'#EF4444', color:'#fff', borderRadius:'50%', width:18, height:18, fontSize:11, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', border:'2px solid white' }}>

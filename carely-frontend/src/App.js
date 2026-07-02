@@ -29,6 +29,7 @@ import NotFoundPage       from './pages/NotFoundPage';
 import Terms              from './pages/Terms';
 import Privacy            from './pages/Privacy';
 import ReferralPage       from './pages/ReferralPage';
+import NotificationsPage  from './pages/NotificationsPage';
 
 function App() {
   return (
@@ -61,6 +62,7 @@ function App() {
           <Route path="/terms"                  element={<Terms />} />
           <Route path="/privacy"                element={<Privacy />} />
           <Route path="/ref/:code"              element={<ReferralPage />} />
+          <Route path="/notifications"          element={<NotificationsPage />} />
           <Route path="*"                       element={<NotFoundPage />} />
         </Routes>
       </AuthProvider>

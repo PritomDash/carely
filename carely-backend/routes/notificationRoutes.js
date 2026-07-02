@@ -30,6 +30,15 @@ router.put('/mark-all-read', authMiddleware, async (req, res) => {
   }
 });
 
+router.put('/:id/read', authMiddleware, async (req, res) => {
+  try {
+    await Notification.updateOne({ _id: req.params.id, user: req.user._id }, { isRead: true });
+    res.json({ message: 'Marked as read' });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to mark' });
+  }
+});
+
 router.delete('/:id', authMiddleware, async (req, res) => {
   try {
     await Notification.deleteOne({ _id: req.params.id, user: req.user._id });

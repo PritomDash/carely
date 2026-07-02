@@ -1,28 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const Booking = require('../models/Booking');
-const Notification = require('../models/Notification');
 const User = require('../models/user');
 const Settings = require('../models/Settings');
 const CreditTransaction = require('../models/CreditTransaction');
 const authMiddleware = require('../middlewares/authMiddleware');
-const nodemailer = require('nodemailer');
 const { getAppliedRate, computeProNet } = require('../utils/pricing');
+const { sendEmail } = require('../utils/emailService');
+const { createNotification } = require('../utils/notificationService');
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
-});
-
-const sendEmail = async ({ to, subject, html }) => {
-  if (!to) return;
-  try { await transporter.sendMail({ from: process.env.EMAIL_USER, to, subject, html }); }
-  catch (e) { console.error('Email failed:', e.message); }
-};
-
-const notifyRealtime = (req, userId, notification) => {
-  if (req.io) req.io.to(String(userId)).emit('newNotification', notification);
-};
+const detailRow = (label, value) =>
+  '<div class="detail-row"><div class="detail-label">' + label + '</div><div class="detail-value">' + value + '</div></div>';
 
 const ymd = (d) => new Date(d).toISOString().slice(0, 10);
 
@@ -290,9 +278,7 @@ router.post('/create', authMiddleware, async (req, res) => {
 
     let totalBDT = 0;
     for (const s of chargeSessions) {
-      const rate = getAppliedRate(s.dateStr, pro);
-      if (!rate || rate <= 0)
-        return res.status(400).json({ message: 'Professional has no rate set for selected day(s)' });
+      const rate = getAppliedRate(s.dateStr, pro) || 0;
       totalBDT += rate * hours;
     }
 
@@ -312,25 +298,25 @@ router.post('/create', authMiddleware, async (req, res) => {
     });
 
     // Notify professional
-    await Notification.create({
-      user: professionalId, type: 'booking',
+    await createNotification({
+      userId: professionalId, type: 'booking',
       message: 'New booking request from ' + req.user.name + ' for ' + date + ' at ' + time + '. Respond within 24 hours.',
-      link: '/my-bookings'
+      link: '/my-bookings',
+      io: req.io,
     });
-    notifyRealtime(req, professionalId, { type: 'booking', message: 'New booking request received.' });
 
     await sendEmail({
       to: pro.email,
       subject: 'New Booking Request - Carely',
-      html:
-        '<p>Hi ' + pro.name + ', you have a new booking request from <b>' + req.user.name + '</b>.</p>' +
-        '<p>Date: ' + date + '</p>' +
-        '<p>Time: ' + time + '</p>' +
-        '<p>Duration: ' + hours + ' hours</p>' +
-        '<p>Work: ' + workDescription + '</p>' +
-        '<p>Address: ' + address + '</p>' +
-        '<p>Please log in and accept or decline within 24 hours.</p>' +
-        '<p>If no response the booking will be auto-declined.</p>'
+      title: 'You have a new booking request!',
+      content:
+        detailRow('Customer', req.user.name) +
+        detailRow('Date', date) +
+        detailRow('Time', time) +
+        detailRow('Duration', hours + ' hours') +
+        detailRow('Address', address) +
+        detailRow('Work Description', workDescription) +
+        '<p style="margin-top:20px;color:#64748B;font-size:13px;">Please log in and accept or decline within 24 hours. If there is no response the booking will be auto-declined.</p>'
     });
 
     res.json({ message: 'Booking request sent', bookingId: booking._id });
@@ -353,18 +339,23 @@ router.post('/accept/:id', authMiddleware, async (req, res) => {
       return res.json({ message: 'Already confirmed', booking });
 
     // Check credits
-    const settings = await Settings.findOne();
-    if (settings?.creditsEnabled) {
+    let settings = await Settings.findOne();
+    if (!settings) settings = await Settings.create({});
+    if (settings.creditsEnabled) {
       const pro = await User.findById(req.user._id);
       if (pro.credits < 1) {
-        return res.status(403).json({ message: 'Insufficient credits. Please top up to accept bookings.' });
+        return res.status(403).json({
+          message: 'You do not have enough credits to accept this booking. Please top up your credits.',
+          creditsEnabled: true,
+          currentCredits: pro.credits,
+        });
       }
       pro.credits -= 1;
-      pro.totalCreditsUsed += 1;
+      pro.totalCreditsUsed = (pro.totalCreditsUsed || 0) + 1;
       await pro.save();
       await CreditTransaction.create({
         professional: pro._id, type: 'deduct', credits: 1,
-        note: 'Accepted booking ' + booking._id, bookingId: booking._id
+        note: 'Credit used to accept booking', bookingId: booking._id
       });
     }
 
@@ -425,50 +416,49 @@ router.post('/accept/:id', authMiddleware, async (req, res) => {
     await booking.save();
 
     // Notifications + emails
-    await Notification.create({
-      user: booking.customer._id, type: 'booking',
-      message: 'Booking confirmed with ' + booking.professional.name + '. Phone: ' + booking.professional.phone + '. Date: ' + booking.date.toISOString().slice(0, 10) + ' at ' + booking.time + '. You can now chat.',
-      link: '/my-bookings'
-    });
-    await Notification.create({
-      user: booking.professional._id, type: 'booking',
-      message: 'Booking confirmed with ' + booking.customer.name + '. Phone: ' + booking.customer.phone + '. Address: ' + booking.address + '. Date: ' + booking.date.toISOString().slice(0, 10) + '.',
-      link: '/my-bookings'
-    });
+    const dateStr = booking.date.toISOString().slice(0, 10);
 
-    notifyRealtime(req, booking.customer._id, { type: 'booking', message: 'Your booking has been confirmed!' });
-    notifyRealtime(req, booking.professional._id, { type: 'booking', message: 'You confirmed a booking.' });
+    await createNotification({
+      userId: booking.customer._id, type: 'booking',
+      message: 'Booking confirmed with ' + booking.professional.name + '. Phone: ' + booking.professional.phone + '. Date: ' + dateStr + ' at ' + booking.time + '. You can now chat.',
+      link: '/my-bookings',
+      io: req.io,
+    });
+    await createNotification({
+      userId: booking.professional._id, type: 'booking',
+      message: 'Booking confirmed with ' + booking.customer.name + '. Phone: ' + booking.customer.phone + '. Address: ' + booking.address + '. Date: ' + dateStr + '.',
+      link: '/my-bookings',
+      io: req.io,
+    });
 
     await sendEmail({
       to: booking.customer.email,
       subject: 'Booking Confirmed - Carely',
-      html:
-        '<p>Your booking with <b>' + booking.professional.name + '</b> is confirmed!</p>' +
-        '<p>Professional Name: ' + booking.professional.name + '</p>' +
-        '<p>Professional Phone: ' + booking.professional.phone + '</p>' +
-        '<p>Professional Type: ' + (booking.professional.professionalType || '') + '</p>' +
-        '<p>Date: ' + booking.date.toISOString().slice(0, 10) + '</p>' +
-        '<p>Time: ' + booking.time + '</p>' +
-        '<p>Duration: ' + hours + ' hours</p>' +
-        '<p>Address: ' + booking.address + '</p>' +
-        '<p>Work: ' + booking.workDescription + '</p>' +
-        '<p>Please arrange payment directly with the professional in cash or bKash.</p>' +
-        '<p>You can chat with them through the Carely app.</p>'
+      title: 'Your booking is confirmed!',
+      content:
+        detailRow('Professional Name', booking.professional.name) +
+        detailRow('Professional Phone', booking.professional.phone) +
+        detailRow('Date', dateStr) +
+        detailRow('Time', booking.time) +
+        detailRow('Duration', hours + ' hours') +
+        detailRow('Address', booking.address) +
+        detailRow('Work', booking.workDescription) +
+        '<p style="margin-top:20px;color:#64748B;font-size:13px;">Please arrange payment directly with the professional in cash or bKash. You can chat with them through the Carely app.</p>'
     });
 
     await sendEmail({
       to: booking.professional.email,
-      subject: 'Booking Confirmed - Carely',
-      html:
-        '<p>You accepted a booking!</p>' +
-        '<p>Customer Name: ' + booking.customer.name + '</p>' +
-        '<p>Customer Phone: ' + booking.customer.phone + '</p>' +
-        '<p>Date: ' + booking.date.toISOString().slice(0, 10) + '</p>' +
-        '<p>Time: ' + booking.time + '</p>' +
-        '<p>Duration: ' + hours + ' hours</p>' +
-        '<p>Work Address: ' + booking.address + '</p>' +
-        '<p>Work: ' + booking.workDescription + '</p>' +
-        '<p>Please arrive on time. Payment will be arranged directly with the customer.</p>'
+      subject: 'Booking Accepted - Carely',
+      title: 'You accepted a booking!',
+      content:
+        detailRow('Customer Name', booking.customer.name) +
+        detailRow('Customer Phone', booking.customer.phone) +
+        detailRow('Date', dateStr) +
+        detailRow('Time', booking.time) +
+        detailRow('Duration', hours + ' hours') +
+        detailRow('Address', booking.address) +
+        detailRow('Work', booking.workDescription) +
+        '<p style="margin-top:20px;color:#64748B;font-size:13px;">Please arrive on time. Payment will be arranged directly with the customer.</p>'
     });
 
     res.json({ message: 'Booking accepted and confirmed', booking });
@@ -487,18 +477,19 @@ router.post('/decline/:id', authMiddleware, async (req, res) => {
     booking.isActive = false;
     await booking.save();
 
-    await Notification.create({
-      user: booking.customer._id, type: 'booking',
+    await createNotification({
+      userId: booking.customer._id, type: 'booking',
       message: booking.professional.name + ' has declined your booking. Please try another professional.',
-      link: '/my-bookings'
+      link: '/my-bookings',
+      io: req.io,
     });
 
     await sendEmail({
       to: booking.customer.email,
       subject: 'Booking Declined - Carely',
-      html:
-        '<p>Unfortunately ' + booking.professional.name + ' has declined your booking request.</p>' +
-        '<p>Please search for another professional on Carely.</p>'
+      title: 'Your booking was declined',
+      content:
+        '<p style="color:#1A1A2E;font-size:14px;line-height:1.7;">' + booking.professional.name + ' has declined your booking request. Please try another professional on Carely.</p>'
     });
 
     res.json({ message: 'Booking declined' });
@@ -525,24 +516,34 @@ router.post('/cancel/:id', authMiddleware, async (req, res) => {
     const dateStr = booking.date.toISOString().slice(0, 10);
 
     if (isCustomer) {
-      await Notification.create({
-        user: booking.professional._id, type: 'booking',
+      await createNotification({
+        userId: booking.professional._id, type: 'booking',
         message: 'Booking on ' + dateStr + ' was cancelled by the customer.',
-        link: '/my-bookings'
+        link: '/my-bookings',
+        io: req.io,
+      });
+
+      await sendEmail({
+        to: booking.professional.email,
+        subject: 'Booking Cancelled - Carely',
+        title: 'A booking was cancelled',
+        content:
+          '<p style="color:#1A1A2E;font-size:14px;line-height:1.7;">' + booking.customer.name + ' has cancelled the booking on ' + dateStr + '.</p>'
       });
     } else {
-      await Notification.create({
-        user: booking.customer._id, type: 'booking',
+      await createNotification({
+        userId: booking.customer._id, type: 'booking',
         message: booking.professional.name + ' cancelled your booking on ' + dateStr + '. Please try another professional.',
-        link: '/my-bookings'
+        link: '/my-bookings',
+        io: req.io,
       });
 
       await sendEmail({
         to: booking.customer.email,
         subject: 'Booking Cancelled - Carely',
-        html:
-          '<p>' + booking.professional.name + ' has cancelled your booking on ' + dateStr + '.</p>' +
-          '<p>Please search for another professional on Carely.</p>'
+        title: 'Your booking was cancelled',
+        content:
+          '<p style="color:#1A1A2E;font-size:14px;line-height:1.7;">' + booking.professional.name + ' has cancelled your booking on ' + dateStr + '. Please search for another professional on Carely.</p>'
       });
     }
 
@@ -565,10 +566,11 @@ router.post('/mark-done/:id', authMiddleware, async (req, res) => {
     booking.status = 'Completed';
     await releaseCalendar(booking);
 
-    await Notification.create({
-      user: booking.customer._id, type: 'booking',
+    await createNotification({
+      userId: booking.customer._id, type: 'booking',
       message: booking.professional.name + ' marked your job as complete. Please rate your experience.',
-      link: '/my-bookings'
+      link: '/rate/' + booking._id,
+      io: req.io,
     });
 
     res.json({ message: 'Job marked as done' });

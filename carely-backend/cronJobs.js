@@ -3,20 +3,10 @@ const Booking = require('./models/Booking');
 const JobPost = require('./models/JobPost');
 const Notification = require('./models/Notification');
 const User = require('./models/user');
-const nodemailer = require('nodemailer');
+const { sendEmail } = require('./utils/emailService');
+const { createNotification } = require('./utils/notificationService');
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
-});
-
-const sendEmail = async ({ to, subject, html }) => {
-  if (!to) return;
-  try { await transporter.sendMail({ from: process.env.EMAIL_USER, to, subject, html }); }
-  catch (e) { console.error('Email failed:', e.message); }
-};
-
-function setupCronJobs() {
+function setupCronJobs(io) {
   console.log('✅ Cron jobs started');
 
   // Every hour: Auto-decline bookings not accepted in 24h
@@ -34,19 +24,19 @@ function setupCronJobs() {
         b.sessions = [];
         await b.save();
 
-        await Notification.create({
-          user: b.customer._id, type: 'booking',
+        await createNotification({
+          userId: b.customer._id, type: 'booking',
           message: 'Your booking was auto-declined. ' + (b.professional?.name || 'The professional') + ' did not respond within 24 hours. Please try another professional.',
-          link: '/my-bookings'
+          link: '/my-bookings',
+          io,
         });
 
         await sendEmail({
           to: b.customer?.email,
           subject: 'Booking Auto-Declined - Carely',
-          html:
-            '<p>' + (b.professional?.name || 'The professional') + ' did not respond to your booking request within 24 hours.</p>' +
-            '<p>Your booking has been automatically declined.</p>' +
-            '<p>Please try booking another professional.</p>'
+          title: 'No response within 24 hours',
+          content:
+            '<p style="color:#1A1A2E;font-size:14px;line-height:1.7;">' + (b.professional?.name || 'The professional') + ' did not respond to your booking request within 24 hours, so it has been automatically declined. Please try booking another professional on Carely.</p>'
         });
       }
       if (bookings.length > 0) console.log('Auto-declined ' + bookings.length + ' bookings');

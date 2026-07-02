@@ -9,6 +9,16 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// ── Socket.IO ──────────────────────────────────────────────────────────────────
+// Created before routes are mounted so req.io is populated for every route handler.
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    methods: ['GET', 'POST'],
+  },
+});
+
 // ── Middleware ─────────────────────────────────────────────────────────────────
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:3000',
@@ -17,6 +27,7 @@ app.use(cors({
 app.use(express.json());
 app.use(require('cookie-parser')());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use((req, _res, next) => { req.io = io; next(); });
 
 const session = require('express-session');
 const passport = require('passport');
@@ -109,21 +120,10 @@ mongoose.connect(process.env.MONGODB_URI, {
 })
 .then(() => {
   console.log('✅ MongoDB connected');
-  require('./cronJobs')();
+  require('./cronJobs')(io);
   seedProfessionals();
 })
 .catch(err => console.error('❌ MongoDB error:', err));
-
-// ── Socket.IO ──────────────────────────────────────────────────────────────────
-const server = http.createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-    methods: ['GET', 'POST'],
-  },
-});
-
-app.use((req, _res, next) => { req.io = io; next(); });
 
 io.on('connection', (socket) => {
   console.log('🟢 Socket connected:', socket.id);

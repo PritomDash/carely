@@ -339,17 +339,30 @@ function CreditsTab() {
   );
 }
 
-function ToggleRow({ label, checked, onChange }) {
-  return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f3f4f6' }}>
-      <span>{label}</span>
-      <label className="toggle-switch">
-        <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
-        <span className="toggle-slider" />
-      </label>
+const Toggle = ({ label, description, value, onChange }) => (
+  <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px 0', borderBottom:'1px solid #F1F5F9' }}>
+    <div>
+      <div style={{ fontWeight:600, fontSize:15, color:'#1A1A2E' }}>{label}</div>
+      <div style={{ fontSize:13, color:'#64748B', marginTop:3 }}>{description}</div>
     </div>
-  );
-}
+    <div
+      onClick={() => onChange(!value)}
+      style={{
+        width:52, height:28, borderRadius:14, cursor:'pointer',
+        background: value ? '#2B7FFF' : '#E2E8F0',
+        position:'relative', transition:'background 0.2s', flexShrink:0
+      }}
+    >
+      <div style={{
+        position:'absolute', top:3,
+        left: value ? 26 : 3,
+        width:22, height:22, borderRadius:'50%',
+        background:'white', transition:'left 0.2s',
+        boxShadow:'0 1px 4px rgba(0,0,0,0.2)'
+      }} />
+    </div>
+  </div>
+);
 
 function SettingsTab() {
   const [settings, setSettings] = useState(null);
@@ -366,6 +379,20 @@ function SettingsTab() {
   }, []);
 
   const setField = (field, value) => setSettings((s) => ({ ...s, [field]: value }));
+
+  const handleToggle = async (field, value) => {
+    const previous = settings[field];
+    setField(field, value);
+    setError(''); setSuccess('');
+    try {
+      const res = await api.put('/api/admin/settings', { ...settings, [field]: value });
+      setSettings(res.data);
+      setSuccess('Settings saved.');
+    } catch (err) {
+      setField(field, previous);
+      setError(err.response?.data?.error || 'Failed to save settings.');
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true); setError(''); setSuccess('');
@@ -400,12 +427,36 @@ function SettingsTab() {
       {success && <div className="badge badge-green" style={{ display: 'block', marginBottom: 16, padding: '8px 12px' }}>{success}</div>}
 
       <div className="card">
-        <ToggleRow label="Credits Enabled" checked={!!settings.creditsEnabled} onChange={(v) => setField('creditsEnabled', v)} />
-        <ToggleRow label="Emergency Posts Enabled" checked={!!settings.emergencyPostEnabled} onChange={(v) => setField('emergencyPostEnabled', v)} />
-        <ToggleRow label="Cash Payment Enabled" checked={!!settings.cashPaymentEnabled} onChange={(v) => setField('cashPaymentEnabled', v)} />
-        <ToggleRow label="Payment Gateway Enabled" checked={!!settings.paymentGatewayEnabled} onChange={(v) => setField('paymentGatewayEnabled', v)} />
-        <ToggleRow label="Featured Listing Enabled" checked={!!settings.featuredListingEnabled} onChange={(v) => setField('featuredListingEnabled', v)} />
-        <ToggleRow label="Subscription Enabled" checked={!!settings.subscriptionEnabled} onChange={(v) => setField('subscriptionEnabled', v)} />
+        <Toggle
+          label="Credits System"
+          description="Charge professionals credits to accept bookings"
+          value={!!settings.creditsEnabled}
+          onChange={(v) => handleToggle('creditsEnabled', v)}
+        />
+        <Toggle
+          label="Emergency Posts"
+          description="Allow customers to pay for priority job posts"
+          value={!!settings.emergencyPostEnabled}
+          onChange={(v) => handleToggle('emergencyPostEnabled', v)}
+        />
+        <Toggle
+          label="Cash Payment"
+          description="Allow cash as a payment option"
+          value={!!settings.cashPaymentEnabled}
+          onChange={(v) => handleToggle('cashPaymentEnabled', v)}
+        />
+        <Toggle
+          label="Featured Listings"
+          description="Allow professionals to pay for featured placement"
+          value={!!settings.featuredListingEnabled}
+          onChange={(v) => handleToggle('featuredListingEnabled', v)}
+        />
+        <Toggle
+          label="Subscription System"
+          description="Monthly subscription option for professionals"
+          value={!!settings.subscriptionEnabled}
+          onChange={(v) => handleToggle('subscriptionEnabled', v)}
+        />
       </div>
 
       <div className="card" style={{ marginTop: 16 }}>
