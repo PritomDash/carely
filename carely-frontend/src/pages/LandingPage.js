@@ -104,12 +104,12 @@ export default function LandingPage() {
               <p style={{ color:'#94A3B8', fontSize:14, marginBottom:24, lineHeight:1.6 }}>
                 Download and install directly on your Android phone. No Play Store needed.
               </p>
-              <a
-                href="https://carely-tan.vercel.app"
+              <Link
+                to="/download"
                 style={{ display:'block', padding:'14px 0', background:'linear-gradient(135deg,#2B7FFF,#60A5FA)', color:'white', borderRadius:12, fontWeight:700, fontSize:15, textDecoration:'none', boxShadow:'0 4px 20px rgba(43,127,255,0.4)' }}
               >
-                🌐 Open Web App
-              </a>
+                ⬇️ Download Free App
+              </Link>
               <div style={{ marginTop:12, fontSize:12, color:'#64748B' }}>
                 Android 7.0 and above
               </div>
