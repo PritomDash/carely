@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api, { API_BASE } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
+import AppNavbar from '../components/AppNavbar';
 
 const fileUrl = (p) => {
   if (!p) return null;
@@ -35,7 +36,14 @@ export default function ChatInbox() {
   if (!user) return null;
 
   if (loading) {
-    return <div className="page"><p className="text-muted">Loading conversations...</p></div>;
+    return (
+      <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+        <AppNavbar />
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
+          <p className="text-muted">Loading conversations...</p>
+        </div>
+      </div>
+    );
   }
 
   const sorted = [...conversations].sort(
@@ -43,7 +51,9 @@ export default function ChatInbox() {
   );
 
   return (
-    <div className="page" style={{ maxWidth: 640 }}>
+    <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+      <AppNavbar />
+      <div style={{ maxWidth: 640, margin: '0 auto', padding: '28px 20px' }}>
       <h2 style={{ marginBottom: 16 }}>Messages</h2>
 
       {error && (
@@ -93,6 +103,7 @@ export default function ChatInbox() {
           })}
         </div>
       )}
+      </div>
     </div>
   );
 }

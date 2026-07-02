@@ -3,6 +3,7 @@ import api, { API_BASE } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { Star } from 'lucide-react';
+import AppNavbar from '../components/AppNavbar';
 
 const STATUS_BADGE = {
   Open: 'badge-green',
@@ -88,11 +89,20 @@ export default function MyJobPosts() {
   if (!user) return null;
 
   if (loading) {
-    return <div className="page"><p className="text-muted">Loading your job posts...</p></div>;
+    return (
+      <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+        <AppNavbar />
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
+          <p className="text-muted">Loading your job posts...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="page" style={{ maxWidth: 720 }}>
+    <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+      <AppNavbar />
+      <div style={{ maxWidth: 720, margin: '0 auto', padding: '28px 20px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
         <h2>My Job Posts</h2>
         <Link to="/create-job-post" className="btn btn-primary">Post a Job</Link>
@@ -194,6 +204,7 @@ export default function MyJobPosts() {
           })}
         </div>
       )}
+      </div>
     </div>
   );
 }

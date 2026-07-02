@@ -1,7 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import SafetyDisclaimer from '../components/SafetyDisclaimer';
-import { Heart, Baby, HeartHandshake, Stethoscope, Activity } from 'lucide-react';
+import AppFooter from '../components/AppFooter';
+import { Baby, HeartHandshake, Stethoscope, Activity } from 'lucide-react';
 
 const SERVICES = [
   { icon: Baby, title: 'Child Care', desc: 'Trusted babysitters and nannies for your children, verified and background-checked.' },
@@ -85,17 +86,7 @@ export default function LandingPage() {
         <SafetyDisclaimer />
       </div>
 
-      <div className="site-footer">
-        <div style={{ marginBottom: 12, fontWeight: 800, fontSize: 18, color: '#1A1A2E', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-          <Heart size={20} fill="#2B7FFF" color="#2B7FFF" /> Carely
-        </div>
-        <div>
-          <Link to="/terms">Terms</Link> | <Link to="/privacy">Privacy</Link>
-        </div>
-        <p style={{ marginTop: 16, fontSize: 12 }}>
-          &copy; 2025 Carely. All rights reserved.
-        </p>
-      </div>
+      <AppFooter />
     </div>
   );
 }

@@ -53,6 +53,19 @@ router.put('/users/:id/suspend', adminAuth, async (req, res) => {
   }
 });
 
+// Feature / unfeature a professional profile
+router.put('/users/:id/feature', adminAuth, async (req, res) => {
+  const { featured, days } = req.body;
+  const user = await User.findById(req.params.id);
+  if (!user) return res.status(404).json({ error: 'Not found' });
+  user.isFeatured = featured;
+  user.featuredUntil = featured
+    ? new Date(Date.now() + (days || 30) * 24 * 60 * 60 * 1000)
+    : null;
+  await user.save();
+  res.json({ message: 'Updated', user });
+});
+
 // Delete user
 router.delete('/users/:id', adminAuth, async (req, res) => {
   try {

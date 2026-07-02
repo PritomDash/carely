@@ -3,6 +3,7 @@ import api, { API_BASE } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { formatBDT } from '../utils/currency';
+import AppNavbar from '../components/AppNavbar';
 
 const STATUS_CLASS = {
   AwaitingAcceptance: 'status-awaiting',
@@ -87,7 +88,14 @@ export default function MyBookingsPage() {
   if (!user) return null;
 
   if (loading) {
-    return <div className="page"><p className="text-muted">Loading bookings...</p></div>;
+    return (
+      <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+        <AppNavbar />
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
+          <p className="text-muted">Loading bookings...</p>
+        </div>
+      </div>
+    );
   }
 
   const sorted = [...bookings].sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -101,7 +109,9 @@ export default function MyBookingsPage() {
   });
 
   return (
-    <div className="page" style={{ maxWidth: 800 }}>
+    <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+      <AppNavbar />
+      <div style={{ maxWidth: 800, margin: '0 auto', padding: '28px 20px' }}>
       <h2 className="page-title">My Bookings</h2>
 
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
@@ -215,6 +225,7 @@ export default function MyBookingsPage() {
 
       <div style={{ marginTop: 20 }}>
         <Link to="/home" className="text-muted">Back to Home</Link>
+      </div>
       </div>
     </div>
   );

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import api, { API_BASE } from '../services/api';
 import { Link } from 'react-router-dom';
 import LocationSelector from '../components/LocationSelector';
+import AppNavbar from '../components/AppNavbar';
+import ShareCard from '../components/ShareCard';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -21,6 +23,7 @@ export default function EditProfilePage() {
   const [success, setSuccess] = useState('');
   const [role, setRole] = useState('customer');
   const [hourlyRate, setHourlyRate] = useState(0);
+  const [profile, setProfile] = useState(null);
 
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
@@ -46,6 +49,7 @@ export default function EditProfilePage() {
       const u = res.data;
       setRole(u.role);
       setHourlyRate(u.hourlyRate || 0);
+      setProfile(u);
       setPhotoPreview(fileUrl(u.profilePhoto));
       setForm({
         name: u.name || '',
@@ -126,11 +130,20 @@ export default function EditProfilePage() {
   };
 
   if (loading) {
-    return <div className="page"><p className="text-muted">Loading profile...</p></div>;
+    return (
+      <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+        <AppNavbar />
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
+          <p className="text-muted">Loading profile...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="page" style={{ maxWidth: 720 }}>
+    <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+      <AppNavbar />
+      <div style={{ maxWidth: 720, margin: '0 auto', padding: '28px 20px' }}>
       <div className="card">
         <h2 className="page-title">Edit Profile</h2>
 
@@ -268,6 +281,13 @@ export default function EditProfilePage() {
         <div style={{ marginTop: 20, textAlign: 'center' }}>
           <Link to="/home" className="text-muted">Back to Home</Link>
         </div>
+      </div>
+
+      {role === 'professional' && profile && (
+        <div style={{ marginTop: 20 }}>
+          <ShareCard user={profile} />
+        </div>
+      )}
       </div>
     </div>
   );

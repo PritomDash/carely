@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { formatBDT } from '../utils/currency';
 import SafetyDisclaimer from '../components/SafetyDisclaimer';
+import AppNavbar from '../components/AppNavbar';
 import { MapPin, Star } from 'lucide-react';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -231,15 +232,25 @@ export default function BookingPage() {
   };
 
   if (loading) {
-    return <div className="page"><p className="text-muted">Loading...</p></div>;
+    return (
+      <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+        <AppNavbar />
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
+          <p className="text-muted">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
   if (!pro) {
     return (
-      <div className="page">
-        <div className="card" style={{ textAlign: 'center', padding: 40 }}>
-          <p className="text-muted">{error || 'Professional not found.'}</p>
-          <Link to="/home" className="btn btn-secondary" style={{ marginTop: 16 }}>Back to Home</Link>
+      <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+        <AppNavbar />
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
+          <div className="card" style={{ textAlign: 'center', padding: 40 }}>
+            <p className="text-muted">{error || 'Professional not found.'}</p>
+            <Link to="/home" className="btn btn-secondary" style={{ marginTop: 16 }}>Back to Home</Link>
+          </div>
         </div>
       </div>
     );
@@ -247,23 +258,28 @@ export default function BookingPage() {
 
   if (confirmation) {
     return (
-      <div className="page" style={{ maxWidth: 480 }}>
-        <div className="card" style={{ textAlign: 'center', padding: 40 }}>
-          <h2 style={{ color: '#16A34A', marginBottom: 12 }}>Booking Requested!</h2>
-          <p className="text-muted" style={{ marginBottom: 8 }}>
-            Your booking request has been sent to {pro.name}.
-          </p>
-          <p className="text-muted" style={{ marginBottom: 20 }}>
-            Booking ID: <strong>{confirmation}</strong>
-          </p>
-          <Link to="/my-bookings" className="btn btn-primary">View My Bookings</Link>
+      <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+        <AppNavbar />
+        <div style={{ maxWidth: 480, margin: '0 auto', padding: '28px 20px' }}>
+          <div className="card" style={{ textAlign: 'center', padding: 40 }}>
+            <h2 style={{ color: '#16A34A', marginBottom: 12 }}>Booking Requested!</h2>
+            <p className="text-muted" style={{ marginBottom: 8 }}>
+              Your booking request has been sent to {pro.name}.
+            </p>
+            <p className="text-muted" style={{ marginBottom: 20 }}>
+              Booking ID: <strong>{confirmation}</strong>
+            </p>
+            <Link to="/my-bookings" className="btn btn-primary">View My Bookings</Link>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="page" style={{ maxWidth: 1000 }}>
+    <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+      <AppNavbar />
+      <div style={{ maxWidth: 1000, margin: '0 auto', padding: '28px 20px' }}>
       <div className="booking-layout">
         <div className="card">
           <div style={{
@@ -442,6 +458,7 @@ export default function BookingPage() {
 
           <SafetyDisclaimer />
         </div>
+      </div>
       </div>
     </div>
   );

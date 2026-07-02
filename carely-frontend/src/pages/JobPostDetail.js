@@ -3,6 +3,7 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { formatBDT } from '../utils/currency';
+import AppNavbar from '../components/AppNavbar';
 
 const formatLocation = (loc) => {
   if (!loc) return 'Location not set';
@@ -49,15 +50,25 @@ export default function JobPostDetail() {
   if (!user) return null;
 
   if (loading) {
-    return <div className="page"><p className="text-muted">Loading...</p></div>;
+    return (
+      <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+        <AppNavbar />
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
+          <p className="text-muted">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
   if (!post) {
     return (
-      <div className="page">
-        <div className="card" style={{ textAlign: 'center', padding: 40 }}>
-          <p className="text-muted">{error || 'Job post not found.'}</p>
-          <Link to="/job-posts" className="btn btn-secondary" style={{ marginTop: 16 }}>Back to Job Posts</Link>
+      <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+        <AppNavbar />
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
+          <div className="card" style={{ textAlign: 'center', padding: 40 }}>
+            <p className="text-muted">{error || 'Job post not found.'}</p>
+            <Link to="/job-posts" className="btn btn-secondary" style={{ marginTop: 16 }}>Back to Job Posts</Link>
+          </div>
         </div>
       </div>
     );
@@ -72,7 +83,9 @@ export default function JobPostDetail() {
     : null;
 
   return (
-    <div className="page" style={{ maxWidth: 640 }}>
+    <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+      <AppNavbar />
+      <div style={{ maxWidth: 640, margin: '0 auto', padding: '28px 20px' }}>
       <div className="card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8 }}>
           <h2>{post.title}</h2>
@@ -154,6 +167,7 @@ export default function JobPostDetail() {
 
       <div style={{ marginTop: 16 }}>
         <Link to="/job-posts" className="text-muted">Back to Job Posts</Link>
+      </div>
       </div>
     </div>
   );

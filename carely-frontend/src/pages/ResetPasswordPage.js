@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import api from '../services/api';
 import { useNavigate, useParams, Link } from 'react-router-dom';
+import AppNavbar from '../components/AppNavbar';
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
@@ -34,7 +35,9 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <div className="page" style={{ maxWidth: 420 }}>
+    <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+      <AppNavbar />
+      <div style={{ maxWidth: 420, margin: '0 auto', padding: '28px 20px' }}>
       <div className="card">
         <h2 style={{ marginBottom: 20, textAlign: 'center' }}>Reset Password</h2>
 
@@ -80,6 +83,7 @@ export default function ResetPasswordPage() {
         <div style={{ marginTop: 20, textAlign: 'center' }}>
           <Link to="/login" className="text-green">Back to login</Link>
         </div>
+      </div>
       </div>
     </div>
   );

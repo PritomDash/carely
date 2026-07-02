@@ -3,6 +3,7 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { formatBDT } from '../utils/currency';
+import AppNavbar from '../components/AppNavbar';
 
 export default function MyCredits() {
   const { user } = useAuth();
@@ -48,18 +49,28 @@ export default function MyCredits() {
   if (!user) return null;
 
   if (loading) {
-    return <div className="page"><p className="text-muted">Loading...</p></div>;
+    return (
+      <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+        <AppNavbar />
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
+          <p className="text-muted">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
   if (!creditsEnabled) {
     return (
-      <div className="page" style={{ maxWidth: 480 }}>
-        <div className="card" style={{ textAlign: 'center', padding: 40 }}>
-          <h2 style={{ marginBottom: 12 }}>Credits</h2>
-          <p className="text-muted">
-            Credits are currently free — you can accept unlimited bookings.
-          </p>
-          <Link to="/professional-profile" className="btn btn-secondary" style={{ marginTop: 20 }}>Back to Profile</Link>
+      <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+        <AppNavbar />
+        <div style={{ maxWidth: 480, margin: '0 auto', padding: '28px 20px' }}>
+          <div className="card" style={{ textAlign: 'center', padding: 40 }}>
+            <h2 style={{ marginBottom: 12 }}>Credits</h2>
+            <p className="text-muted">
+              Credits are currently free — you can accept unlimited bookings.
+            </p>
+            <Link to="/professional-profile" className="btn btn-secondary" style={{ marginTop: 20 }}>Back to Profile</Link>
+          </div>
         </div>
       </div>
     );
@@ -69,7 +80,9 @@ export default function MyCredits() {
   const lowBalance = credits < 3;
 
   return (
-    <div className="page" style={{ maxWidth: 640 }}>
+    <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+      <AppNavbar />
+      <div style={{ maxWidth: 640, margin: '0 auto', padding: '28px 20px' }}>
       <h2 style={{ marginBottom: 16 }}>My Credits</h2>
 
       {error && (
@@ -151,6 +164,7 @@ export default function MyCredits() {
 
       <div style={{ marginTop: 20 }}>
         <Link to="/professional-profile" className="text-muted">Back to Profile</Link>
+      </div>
       </div>
     </div>
   );

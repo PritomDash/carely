@@ -1,83 +1,97 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import AppNavbar from '../components/AppNavbar';
+import AppFooter from '../components/AppFooter';
+
+const SECTIONS = [
+  {
+    title: '1. What is Carely',
+    icon: '🏢',
+    content: 'Carely is a technology platform and marketplace that connects customers with independent care professionals in Bangladesh. Carely is NOT an employer, staffing agency, or service provider. We simply provide the platform for connection.'
+  },
+  {
+    title: '2. Carely is Not Responsible For',
+    icon: '⚠️',
+    content: 'The quality, safety, or outcome of any service arranged through this platform. The authenticity or accuracy of any documents or credentials uploaded by professionals. Any injury, loss, damage, or dispute arising from a booking. The conduct or behavior of any user on or off the platform. Any agreement made between customer and professional outside this platform.'
+  },
+  {
+    title: '3. Document Disclaimer',
+    icon: '📄',
+    content: 'Professionals may upload identity and credential documents to their profile. Carely does NOT verify, authenticate, or guarantee the accuracy of any uploaded document. Carely does not conduct background checks. All documents are self-reported by the professional. Customers must verify professional credentials themselves before hiring.'
+  },
+  {
+    title: '4. Your Responsibility as a Customer',
+    icon: '👤',
+    content: "Before hiring any professional through Carely you must: review their uploaded documents yourself, conduct your own background verification if needed, meet in a safe place before allowing access to your home, and trust your own judgment. Your family's safety is your responsibility."
+  },
+  {
+    title: '5. Your Responsibility as a Professional',
+    icon: '💼',
+    content: 'You are an independent worker and NOT an employee of Carely. You are responsible for your own taxes, TIN registration, and obligations under Bangladesh law. You must comply with all applicable Bangladesh laws and regulations.'
+  },
+  {
+    title: '6. Bookings',
+    icon: '📅',
+    content: 'Customers submit booking requests which professionals can accept or decline. No cancellation fees or late fees are charged by Carely. Payment is arranged directly between customer and professional outside the app. Carely does not handle, hold, or process payments between customers and professionals.'
+  },
+  {
+    title: '7. Credit System',
+    icon: '💳',
+    content: 'Professionals may purchase credits to use platform features such as accepting bookings. Credits are non-refundable once used. The credit system may be enabled or disabled by Carely at any time.'
+  },
+  {
+    title: '8. Suspension',
+    icon: '🚫',
+    content: 'Carely may suspend or remove any account for violations of these terms, fraudulent activity, or any behavior that harms other users or the platform.'
+  },
+  {
+    title: '9. Limitation of Liability',
+    icon: '⚖️',
+    content: "To the maximum extent permitted by Bangladesh law, Carely's total liability for any claim is limited to the amount of platform fees paid by that user in the 30 days before the claim. Carely disclaims all other warranties and liabilities."
+  },
+  {
+    title: '10. Governing Law',
+    icon: '🇧🇩',
+    content: 'These terms are governed by the laws of Bangladesh. Any disputes shall be resolved under Bangladesh jurisdiction.'
+  },
+  {
+    title: '11. Contact',
+    icon: '📞',
+    content: 'Questions about these terms? Contact us through the in-app support chat or visit our Privacy Policy page.'
+  },
+];
 
 export default function Terms() {
   return (
-    <div className="page legal-page" style={{ maxWidth: 800 }}>
-      <h1 style={{ marginBottom: 8 }}>Terms & Conditions</h1>
-      <p className="text-muted" style={{ marginBottom: 24 }}>Last updated: {new Date().getFullYear()}</p>
+    <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+      <AppNavbar />
+      <div style={{ maxWidth: 860, margin: '40px auto', padding: '0 20px 60px' }}>
 
-      <h2>1. Carely Is a Marketplace, Not an Employer</h2>
-      <p>
-        Carely operates solely as an online marketplace connecting customers seeking care services
-        (Child Care, Aged Care, Nurse, and Physiotherapist) with independent professionals offering
-        those services. Carely does not employ, train, supervise, or manage any professional listed
-        on the platform.
-      </p>
+        <div style={{ background: 'linear-gradient(135deg,#2B7FFF,#60A5FA)', borderRadius: 20, padding: '40px 48px', color: 'white', marginBottom: 32, textAlign: 'center' }}>
+          <div style={{ fontSize: 48, marginBottom: 12 }}>📋</div>
+          <h1 style={{ fontSize: 32, fontWeight: 800, marginBottom: 8 }}>Terms & Conditions</h1>
+          <p style={{ opacity: 0.9, fontSize: 15 }}>Effective date: January 2025 | Governed by Bangladesh Law</p>
+        </div>
 
-      <h2>2. Professionals Are Independent Workers</h2>
-      <p>
-        All professionals on Carely operate as independent contractors. They are not employees, agents,
-        or representatives of Carely. Professionals set their own availability and rates, and are solely
-        responsible for the quality and manner in which they perform their services.
-      </p>
+        {SECTIONS.map((section, i) => (
+          <div key={i} style={{ background: 'white', border: '1px solid #E8EDF3', borderRadius: 14, padding: '20px 24px', marginBottom: 12, boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}>
+            <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1A1A2E', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span>{section.icon}</span> {section.title}
+            </h2>
+            <p style={{ fontSize: 14, color: '#4A5568', lineHeight: 1.8, margin: 0 }}>{section.content}</p>
+          </div>
+        ))}
 
-      <h2>3. Document Verification</h2>
-      <p>
-        Carely may request identity and professional documents from professionals for basic listing
-        purposes, but Carely does not independently verify the authenticity of any document. Customers
-        are solely responsible for verifying a professional's identity, qualifications, and documents
-        themselves before allowing any professional into their home or around their family.
-      </p>
+        <div style={{ background: '#FEF2F2', border: '1.5px solid #FECACA', borderRadius: 14, padding: '20px 24px', marginTop: 8 }}>
+          <h3 style={{ color: '#991B1B', fontWeight: 700, marginBottom: 8 }}>⚠️ Important Safety Reminder</h3>
+          <p style={{ color: '#7F1D1D', fontSize: 14, lineHeight: 1.7, margin: 0 }}>
+            Carely is a marketplace platform only. We connect customers with independent professionals.
+            Always verify a professional's identity and documents yourself before allowing them into your home
+            or trusting them with your family members. Carely is not responsible for any service outcome.
+          </p>
+        </div>
 
-      <h2>4. No Cancellation Fees</h2>
-      <p>
-        Carely does not charge cancellation fees to customers or professionals under any circumstance.
-        Bookings may be cancelled by either party in accordance with the in-app cancellation options.
-      </p>
-
-      <h2>5. Dispute Window</h2>
-      <p>
-        Once a professional marks a job as done, the customer has a 24-hour window to confirm completion
-        or raise a dispute. If no action is taken within 24 hours, the job is treated as confirmed and
-        payment is released to the professional. Disputes raised after the 24-hour window may not be
-        eligible for review.
-      </p>
-
-      <h2>6. Taxes</h2>
-      <p>
-        Professionals are independent contractors and are solely responsible for reporting and paying any
-        applicable taxes on their earnings under the laws of Bangladesh, including but not limited to
-        income tax obligations administered by the National Board of Revenue (NBR). Carely does not
-        withhold or remit taxes on behalf of any professional.
-      </p>
-
-      <h2>7. Governing Law</h2>
-      <p>
-        These Terms & Conditions are governed by and construed in accordance with the laws of the
-        People's Republic of Bangladesh. Any disputes arising from the use of Carely shall be subject to
-        the exclusive jurisdiction of the courts of Bangladesh.
-      </p>
-
-      <h2>8. Limitation of Liability</h2>
-      <p>
-        Carely is not responsible for the conduct, actions, omissions, quality of service, or safety of
-        any customer or professional using the platform. To the fullest extent permitted by law, Carely
-        disclaims all liability for any direct, indirect, incidental, or consequential damages arising
-        from bookings, services rendered, or interactions between customers and professionals facilitated
-        through the platform. Use of Carely is at your own risk, and users are encouraged to exercise
-        their own judgment when engaging with any professional or customer on the platform.
-      </p>
-
-      <h2>9. Changes to These Terms</h2>
-      <p>
-        Carely may update these Terms & Conditions from time to time. Continued use of the platform after
-        changes are posted constitutes acceptance of the revised terms.
-      </p>
-
-      <div style={{ marginTop: 32 }}>
-        <Link to="/" className="text-muted">Back to Home</Link>
       </div>
+      <AppFooter />
     </div>
   );
 }

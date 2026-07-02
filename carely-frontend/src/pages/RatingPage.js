@@ -3,6 +3,7 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { Star } from 'lucide-react';
+import AppNavbar from '../components/AppNavbar';
 
 export default function RatingPage() {
   const { user } = useAuth();
@@ -49,11 +50,20 @@ export default function RatingPage() {
   };
 
   if (loading) {
-    return <div className="page"><p className="text-muted">Loading...</p></div>;
+    return (
+      <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+        <AppNavbar />
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
+          <p className="text-muted">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="page" style={{ maxWidth: 480 }}>
+    <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+      <AppNavbar />
+      <div style={{ maxWidth: 480, margin: '0 auto', padding: '28px 20px' }}>
       <div className="card">
         <h2 style={{ marginBottom: 8 }}>Rate Your Experience</h2>
         {booking?.professional?.name && (
@@ -108,6 +118,7 @@ export default function RatingPage() {
         <div style={{ marginTop: 20, textAlign: 'center' }}>
           <Link to="/my-bookings" className="text-muted">Back to My Bookings</Link>
         </div>
+      </div>
       </div>
     </div>
   );

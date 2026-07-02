@@ -1,80 +1,83 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import AppNavbar from '../components/AppNavbar';
+import AppFooter from '../components/AppFooter';
+
+const SECTIONS = [
+  {
+    title: '1. What We Collect',
+    icon: '📊',
+    content: 'We collect: name, email address, phone number, profile information, location (division, district, thana), uploaded documents (stored securely), booking history, chat messages and notifications, and device/usage data.'
+  },
+  {
+    title: '2. How We Use Your Data',
+    icon: '⚙️',
+    content: 'To operate the marketplace and match customers with professionals. To send booking confirmations and notifications. For platform safety and fraud prevention. To improve our services and user experience. We do NOT sell your personal data to third parties.'
+  },
+  {
+    title: '3. Document Storage',
+    icon: '📂',
+    content: 'Documents uploaded by professionals (ID, certificates etc.) are stored securely on our servers. Documents are only visible to the professional themselves and Carely administrators for safety purposes. Documents older than 15 days may be automatically deleted to manage storage. Profile photos are retained longer than other documents. Carely does not share documents with customers or third parties.'
+  },
+  {
+    title: '4. Chat Messages',
+    icon: '💬',
+    content: 'Messages sent through the Carely chat are stored to maintain conversation history and for dispute resolution if needed. Carely administrators can view messages for safety and compliance purposes. Phone numbers and emails shared in chat are the responsibility of the user who shares them.'
+  },
+  {
+    title: '5. Data Sharing',
+    icon: '🤝',
+    content: 'When a booking is confirmed we share contact details (name and phone number) between the customer and professional to facilitate the service. We share data with service providers (hosting, email) under contractual safeguards. We may share data when required by Bangladesh law or to protect platform safety.'
+  },
+  {
+    title: '6. Your Rights',
+    icon: '✅',
+    content: 'You may request access to your personal data. You may request deletion of your account and associated data subject to legal requirements. You can update your profile information at any time. To exercise these rights contact us through in-app support.'
+  },
+  {
+    title: '7. Account Inactivity',
+    icon: '⏰',
+    content: 'Professional accounts that have been inactive (no login) for more than 3 months may have their uploaded documents automatically deleted to free storage space. The account itself remains active. Profile photos are retained.'
+  },
+  {
+    title: '8. Cookies',
+    icon: '🍪',
+    content: 'We use cookies for authentication (keeping you logged in) and referral tracking (knowing who referred you to the platform). We do not use cookies for advertising tracking.'
+  },
+  {
+    title: '9. Bangladesh Law',
+    icon: '🇧🇩',
+    content: 'This privacy policy is governed by the laws of Bangladesh including the Digital Security Act 2018 and applicable data protection regulations of the Bangladesh Telecommunication Regulatory Commission (BTRC).'
+  },
+  {
+    title: '10. Contact',
+    icon: '📞',
+    content: 'Questions about privacy? Contact us through the in-app support chat. For terms of service see our Terms & Conditions page.'
+  },
+];
 
 export default function Privacy() {
   return (
-    <div className="page legal-page" style={{ maxWidth: 800 }}>
-      <h1 style={{ marginBottom: 8 }}>Privacy Policy</h1>
-      <p className="text-muted" style={{ marginBottom: 24 }}>Last updated: {new Date().getFullYear()}</p>
+    <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+      <AppNavbar />
+      <div style={{ maxWidth: 860, margin: '40px auto', padding: '0 20px 60px' }}>
 
-      <h2>1. What Data We Collect</h2>
-      <p>When you use Carely, we collect the following categories of information:</p>
-      <ul>
-        <li><strong>Personal details:</strong> name, email address, and phone number.</li>
-        <li><strong>Location:</strong> division, district, and thana used to match customers with nearby professionals.</li>
-        <li><strong>Booking information:</strong> booking history, schedules, addresses, and payment amounts.</li>
-        <li><strong>Messages:</strong> chat messages exchanged between customers, professionals, and admin support.</li>
-        <li><strong>Verification documents:</strong> ID documents, passports, and professional certificates uploaded by professionals.</li>
-      </ul>
+        <div style={{ background: 'linear-gradient(135deg,#7C3AED,#A78BFA)', borderRadius: 20, padding: '40px 48px', color: 'white', marginBottom: 32, textAlign: 'center' }}>
+          <div style={{ fontSize: 48, marginBottom: 12 }}>🔒</div>
+          <h1 style={{ fontSize: 32, fontWeight: 800, marginBottom: 8 }}>Privacy Policy</h1>
+          <p style={{ opacity: 0.9, fontSize: 15 }}>Effective date: January 2025 | BTRC Compliant</p>
+        </div>
 
-      <h2>2. How We Use Your Data</h2>
-      <p>
-        We use the information collected solely to operate the Carely marketplace — matching customers with
-        professionals, processing bookings, enabling in-app communication, calculating payouts in BDT, and
-        providing customer support.
-      </p>
+        {SECTIONS.map((section, i) => (
+          <div key={i} style={{ background: 'white', border: '1px solid #E8EDF3', borderRadius: 14, padding: '20px 24px', marginBottom: 12, boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}>
+            <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1A1A2E', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span>{section.icon}</span> {section.title}
+            </h2>
+            <p style={{ fontSize: 14, color: '#4A5568', lineHeight: 1.8, margin: 0 }}>{section.content}</p>
+          </div>
+        ))}
 
-      <h2>3. Document Storage</h2>
-      <p>
-        Documents uploaded by professionals (ID documents, passports, police clearances, certificates) are
-        stored securely and are only accessible to Carely administrators for internal listing purposes.
-        These documents are never shared publicly or displayed on any professional's public profile.
-      </p>
-
-      <h2>4. No Selling of Data</h2>
-      <p>
-        Carely does not sell, rent, or trade your personal data to third parties for marketing or any other
-        purposes. Your data is used strictly to provide and improve the Carely service.
-      </p>
-
-      <h2>5. Data Sharing</h2>
-      <p>
-        Limited booking-related information (such as name and phone number) is shared between a customer
-        and professional only once a booking is confirmed, so both parties can coordinate the service.
-      </p>
-
-      <h2>6. Your Rights</h2>
-      <p>
-        You have the right to access, correct, or delete your personal data. You may request deletion of
-        your account and associated data at any time by contacting Carely support. Once verified, your
-        account and personal data will be removed in accordance with applicable law, except where retention
-        is required for legal or regulatory purposes.
-      </p>
-
-      <h2>7. Data Security</h2>
-      <p>
-        We take reasonable technical and organizational measures to protect your data against unauthorized
-        access, alteration, disclosure, or destruction. However, no method of electronic storage or
-        transmission is completely secure, and we cannot guarantee absolute security.
-      </p>
-
-      <h2>8. Governing Law</h2>
-      <p>
-        This Privacy Policy is governed by the laws of the People's Republic of Bangladesh, including
-        applicable regulations issued by the Bangladesh Telecommunication Regulatory Commission (BTRC).
-        By using Carely, you consent to the collection and use of your information as described in this
-        policy.
-      </p>
-
-      <h2>9. Changes to This Policy</h2>
-      <p>
-        We may update this Privacy Policy from time to time. Continued use of Carely after changes are
-        posted constitutes acceptance of the revised policy.
-      </p>
-
-      <div style={{ marginTop: 32 }}>
-        <Link to="/" className="text-muted">Back to Home</Link>
       </div>
+      <AppFooter />
     </div>
   );
 }

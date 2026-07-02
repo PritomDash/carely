@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import api from '../services/api';
 import { Link } from 'react-router-dom';
+import AppNavbar from '../components/AppNavbar';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -24,7 +25,9 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="page" style={{ maxWidth: 420 }}>
+    <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+      <AppNavbar />
+      <div style={{ maxWidth: 420, margin: '0 auto', padding: '28px 20px' }}>
       <div className="card">
         <h2 style={{ marginBottom: 20, textAlign: 'center' }}>Forgot Password</h2>
         <p className="text-muted" style={{ marginBottom: 20, textAlign: 'center' }}>
@@ -62,6 +65,7 @@ export default function ForgotPasswordPage() {
         <div style={{ marginTop: 20, textAlign: 'center' }}>
           <Link to="/login" className="text-green">Back to login</Link>
         </div>
+      </div>
       </div>
     </div>
   );

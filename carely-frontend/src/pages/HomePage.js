@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import api, { API_BASE } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { formatBDT } from '../utils/currency';
 import LocationSelector from '../components/LocationSelector';
+import AppNavbar from '../components/AppNavbar';
+import AppFooter from '../components/AppFooter';
 import socket from '../socket';
-import {
-  Bell, Search, MapPin, Clock, Star,
-} from 'lucide-react';
+import { Search, MapPin, Clock, Star } from 'lucide-react';
 
 const PROFESSIONAL_TYPES = ['Child Care', 'Aged Care', 'Nurse', 'Physiotherapist'];
 const TYPE_COLORS = {
@@ -16,28 +16,6 @@ const TYPE_COLORS = {
   'Nurse': { bg: '#DCFCE7', text: '#15803D' },
   'Physiotherapist': { bg: '#FFF7ED', text: '#C2410C' },
 };
-
-const CUSTOMER_LINKS = [
-  { emoji: '📋', label: 'My Bookings', to: '/my-bookings' },
-  { emoji: '📝', label: 'Post a Job', to: '/create-job-post' },
-  { emoji: '📌', label: 'My Job Posts', to: '/my-posts' },
-  { emoji: '💬', label: 'Chat Inbox', to: '/chat-inbox' },
-  { emoji: '👤', label: 'Edit Profile', to: '/edit-profile' },
-];
-
-const PROFESSIONAL_LINKS = [
-  { emoji: '📋', label: 'My Bookings', to: '/my-bookings' },
-  { emoji: '✏️', label: 'Edit Profile', to: '/edit-profile' },
-  { emoji: '📄', label: 'Documents', to: '/upload-documents' },
-  { emoji: '💰', label: 'Earnings', to: '/earnings' },
-  { emoji: '💳', label: 'My Credits', to: '/my-credits' },
-  { emoji: '📢', label: 'Job Posts', to: '/job-posts' },
-  { emoji: '💬', label: 'Chat Inbox', to: '/chat-inbox' },
-];
-
-const ADMIN_LINKS = [
-  { emoji: '🛡️', label: 'Admin Dashboard', to: '/admin' },
-];
 
 const fileUrl = (p) => {
   if (!p) return null;
@@ -52,12 +30,6 @@ const formatLocation = (loc) => {
 
 const getInitials = (name = '') =>
   name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase()).join('') || '?';
-
-const Avatar = ({ src, name, size = 64 }) => (
-  <div className="avatar" style={{ width: size, height: size, fontSize: size * 0.35 }}>
-    {src ? <img src={src} alt={name} /> : <span>{getInitials(name)}</span>}
-  </div>
-);
 
 const Stars = ({ rating = 0 }) => (
   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
@@ -74,73 +46,53 @@ const Stars = ({ rating = 0 }) => (
   </span>
 );
 
-function ProfileDropdown({ user, role, onLogout, onClose }) {
-  const links = role === 'professional' ? PROFESSIONAL_LINKS : role === 'admin' ? ADMIN_LINKS : CUSTOMER_LINKS;
-
-  return (
-    <div className="profile-dropdown">
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '8px 8px 12px' }}>
-        <Avatar name={user?.name} size={48} />
-        <div style={{ fontWeight: 700, marginTop: 8 }}>{user?.name}</div>
-        <span className="badge badge-blue" style={{ marginTop: 6, textTransform: 'capitalize' }}>{role}</span>
-      </div>
-      <div style={{ borderTop: '1px solid #E2E8F0', margin: '4px 0' }} />
-      {links.map((l) => (
-        <Link key={l.label} to={l.to} className="dropdown-item" onClick={onClose}>
-          <span>{l.emoji}</span> {l.label}
-        </Link>
-      ))}
-      <div style={{ borderTop: '1px solid #E2E8F0', margin: '4px 0' }} />
-      <button
-        className="dropdown-item dropdown-item-danger"
-        onClick={() => { onClose(); onLogout(); }}
-      >
-        <span>🚪</span> Logout
-      </button>
-    </div>
-  );
-}
-
-function Navbar({ user, role, unreadCount, onLogout }) {
-  const [open, setOpen] = useState(false);
-  const wrapperRef = useRef(null);
+function Leaderboard() {
+  const [leaders, setLeaders] = useState([]);
 
   useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    api.get('/api/users/leaderboard')
+      .then((res) => setLeaders(res.data || []))
+      .catch(() => setLeaders([]));
   }, []);
 
+  if (leaders.length === 0) return null;
+
   return (
-    <div className="navbar">
-      <Link to="/home" className="navbar-brand">
-        <span className="heart">💙</span> Carely
-      </Link>
-      <div className="navbar-links">
-        <Link to="/chat-inbox" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-          <Bell size={20} />
-          {unreadCount > 0 && (
-            <span className="badge badge-red" style={{
-              position: 'absolute', top: -8, right: -10, borderRadius: '999px',
-              padding: '0 6px', fontSize: 11, lineHeight: '16px'
+    <div style={{ marginBottom: 24 }}>
+      <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12, color: '#1A1A2E' }}>
+        🏆 Top Professionals This Month
+      </h3>
+      <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8 }}>
+        {leaders.map((p, i) => (
+          <div
+            key={p._id}
+            style={{
+              minWidth: 150, flexShrink: 0, background: 'white', border: '1px solid #E8EDF3',
+              borderRadius: 14, padding: '18px 14px 14px', textAlign: 'center', position: 'relative',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
+            }}
+          >
+            {i === 0 && (
+              <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', fontSize: 22 }}>
+                👑
+              </div>
+            )}
+            <div style={{
+              width: 56, height: 56, borderRadius: '50%', overflow: 'hidden', margin: '0 auto 8px',
+              background: '#EBF3FF', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontWeight: 700, color: '#2B7FFF',
             }}>
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </span>
-          )}
-        </Link>
-        <span style={{ fontWeight: 600, fontSize: 14 }}>{user?.name}</span>
-        <div ref={wrapperRef} style={{ position: 'relative' }}>
-          <div onClick={() => setOpen((o) => !o)} style={{ cursor: 'pointer' }}>
-            <Avatar name={user?.name} size={36} />
+              {p.profilePhoto ? (
+                <img src={fileUrl(p.profilePhoto)} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : getInitials(p.name)}
+            </div>
+            <div style={{ fontWeight: 700, fontSize: 13 }}>{p.name}</div>
+            <div style={{ fontSize: 11, color: '#64748B', marginTop: 2 }}>{p.professionalType}</div>
+            <div style={{ marginTop: 4, fontSize: 12, color: '#F59E0B' }}>
+              ★ {p.rating ? p.rating.toFixed(1) : 'New'}
+            </div>
           </div>
-          {open && (
-            <ProfileDropdown user={user} role={role} onLogout={onLogout} onClose={() => setOpen(false)} />
-          )}
-        </div>
+        ))}
       </div>
     </div>
   );
@@ -199,6 +151,8 @@ function ProfessionalsSearch() {
         </button>
       </form>
 
+      <Leaderboard />
+
       {loading ? (
         <p className="text-muted">Loading professionals...</p>
       ) : professionals.length === 0 ? (
@@ -210,7 +164,15 @@ function ProfessionalsSearch() {
           {professionals.map((p) => {
             const typeColor = TYPE_COLORS[p.professionalType] || { bg: '#F1F5F9', text: '#475569' };
             return (
-              <div key={p._id} className="pro-card">
+              <div key={p._id} className="pro-card" style={{ position: 'relative' }}>
+                {p.isFeatured && (
+                  <span style={{
+                    position: 'absolute', top: 10, right: 10, background: '#FEF3C7', color: '#B45309',
+                    fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 999,
+                  }}>
+                    ⭐ Featured
+                  </span>
+                )}
                 <div className="pro-card-header">
                   {p.profilePhoto ? (
                     <img className="pro-avatar" src={fileUrl(p.profilePhoto)} alt={p.name} />
@@ -262,14 +224,12 @@ function ProfessionalsSearch() {
 }
 
 export default function HomePage() {
-  const { user: contextUser, logout } = useAuth();
+  const { user: contextUser } = useAuth();
   const navigate = useNavigate();
-  const [unreadCount, setUnreadCount] = useState(0);
 
   const storedUser = localStorage.getItem('carelyUser');
   const localUser = storedUser ? JSON.parse(storedUser) : null;
   const user = contextUser || localUser;
-  const role = contextUser?.role || localUser?.role || null;
 
   useEffect(() => {
     if (!user) {
@@ -277,37 +237,20 @@ export default function HomePage() {
     }
   }, [user, navigate]);
 
-  const refreshUnreadCount = useCallback(() => {
-    api.get('/api/notifications/count-unread')
-      .then((res) => setUnreadCount(res.data?.unreadCount || 0))
-      .catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    if (!user) return;
-    refreshUnreadCount();
-  }, [user, refreshUnreadCount]);
-
   useEffect(() => {
     if (!user?._id) return;
     socket.emit('joinRoom', user._id);
-    socket.on('newNotification', refreshUnreadCount);
-    return () => socket.off('newNotification', refreshUnreadCount);
-  }, [user, refreshUnreadCount]);
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
+  }, [user]);
 
   if (!user) return null;
 
   return (
-    <div>
-      <Navbar user={user} role={role} unreadCount={unreadCount} onLogout={handleLogout} />
-      <div className="page">
+    <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+      <AppNavbar />
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
         <ProfessionalsSearch />
       </div>
+      <AppFooter />
     </div>
   );
 }

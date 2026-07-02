@@ -3,6 +3,7 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { formatBDT } from '../utils/currency';
+import AppNavbar from '../components/AppNavbar';
 
 export default function EarningsPage() {
   const { user } = useAuth();
@@ -26,13 +27,22 @@ export default function EarningsPage() {
   if (!user) return null;
 
   if (loading) {
-    return <div className="page"><p className="text-muted">Loading earnings...</p></div>;
+    return (
+      <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+        <AppNavbar />
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
+          <p className="text-muted">Loading earnings...</p>
+        </div>
+      </div>
+    );
   }
 
   const totalEarned = bookings.reduce((sum, b) => sum + (b.proNet ?? b.amount ?? 0), 0);
 
   return (
-    <div className="page" style={{ maxWidth: 640 }}>
+    <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+      <AppNavbar />
+      <div style={{ maxWidth: 640, margin: '0 auto', padding: '28px 20px' }}>
       <h2 style={{ marginBottom: 16 }}>Earnings</h2>
 
       {error && (
@@ -75,6 +85,7 @@ export default function EarningsPage() {
 
       <div style={{ marginTop: 20 }}>
         <Link to="/professional-profile" className="text-muted">Back to profile</Link>
+      </div>
       </div>
     </div>
   );

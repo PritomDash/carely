@@ -108,9 +108,29 @@ router.get('/professionals', async (req, res) => {
       );
     }
 
+    professionals.sort((a, b) => {
+      if (a.isFeatured && !b.isFeatured) return -1;
+      if (!a.isFeatured && b.isFeatured) return 1;
+      const scoreA = (a.referralScore || 0) + (a.rating || 0) * 10 + (a.ratings?.length || 0);
+      const scoreB = (b.referralScore || 0) + (b.rating || 0) * 10 + (b.ratings?.length || 0);
+      return scoreB - scoreA;
+    });
+
     res.json(professionals);
   } catch (err) {
     res.status(500).json({ message: 'Failed to fetch professionals' });
+  }
+});
+
+router.get('/leaderboard', async (req, res) => {
+  try {
+    const top = await User.find({ role: 'professional', isVerified: true })
+      .select('name profilePhoto rating referralCount referralScore professionalType isFeatured location')
+      .sort({ referralScore: -1, rating: -1 })
+      .limit(10);
+    res.json(top);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed' });
   }
 });
 

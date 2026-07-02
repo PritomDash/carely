@@ -3,6 +3,7 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import LocationSelector from '../components/LocationSelector';
+import AppNavbar from '../components/AppNavbar';
 
 const PROFESSIONAL_TYPES = ['Child Care', 'Aged Care', 'Nurse', 'Physiotherapist'];
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -82,11 +83,20 @@ export default function CreateJobPost() {
   if (!user || user.role !== 'customer') return null;
 
   if (loading) {
-    return <div className="page"><p className="text-muted">Loading...</p></div>;
+    return (
+      <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+        <AppNavbar />
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
+          <p className="text-muted">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="page" style={{ maxWidth: 640 }}>
+    <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+      <AppNavbar />
+      <div style={{ maxWidth: 640, margin: '0 auto', padding: '28px 20px' }}>
       <div className="card">
         <h2 style={{ marginBottom: 20 }}>Post a Job</h2>
 
@@ -181,6 +191,7 @@ export default function CreateJobPost() {
 
       <div style={{ marginTop: 16 }}>
         <Link to="/home" className="text-muted">Back to Home</Link>
+      </div>
       </div>
     </div>
   );

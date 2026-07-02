@@ -3,6 +3,7 @@ import api, { API_BASE } from '../services/api';
 import { Link } from 'react-router-dom';
 import { formatBDT } from '../utils/currency';
 import { Star } from 'lucide-react';
+import AppNavbar from '../components/AppNavbar';
 
 const fileUrl = (p) => {
   if (!p) return null;
@@ -55,15 +56,31 @@ export default function ProfessionalProfile() {
   }, []);
 
   if (loading) {
-    return <div className="page"><p className="text-muted">Loading profile...</p></div>;
+    return (
+      <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+        <AppNavbar />
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
+          <p className="text-muted">Loading profile...</p>
+        </div>
+      </div>
+    );
   }
 
   if (!profile) {
-    return <div className="page"><p className="text-muted">Failed to load profile.</p></div>;
+    return (
+      <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+        <AppNavbar />
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
+          <p className="text-muted">Failed to load profile.</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="page" style={{ maxWidth: 720 }}>
+    <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+      <AppNavbar />
+      <div style={{ maxWidth: 720, margin: '0 auto', padding: '28px 20px' }}>
       <div className="card">
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center' }}>
           <div style={{
@@ -114,6 +131,7 @@ export default function ProfessionalProfile() {
           <Link to="/earnings" className="btn btn-primary btn-block">Payout Details</Link>
           <Link to="/upload-documents" className="btn btn-primary btn-block">Upload Documents</Link>
         </div>
+      </div>
       </div>
     </div>
   );

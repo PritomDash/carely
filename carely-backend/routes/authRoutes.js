@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/user');
+const CreditTransaction = require('../models/CreditTransaction');
+const Notification = require('../models/Notification');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
@@ -68,11 +70,54 @@ router.post('/register', upload.fields([
     const user = new User(userData);
     await user.save();
 
+    const prefix = user.name.split(' ')[0].toUpperCase().slice(0, 4);
+    const suffix = Math.random().toString(36).slice(2, 6).toUpperCase();
+    user.referralCode = prefix + suffix;
+    await user.save();
+
+    const refCode = req.cookies?.referralCode;
+    if (refCode) {
+      const referrer = await User.findOne({ referralCode: refCode });
+      if (referrer && String(referrer._id) !== String(user._id)) {
+        user.referredBy = referrer._id;
+        await user.save();
+        referrer.referralCount += 1;
+        referrer.referralScore += 10;
+        const Settings = require('../models/Settings');
+        const settings = await Settings.findOne();
+        if (settings?.creditsEnabled) {
+          referrer.credits += 1;
+          await CreditTransaction.create({
+            professional: referrer._id,
+            type: 'bonus',
+            credits: 1,
+            note: 'Referral bonus - someone joined using your link'
+          });
+        }
+        await referrer.save();
+        await Notification.create({
+          user: referrer._id,
+          type: 'admin',
+          message: user.name + ' joined Carely using your referral link! Your ranking improved.' + (settings?.creditsEnabled ? ' +1 credit added.' : ''),
+          link: '/edit-profile'
+        });
+      }
+    }
+
     const token = generateToken(user);
     res.status(201).json({ token, user });
   } catch (err) {
     res.status(500).json({ message: 'Registration failed', error: err.message });
   }
+});
+
+router.get('/ref/:code', (req, res) => {
+  res.cookie('referralCode', req.params.code, {
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    httpOnly: false,
+    sameSite: 'lax'
+  });
+  res.redirect(process.env.FRONTEND_URL + '/register?ref=' + req.params.code);
 });
 
 router.post('/login', async (req, res) => {

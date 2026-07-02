@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { formatBDT } from '../utils/currency';
 import SafetyDisclaimer from '../components/SafetyDisclaimer';
+import AppNavbar from '../components/AppNavbar';
 import { Star, MessageCircle, MapPin } from 'lucide-react';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -76,22 +77,34 @@ export default function ViewProfilePage() {
   }, [user, id]);
 
   if (loading) {
-    return <div className="page"><p className="text-muted">Loading profile...</p></div>;
+    return (
+      <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+        <AppNavbar />
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
+          <p className="text-muted">Loading profile...</p>
+        </div>
+      </div>
+    );
   }
 
   if (!pro) {
     return (
-      <div className="page">
-        <div className="card" style={{ textAlign: 'center', padding: 40 }}>
-          <p className="text-muted">Professional not found.</p>
-          <Link to="/home" className="btn btn-secondary" style={{ marginTop: 16 }}>Back to Home</Link>
+      <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+        <AppNavbar />
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
+          <div className="card" style={{ textAlign: 'center', padding: 40 }}>
+            <p className="text-muted">Professional not found.</p>
+            <Link to="/home" className="btn btn-secondary" style={{ marginTop: 16 }}>Back to Home</Link>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="page" style={{ maxWidth: 1000 }}>
+    <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+      <AppNavbar />
+      <div style={{ maxWidth: 1000, margin: '0 auto', padding: '28px 20px' }}>
       <div className="card" style={{ marginBottom: 20 }}>
         <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', alignItems: 'center' }}>
           <div style={{
@@ -220,6 +233,7 @@ export default function ViewProfilePage() {
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

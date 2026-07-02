@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { Link } from 'react-router-dom';
 import { CheckCircle2 } from 'lucide-react';
+import AppNavbar from '../components/AppNavbar';
 
 export default function DocumentUpload() {
   const [loading, setLoading] = useState(true);
@@ -83,7 +84,14 @@ export default function DocumentUpload() {
   };
 
   if (loading) {
-    return <div className="page"><p className="text-muted">Loading...</p></div>;
+    return (
+      <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+        <AppNavbar />
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
+          <p className="text-muted">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
   const DocLabel = ({ label, field, required }) => (
@@ -99,7 +107,9 @@ export default function DocumentUpload() {
   );
 
   return (
-    <div className="page" style={{ maxWidth: 600 }}>
+    <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+      <AppNavbar />
+      <div style={{ maxWidth: 600, margin: '0 auto', padding: '28px 20px' }}>
       <div className="card">
         <h2 style={{ marginBottom: 16 }}>Upload Documents</h2>
 
@@ -175,6 +185,7 @@ export default function DocumentUpload() {
         <div style={{ marginTop: 20, textAlign: 'center' }}>
           <Link to="/professional-profile" className="text-muted">Back to profile</Link>
         </div>
+      </div>
       </div>
     </div>
   );

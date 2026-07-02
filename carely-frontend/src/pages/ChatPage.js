@@ -3,6 +3,7 @@ import api, { API_BASE } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import socket from '../socket';
+import AppNavbar from '../components/AppNavbar';
 
 const fileUrl = (p) => {
   if (!p) return null;
@@ -87,11 +88,20 @@ export default function ChatPage() {
   if (!user) return null;
 
   if (loading) {
-    return <div className="page"><p className="text-muted">Loading conversation...</p></div>;
+    return (
+      <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+        <AppNavbar />
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
+          <p className="text-muted">Loading conversation...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="page" style={{ maxWidth: 640 }}>
+    <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+      <AppNavbar />
+      <div style={{ maxWidth: 640, margin: '0 auto', padding: '28px 20px' }}>
       <div className="card" style={{ display: 'flex', flexDirection: 'column', height: '70vh', padding: 0, overflow: 'hidden' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', borderBottom: '1px solid #e5e7eb' }}>
           <div style={{ width: 36, height: 36, borderRadius: '50%', overflow: 'hidden', background: '#f3f4f6', flexShrink: 0 }}>
@@ -148,6 +158,7 @@ export default function ChatPage() {
 
       <div style={{ marginTop: 16 }}>
         <Link to="/chat-inbox" className="text-muted">Back to Inbox</Link>
+      </div>
       </div>
     </div>
   );

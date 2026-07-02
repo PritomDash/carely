@@ -28,6 +28,7 @@ import MyCredits          from './pages/MyCredits';
 import NotFoundPage       from './pages/NotFoundPage';
 import Terms              from './pages/Terms';
 import Privacy            from './pages/Privacy';
+import ReferralPage       from './pages/ReferralPage';
 
 function App() {
   return (
@@ -59,6 +60,7 @@ function App() {
           <Route path="/my-credits"             element={<MyCredits />} />
           <Route path="/terms"                  element={<Terms />} />
           <Route path="/privacy"                element={<Privacy />} />
+          <Route path="/ref/:code"              element={<ReferralPage />} />
           <Route path="*"                       element={<NotFoundPage />} />
         </Routes>
       </AuthProvider>

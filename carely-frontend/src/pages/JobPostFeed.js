@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { formatBDT } from '../utils/currency';
 import LocationSelector from '../components/LocationSelector';
+import AppNavbar from '../components/AppNavbar';
 
 const PROFESSIONAL_TYPES = ['Child Care', 'Aged Care', 'Nurse', 'Physiotherapist'];
 
@@ -88,11 +89,20 @@ export default function JobPostFeed() {
   if (!user || user.role !== 'professional') return null;
 
   if (loading) {
-    return <div className="page"><p className="text-muted">Loading job posts...</p></div>;
+    return (
+      <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+        <AppNavbar />
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
+          <p className="text-muted">Loading job posts...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="page" style={{ maxWidth: 720 }}>
+    <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+      <AppNavbar />
+      <div style={{ maxWidth: 720, margin: '0 auto', padding: '28px 20px' }}>
       <h2 style={{ marginBottom: 16 }}>Job Posts</h2>
 
       <div className="card" style={{ marginBottom: 20 }}>
@@ -168,6 +178,7 @@ export default function JobPostFeed() {
           })}
         </div>
       )}
+      </div>
     </div>
   );
 }

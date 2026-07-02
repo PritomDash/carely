@@ -15,6 +15,7 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
+app.use(require('cookie-parser')());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 const session = require('express-session');

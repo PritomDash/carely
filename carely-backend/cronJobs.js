@@ -168,6 +168,15 @@ function setupCronJobs() {
       console.error('Disk check error:', err.message);
     }
   });
+
+  // Every day at 1am: Expire featured profiles past their featuredUntil date
+  cron.schedule('0 1 * * *', async () => {
+    await User.updateMany(
+      { isFeatured: true, featuredUntil: { $lte: new Date() } },
+      { isFeatured: false, featuredUntil: null }
+    );
+    console.log('Expired featured profiles cleaned');
+  });
 }
 
 module.exports = setupCronJobs;
