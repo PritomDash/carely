@@ -33,7 +33,6 @@ import NotificationsPage  from './pages/NotificationsPage';
 import InstallBanner      from './components/InstallBanner';
 import BlogPage           from './pages/BlogPage';
 import BlogPost           from './pages/BlogPost';
-import DownloadPage       from './pages/DownloadPage';
 
 function App() {
   return (
@@ -69,7 +68,6 @@ function App() {
           <Route path="/notifications"          element={<NotificationsPage />} />
           <Route path="/blog"                   element={<BlogPage />} />
           <Route path="/blog/:slug"             element={<BlogPost />} />
-          <Route path="/download"               element={<DownloadPage />} />
           <Route path="*"                       element={<NotFoundPage />} />
         </Routes>
         <InstallBanner />

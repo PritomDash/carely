@@ -50,6 +50,21 @@ export default function LandingPage() {
             <span key={label} className="trust-pill">{label}</span>
           ))}
         </div>
+
+        <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+          <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>or</span>
+          <a
+            href="https://github.com/PritomDash/carely/releases/latest/download/Carely.apk"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              fontSize: 13, color: 'rgba(255,255,255,0.85)',
+              textDecoration: 'none', borderBottom: '1px solid rgba(255,255,255,0.4)',
+              paddingBottom: 1,
+            }}
+          >
+            📱 Download Android App
+          </a>
+        </div>
       </div>
 
       <div className="section" style={{ background: '#fff', maxWidth: 'none', paddingTop: 56, paddingBottom: 56 }}>
@@ -82,72 +97,35 @@ export default function LandingPage() {
         </div>
       </div>
 
-      <div style={{ background:'linear-gradient(135deg,#0F172A,#1E293B)', padding:'64px 28px' }}>
-        <div style={{ maxWidth:900, margin:'0 auto', textAlign:'center' }}>
-
-          <div style={{ fontSize:14, fontWeight:700, color:'#60A5FA', letterSpacing:2, textTransform:'uppercase', marginBottom:12 }}>
-            GET THE APP
+      <div className="section" style={{ background: '#fff', maxWidth: 'none', paddingTop: 0, paddingBottom: 56 }}>
+        <div style={{ background: '#F0F7FF', borderRadius: 14, padding: '20px 24px', maxWidth: 600, margin: '0 auto 40px', border: '1px solid #BFDBFE' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+            <span style={{ fontSize: 22 }}>📱</span>
+            <span style={{ fontWeight: 700, fontSize: 16, color: '#1E40AF' }}>Use Carely on Your Android Phone</span>
           </div>
-          <h2 style={{ color:'white', fontSize:34, fontWeight:800, marginBottom:12, lineHeight:1.2 }}>
-            Use Carely on Your Phone
-          </h2>
-          <p style={{ color:'#94A3B8', fontSize:16, marginBottom:48, maxWidth:500, margin:'0 auto 48px' }}>
-            Download the Carely app for Android or install directly from your browser. Available free.
+          <p style={{ fontSize: 14, color: '#374151', lineHeight: 1.7, margin: '0 0 12px' }}>
+            Carely works as an app on your Android phone. Two easy ways to get it:
           </p>
-
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:24, maxWidth:700, margin:'0 auto' }}>
-
-            {/* APK Download Card */}
-            <div style={{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:20, padding:'32px 24px', textAlign:'center', backdropFilter:'blur(10px)' }}>
-              <div style={{ fontSize:52, marginBottom:16 }}>🤖</div>
-              <h3 style={{ color:'white', fontWeight:800, fontSize:20, marginBottom:8 }}>Android APK</h3>
-              <p style={{ color:'#94A3B8', fontSize:14, marginBottom:24, lineHeight:1.6 }}>
-                Download and install directly on your Android phone. No Play Store needed.
-              </p>
-              <Link
-                to="/download"
-                style={{ display:'block', padding:'14px 0', background:'linear-gradient(135deg,#2B7FFF,#60A5FA)', color:'white', borderRadius:12, fontWeight:700, fontSize:15, textDecoration:'none', boxShadow:'0 4px 20px rgba(43,127,255,0.4)' }}
-              >
-                ⬇️ Download Free App
-              </Link>
-              <div style={{ marginTop:12, fontSize:12, color:'#64748B' }}>
-                Android 7.0 and above
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <div style={{ fontWeight: 700, fontSize: 13, color: '#1E40AF', marginBottom: 4 }}>Option 1 — Download APK</div>
+              <div style={{ fontSize: 13, color: '#64748B', lineHeight: 1.6 }}>
+                Download directly without Play Store.{' '}
+                <a
+                  href="https://github.com/PritomDash/carely/releases/latest/download/Carely.apk"
+                  style={{ color: '#2B7FFF', fontWeight: 600, textDecoration: 'none' }}
+                >
+                  Download Carely.apk
+                </a>
               </div>
             </div>
-
-            {/* Install from Browser Card */}
-            <div style={{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:20, padding:'32px 24px', textAlign:'center', backdropFilter:'blur(10px)' }}>
-              <div style={{ fontSize:52, marginBottom:16 }}>🌐</div>
-              <h3 style={{ color:'white', fontWeight:800, fontSize:20, marginBottom:8 }}>Install from Browser</h3>
-              <p style={{ color:'#94A3B8', fontSize:14, marginBottom:24, lineHeight:1.6 }}>
-                Open in Chrome on Android and add to home screen. Works instantly, no download needed.
-              </p>
-              <div style={{ padding:'14px 0', background:'rgba(255,255,255,0.10)', color:'white', borderRadius:12, fontWeight:600, fontSize:14 }}>
-                📲 How to install:
-              </div>
-              <div style={{ marginTop:12, textAlign:'left' }}>
-                {[
-                  'Open this site in Chrome',
-                  'Tap menu (⋮) top right',
-                  'Tap "Add to Home screen"',
-                  'Tap Add to confirm',
-                ].map((step, i) => (
-                  <div key={i} style={{ display:'flex', alignItems:'center', gap:8, color:'#94A3B8', fontSize:13, marginBottom:6 }}>
-                    <span style={{ color:'#60A5FA', fontWeight:700, flexShrink:0 }}>{i+1}.</span>
-                    {step}
-                  </div>
-                ))}
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <div style={{ fontWeight: 700, fontSize: 13, color: '#1E40AF', marginBottom: 4 }}>Option 2 — Install from Chrome</div>
+              <div style={{ fontSize: 13, color: '#64748B', lineHeight: 1.6 }}>
+                Open in Chrome → tap menu ⋮ → Add to Home screen → tap Add
               </div>
             </div>
-
           </div>
-
-          <div style={{ marginTop:32, padding:'16px 24px', background:'rgba(255,255,255,0.04)', borderRadius:12, display:'inline-block' }}>
-            <p style={{ color:'#64748B', fontSize:13, margin:0 }}>
-              🔜 Coming soon to Google Play Store
-            </p>
-          </div>
-
         </div>
       </div>
 
