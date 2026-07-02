@@ -133,6 +133,18 @@ function ProfessionalsSearch() {
 
   return (
     <div>
+      <h1 className="home-search-heading" style={{
+        fontSize: 32,
+        fontWeight: 800,
+        color: '#1A1A2E',
+        marginBottom: 20,
+        marginTop: 32,
+        letterSpacing: '-0.5px',
+        lineHeight: 1.2,
+      }}>
+        Find Your Care Professional
+      </h1>
+
       <form className="search-bar" onSubmit={handleSubmit}>
         <input
           className="search-input"

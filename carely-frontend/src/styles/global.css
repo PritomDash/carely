@@ -229,6 +229,10 @@ input, select, textarea { font-family: inherit; }
   .pros-grid { grid-template-columns: 1fr; }
 }
 
+@media (max-width: 600px) {
+  .home-search-heading { font-size: 24px !important; }
+}
+
 /* PROFILE DROPDOWN */
 .profile-dropdown {
   position: absolute;
