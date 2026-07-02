@@ -1,142 +1,340 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import SafetyDisclaimer from '../components/SafetyDisclaimer';
 import AppFooter from '../components/AppFooter';
-import { Baby, HeartHandshake, Stethoscope, Activity } from 'lucide-react';
 
-const SERVICES = [
-  { icon: Baby, title: 'Child Care', desc: 'Trusted babysitters and nannies for your children, verified and background-checked.' },
-  { icon: HeartHandshake, title: 'Aged Care', desc: 'Compassionate caregivers to support elderly family members at home.' },
-  { icon: Stethoscope, title: 'Nurse', desc: 'Qualified nurses for home visits, post-surgery care, and ongoing treatment.' },
-  { icon: Activity, title: 'Physiotherapist', desc: 'Licensed physiotherapists for rehabilitation and mobility support at home.' },
-];
-
-const STEPS = [
-  { title: '1. Search', desc: 'Use filters to find nearby professionals by location and care type' },
-  { title: '2. Book', desc: 'Send a booking request to your chosen professional' },
-  { title: '3. Confirm', desc: 'Professional accepts and contacts you directly to arrange meeting' },
-];
-
-const TRUST_PILLS = [
-  '✓ Verified Profiles',
-  '🔒 Secure Booking',
-  '💬 Private In-App Chat',
-  '📍 Nearby Professionals',
-];
+const PHOTOS = {
+  hero: 'https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?w=1200&q=80',
+  childCare: 'https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=600&q=80',
+  agedCare: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=600&q=80',
+  nurse: 'https://images.unsplash.com/photo-1584515933487-779824d29309?w=600&q=80',
+  physio: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&q=80',
+  laptop: 'https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=800&q=80',
+  family: 'https://images.unsplash.com/photo-1476703993599-0035a21b17a9?w=600&q=80',
+};
 
 export default function LandingPage() {
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
-    <div>
-      <div className="navbar">
-        <Link to="/" className="navbar-brand">
-          <span className="heart">💙</span> Carely
-        </Link>
-        <div className="navbar-links">
-          <Link to="/login" className="btn-primary">Sign In</Link>
-          <Link to="/register" className="btn-outline">Sign Up</Link>
+    <div style={{ minHeight: '100vh', background: '#FFFFFF', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
+
+      {/* STICKY NAVBAR */}
+      <nav className="landing-nav" style={{
+        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 200,
+        background: scrolled ? 'rgba(255,255,255,0.97)' : 'transparent',
+        backdropFilter: scrolled ? 'blur(12px)' : 'none',
+        borderBottom: scrolled ? '1px solid rgba(0,0,0,0.08)' : 'none',
+        padding: '0 40px', height: 68,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        transition: 'all 0.3s ease',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 28 }}>💙</span>
+          <span style={{ fontSize: 24, fontWeight: 900, color: scrolled ? '#1A1A2E' : '#FFFFFF', letterSpacing: '-0.5px' }}>Carely</span>
+        </div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <Link to="/blog" className="landing-nav-blog" style={{ color: scrolled ? '#64748B' : 'rgba(255,255,255,0.85)', fontSize: 14, fontWeight: 500, textDecoration: 'none', padding: '8px 12px' }}>Blog</Link>
+          <Link to="/login" style={{ padding: '10px 22px', border: '1.5px solid', borderColor: scrolled ? '#2563EB' : 'rgba(255,255,255,0.6)', borderRadius: 10, color: scrolled ? '#2563EB' : '#FFFFFF', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>Sign In</Link>
+          <Link to="/register" style={{ padding: '10px 22px', background: scrolled ? '#2563EB' : '#FFFFFF', borderRadius: 10, color: scrolled ? '#FFFFFF' : '#1E3A8A', fontWeight: 800, fontSize: 14, textDecoration: 'none', boxShadow: '0 2px 12px rgba(37,99,235,0.25)' }}>Get Started Free</Link>
+        </div>
+      </nav>
+
+      {/* HERO - FULL SCREEN WITH PHOTO */}
+      <div className="landing-hero" style={{ position: 'relative', height: '100vh', minHeight: 600, display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
+
+        {/* Background photo */}
+        <img
+          src={PHOTOS.hero}
+          alt="Care professional with elderly"
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
+        />
+
+        {/* Dark overlay with blue tint */}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(15,23,78,0.88) 0%, rgba(29,78,216,0.80) 50%, rgba(37,99,235,0.70) 100%)' }} />
+
+        {/* Content */}
+        <div style={{ position: 'relative', zIndex: 1, maxWidth: 780, padding: '0 40px', margin: '0 auto', textAlign: 'center', width: '100%' }}>
+
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 24, padding: '8px 20px', marginBottom: 28 }}>
+            <span>🇧🇩</span>
+            <span style={{ color: 'rgba(255,255,255,0.95)', fontSize: 14, fontWeight: 600 }}>Bangladesh's #1 Care Marketplace</span>
+          </div>
+
+          <h1 className="landing-hero-title" style={{ fontSize: 58, fontWeight: 900, color: '#FFFFFF', marginBottom: 20, lineHeight: 1.1, letterSpacing: '-2px' }}>
+            Find Trusted Care<br />
+            <span style={{ color: '#93C5FD' }}>Professionals</span> Near You
+          </h1>
+
+          <p style={{ fontSize: 19, color: 'rgba(255,255,255,0.88)', marginBottom: 40, lineHeight: 1.7, maxWidth: 560, margin: '0 auto 40px' }}>
+            Connect with verified child care, aged care, nursing, and physiotherapy professionals across all 64 districts of Bangladesh.
+          </p>
+
+          <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 32 }}>
+            <Link to="/register" style={{
+              padding: '18px 40px', background: '#FFFFFF', color: '#1E3A8A',
+              borderRadius: 14, fontWeight: 900, fontSize: 18, textDecoration: 'none',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+              display: 'flex', alignItems: 'center', gap: 8,
+            }}>
+              Get Started Free →
+            </Link>
+            <Link to="/login" style={{
+              padding: '18px 40px', background: 'rgba(255,255,255,0.12)',
+              color: '#FFFFFF', borderRadius: 14, fontWeight: 700, fontSize: 18,
+              textDecoration: 'none', border: '2px solid rgba(255,255,255,0.35)',
+              backdropFilter: 'blur(8px)',
+            }}>
+              Sign In
+            </Link>
+          </div>
+
+          <div style={{ marginBottom: 40 }}>
+            <a href="https://github.com/PritomDash/carely/releases/latest/download/Carely.apk"
+              style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, textDecoration: 'none', borderBottom: '1px solid rgba(255,255,255,0.3)', paddingBottom: 2 }}>
+              📱 Download Android App
+            </a>
+          </div>
+
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+            {['✓ Verified Professionals', '🔒 Secure Booking', '💬 In-App Chat', '📍 All 64 Districts'].map(b => (
+              <div key={b} style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 20, padding: '7px 16px', color: 'rgba(255,255,255,0.9)', fontSize: 13, fontWeight: 500 }}>
+                {b}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Scroll indicator */}
+        <div className="landing-scroll-indicator" style={{ position: 'absolute', bottom: 32, left: '50%', transform: 'translateX(-50%)', color: 'rgba(255,255,255,0.6)', fontSize: 12, textAlign: 'center' }}>
+          <div>↓</div>
+          <div>Scroll</div>
         </div>
       </div>
 
-      <div className="hero">
-        <h1>Welcome to Carely</h1>
-        <p>Your trusted platform to find verified care professionals across Bangladesh</p>
-        <div className="hero-buttons">
-          <Link to="/register" className="hero-btn-green">Get Started</Link>
-          <Link to="/login" className="hero-btn-blue">Sign In</Link>
-        </div>
-
-        <div style={{ marginTop: 24, display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-          {TRUST_PILLS.map((label) => (
-            <span key={label} className="trust-pill">{label}</span>
+      {/* STATS STRIP */}
+      <div style={{ background: 'linear-gradient(135deg, #1E3A8A, #2563EB)', padding: '28px 40px' }}>
+        <div className="landing-stats-row" style={{ maxWidth: 900, margin: '0 auto', display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap', gap: 20 }}>
+          {[
+            { n: '500+', l: 'Care Professionals' },
+            { n: '64', l: 'Districts Covered' },
+            { n: '4', l: 'Service Types' },
+            { n: '100%', l: 'Free to Join' },
+          ].map(s => (
+            <div key={s.l} style={{ textAlign: 'center' }}>
+              <div className="landing-stat-number" style={{ fontSize: 32, fontWeight: 900, color: '#93C5FD' }}>{s.n}</div>
+              <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.75)', marginTop: 4 }}>{s.l}</div>
+            </div>
           ))}
         </div>
+      </div>
 
-        <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-          <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>or</span>
-          <a
-            href="https://github.com/PritomDash/carely/releases/latest/download/Carely.apk"
-            style={{
-              fontSize: 14,
-              color: '#2B7FFF',
-              textDecoration: 'underline',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              fontWeight: 500,
-            }}
-          >
-            📱 Download Android App (APK)
-          </a>
+      {/* SERVICES WITH REAL PHOTOS */}
+      <div className="landing-section" style={{ padding: '80px 40px', background: '#FFFFFF' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 56 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#2563EB', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 12 }}>OUR SERVICES</div>
+            <h2 style={{ fontSize: 42, fontWeight: 900, color: '#1A1A2E', marginBottom: 14, letterSpacing: '-1px' }}>Professional Care at Your Door</h2>
+            <p style={{ fontSize: 17, color: '#64748B', maxWidth: 500, margin: '0 auto' }}>Expert care professionals available across Bangladesh</p>
+          </div>
+
+          <div className="landing-services-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 24 }}>
+
+            {/* Child Care - Large card */}
+            <div className="landing-service-card-large" style={{ borderRadius: 24, overflow: 'hidden', position: 'relative', height: 380, cursor: 'pointer', gridRow: 'span 1' }}>
+              <img src={PHOTOS.childCare} alt="Child Care" style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.4s' }} />
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.1) 60%)' }} />
+              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '28px 28px 28px' }}>
+                <div style={{ background: '#3B82F6', color: 'white', display: 'inline-block', padding: '4px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700, marginBottom: 10 }}>CHILD CARE</div>
+                <h3 style={{ color: 'white', fontSize: 26, fontWeight: 800, marginBottom: 8 }}>Trusted Baby & Child Care</h3>
+                <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 14, lineHeight: 1.6, margin: 0 }}>Professional nannies and babysitters, verified and experienced with children of all ages.</p>
+                <Link to="/register" style={{ display: 'inline-block', marginTop: 16, padding: '10px 22px', background: 'white', color: '#1E3A8A', borderRadius: 10, fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>Find Child Care →</Link>
+              </div>
+            </div>
+
+            {/* Right column - two cards */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+
+              {/* Aged Care */}
+              <div className="landing-service-card-medium" style={{ borderRadius: 24, overflow: 'hidden', position: 'relative', height: 175 }}>
+                <img src={PHOTOS.agedCare} alt="Aged Care" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(0,0,0,0.8) 40%, rgba(0,0,0,0.2) 100%)' }} />
+                <div style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: 24, right: 24 }}>
+                  <div style={{ background: '#7C3AED', color: 'white', display: 'inline-block', padding: '3px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700, marginBottom: 6 }}>AGED CARE</div>
+                  <h3 style={{ color: 'white', fontSize: 19, fontWeight: 800, marginBottom: 6 }}>Compassionate Elderly Care</h3>
+                  <Link to="/register" style={{ color: '#C4B5FD', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>Find Aged Care →</Link>
+                </div>
+              </div>
+
+              {/* Bottom row - Nurse and Physio */}
+              <div className="landing-services-subgrid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, flex: 1 }}>
+
+                {/* Nurse */}
+                <div className="landing-service-card-small" style={{ borderRadius: 24, overflow: 'hidden', position: 'relative' }}>
+                  <img src={PHOTOS.nurse} alt="Nurse" style={{ width: '100%', height: '100%', objectFit: 'cover', minHeight: 155 }} />
+                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.1) 50%)' }} />
+                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '16px' }}>
+                    <div style={{ background: '#059669', color: 'white', display: 'inline-block', padding: '3px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700, marginBottom: 6 }}>NURSE</div>
+                    <h3 style={{ color: 'white', fontSize: 16, fontWeight: 800, marginBottom: 4 }}>Home Nursing Care</h3>
+                    <Link to="/register" style={{ color: '#6EE7B7', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>Find Nurse →</Link>
+                  </div>
+                </div>
+
+                {/* Physio */}
+                <div className="landing-service-card-small" style={{ borderRadius: 24, overflow: 'hidden', position: 'relative' }}>
+                  <img src={PHOTOS.physio} alt="Physiotherapy" style={{ width: '100%', height: '100%', objectFit: 'cover', minHeight: 155 }} />
+                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.1) 50%)' }} />
+                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '16px' }}>
+                    <div style={{ background: '#EA580C', color: 'white', display: 'inline-block', padding: '3px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700, marginBottom: 6 }}>PHYSIO</div>
+                    <h3 style={{ color: 'white', fontSize: 16, fontWeight: 800, marginBottom: 4 }}>Physiotherapy</h3>
+                    <Link to="/register" style={{ color: '#FED7AA', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>Find Physio →</Link>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="section" style={{ background: '#fff', maxWidth: 'none', paddingTop: 56, paddingBottom: 56 }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 20px' }}>
-          <h2 className="section-title" style={{ marginBottom: 8 }}>How It Works</h2>
-          <div className="grid-3" style={{ marginTop: 32 }}>
-            {STEPS.map((step) => (
-              <div key={step.title} className="feature-card">
-                <h3 style={{ marginBottom: 8 }}>{step.title}</h3>
-                <p className="text-muted">{step.desc}</p>
+      {/* HOW IT WORKS */}
+      <div className="landing-section" style={{ padding: '80px 40px', background: '#F8FAFF' }}>
+        <div style={{ maxWidth: 1000, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 56 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#2563EB', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 12 }}>SIMPLE PROCESS</div>
+            <h2 style={{ fontSize: 42, fontWeight: 900, color: '#1A1A2E', letterSpacing: '-1px' }}>Book in 3 Easy Steps</h2>
+          </div>
+          <div className="landing-steps-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+            {[
+              { num: '01', icon: '🔍', title: 'Search', desc: 'Find verified professionals near your location by service type and availability.', color: '#EBF3FF', accent: '#2563EB' },
+              { num: '02', icon: '📅', title: 'Book', desc: 'Send a booking request with your preferred date, time, and requirements.', color: '#F3E8FF', accent: '#7C3AED' },
+              { num: '03', icon: '✅', title: 'Confirm', desc: 'Professional accepts and you both get each others contact details to coordinate.', color: '#DCFCE7', accent: '#16A34A' },
+            ].map((s, i) => (
+              <div key={s.num} style={{ background: 'white', border: '1.5px solid #E8EDF3', borderRadius: 20, padding: '32px 28px', position: 'relative', boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}>
+                <div style={{ fontSize: 48, fontWeight: 900, color: '#F1F5F9', position: 'absolute', top: 16, right: 20, lineHeight: 1 }}>{s.num}</div>
+                <div style={{ width: 60, height: 60, background: s.color, borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, marginBottom: 20 }}>{s.icon}</div>
+                <h3 style={{ fontSize: 22, fontWeight: 800, color: '#1A1A2E', marginBottom: 10 }}>{s.title}</h3>
+                <p style={{ fontSize: 15, color: '#64748B', lineHeight: 1.7, margin: 0 }}>{s.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      <div className="section" style={{ background: '#F5F7FA', maxWidth: 'none', paddingTop: 56, paddingBottom: 56 }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 20px' }}>
-          <h2 className="section-title">Our Services</h2>
-          <p className="section-subtitle">Professionals across four essential care categories</p>
-          <div className="grid-4 services-grid">
-            {SERVICES.map((s) => (
-              <div key={s.title} className="feature-card">
-                <div className="feature-icon"><s.icon size={26} /></div>
-                <h3 style={{ marginBottom: 8 }}>{s.title}</h3>
-                <p className="text-muted">{s.desc}</p>
+      {/* APP SHOWCASE - Laptop mockup section */}
+      <div className="landing-section" style={{ padding: '80px 40px', background: 'linear-gradient(135deg, #1E3A8A 0%, #1D4ED8 100%)', overflow: 'hidden' }}>
+        <div className="landing-showcase-grid" style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 60, alignItems: 'center' }}>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#93C5FD', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 16 }}>AVAILABLE EVERYWHERE</div>
+            <h2 style={{ fontSize: 42, fontWeight: 900, color: '#FFFFFF', marginBottom: 20, lineHeight: 1.2, letterSpacing: '-1px' }}>Use Carely on Any Device</h2>
+            <p style={{ fontSize: 17, color: 'rgba(255,255,255,0.8)', lineHeight: 1.8, marginBottom: 32 }}>
+              Access Carely from any browser on your phone, tablet, or computer. Install as an app on Android for the best experience.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 32 }}>
+              {[
+                'Works on all Android phones',
+                'Instant install from Chrome browser',
+                'Download APK directly',
+                'Coming soon to Google Play Store',
+              ].map(f => (
+                <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 12, color: 'rgba(255,255,255,0.85)', fontSize: 15 }}>
+                  <div style={{ width: 24, height: 24, background: 'rgba(255,255,255,0.15)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>✓</div>
+                  {f}
+                </div>
+              ))}
+            </div>
+            <a href="https://github.com/PritomDash/carely/releases/latest/download/Carely.apk" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 28px', background: 'white', color: '#1E3A8A', borderRadius: 12, fontWeight: 800, fontSize: 15, textDecoration: 'none' }}>
+              📱 Download Android App
+            </a>
+          </div>
+          <div style={{ position: 'relative' }}>
+            {/* Laptop mockup */}
+            <div style={{ background: '#1A1A2E', borderRadius: 16, padding: '12px 12px 0', boxShadow: '0 32px 80px rgba(0,0,0,0.5)' }}>
+              <div style={{ background: '#2D3748', borderRadius: '8px 8px 0 0', padding: '8px 12px', display: 'flex', gap: 6, marginBottom: 8 }}>
+                <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#EF4444' }} />
+                <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#F59E0B' }} />
+                <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#10B981' }} />
+              </div>
+              <img src={PHOTOS.laptop} alt="Carely App" style={{ width: '100%', borderRadius: '4px 4px 0 0', display: 'block', maxHeight: 280, objectFit: 'cover' }} />
+            </div>
+            <div style={{ background: '#0F172A', height: 16, borderRadius: '0 0 8px 8px', marginTop: 0 }} />
+            <div style={{ background: '#1E293B', height: 8, borderRadius: 4, margin: '0 20px' }} />
+          </div>
+        </div>
+      </div>
+
+      {/* TESTIMONIAL / TRUST SECTION */}
+      <div className="landing-section" style={{ padding: '80px 40px', background: '#FFFFFF' }}>
+        <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center' }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#2563EB', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 12 }}>WHY CARELY</div>
+          <h2 style={{ fontSize: 42, fontWeight: 900, color: '#1A1A2E', marginBottom: 48, letterSpacing: '-1px' }}>Built for Bangladesh Families</h2>
+          <div className="landing-features-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+            {[
+              { icon: '🔍', title: 'Easy to Find', desc: 'Search by your division, district, and thana. Find professionals right in your neighborhood.' },
+              { icon: '✅', title: 'Profile Verified', desc: 'Professionals upload their identity documents. You can review before hiring anyone.' },
+              { icon: '💬', title: 'Chat in App', desc: 'Once booking is confirmed chat directly through the app. Safe and private.' },
+              { icon: '📅', title: 'Smart Booking', desc: 'See real-time availability. No double bookings. Book your exact time slot.' },
+              { icon: '⭐', title: 'Rated by Users', desc: 'Read honest reviews from other customers before making your choice.' },
+              { icon: '🆓', title: 'Free for Customers', desc: 'Finding and booking care professionals is completely free for customers.' },
+            ].map(f => (
+              <div key={f.title} style={{ padding: '28px 24px', border: '1.5px solid #E8EDF3', borderRadius: 16, textAlign: 'left', transition: 'box-shadow 0.2s', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+                <div style={{ fontSize: 32, marginBottom: 14 }}>{f.icon}</div>
+                <h3 style={{ fontSize: 17, fontWeight: 800, color: '#1A1A2E', marginBottom: 8 }}>{f.title}</h3>
+                <p style={{ fontSize: 14, color: '#64748B', lineHeight: 1.7, margin: 0 }}>{f.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      <div className="section" style={{ background: '#fff', maxWidth: 'none', paddingTop: 0, paddingBottom: 56 }}>
-        <div style={{ background: '#F0F7FF', borderRadius: 14, padding: '20px 24px', maxWidth: 600, margin: '0 auto 40px', border: '1px solid #BFDBFE' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-            <span style={{ fontSize: 22 }}>📱</span>
-            <span style={{ fontWeight: 700, fontSize: 16, color: '#1E40AF' }}>Use Carely on Your Android Phone</span>
-          </div>
-          <p style={{ fontSize: 14, color: '#374151', lineHeight: 1.7, margin: '0 0 12px' }}>
-            Carely works as an app on your Android phone. Two easy ways to get it:
+      {/* CTA SECTION */}
+      <div className="landing-section" style={{ padding: '80px 40px', background: 'linear-gradient(135deg, #0F172A 0%, #1E3A8A 50%, #2563EB 100%)', textAlign: 'center' }}>
+        <div style={{ maxWidth: 600, margin: '0 auto' }}>
+          <h2 style={{ fontSize: 46, fontWeight: 900, color: '#FFFFFF', marginBottom: 16, lineHeight: 1.1, letterSpacing: '-1.5px' }}>
+            Ready to Find Your<br />Care Professional?
+          </h2>
+          <p style={{ fontSize: 18, color: 'rgba(255,255,255,0.8)', marginBottom: 40, lineHeight: 1.7 }}>
+            Join thousands of families across Bangladesh finding trusted care through Carely.
           </p>
-          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-            <div style={{ flex: 1, minWidth: 200 }}>
-              <div style={{ fontWeight: 700, fontSize: 13, color: '#1E40AF', marginBottom: 4 }}>Option 1 — Download APK</div>
-              <div style={{ fontSize: 13, color: '#64748B', lineHeight: 1.6 }}>
-                Download directly without Play Store.
-                After downloading tap the file — if blocked go to{' '}
-                <strong>Settings → Security → Enable Unknown Sources</strong>
-                {' '}then tap Install.{' '}
-                <a
-                  href="https://github.com/PritomDash/carely/releases/latest/download/Carely.apk"
-                  style={{ color: '#2B7FFF', fontWeight: 600, textDecoration: 'none' }}
-                >
-                  Download Carely.apk
-                </a>
-              </div>
-            </div>
-            <div style={{ flex: 1, minWidth: 200 }}>
-              <div style={{ fontWeight: 700, fontSize: 13, color: '#1E40AF', marginBottom: 4 }}>Option 2 — Install from Chrome</div>
-              <div style={{ fontSize: 13, color: '#64748B', lineHeight: 1.6 }}>
-                Open in Chrome → tap menu ⋮ → Add to Home screen → tap Add
-              </div>
-            </div>
+          <div className="landing-cta-buttons" style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Link to="/register" style={{ padding: '18px 44px', background: '#FFFFFF', color: '#1E3A8A', borderRadius: 14, fontWeight: 900, fontSize: 18, textDecoration: 'none', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
+              Get Started Free
+            </Link>
+            <Link to="/register?type=professional" style={{ padding: '18px 44px', background: 'rgba(255,255,255,0.12)', color: '#FFFFFF', borderRadius: 14, fontWeight: 700, fontSize: 18, textDecoration: 'none', border: '2px solid rgba(255,255,255,0.3)' }}>
+              Join as Professional
+            </Link>
           </div>
         </div>
       </div>
 
-      <div className="section" style={{ maxWidth: 720 }}>
-        <SafetyDisclaimer />
+      {/* DOWNLOAD TIP */}
+      <div className="landing-section" style={{ background: '#F0F7FF', padding: '40px 40px' }}>
+        <div style={{ maxWidth: 700, margin: '0 auto', background: 'white', borderRadius: 16, padding: '24px 28px', border: '1.5px solid #BFDBFE' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+            <span style={{ fontSize: 22 }}>📱</span>
+            <span style={{ fontWeight: 800, fontSize: 17, color: '#1E40AF' }}>Use Carely on Your Android Phone</span>
+          </div>
+          <div className="landing-download-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div style={{ background: '#F7FAFF', borderRadius: 10, padding: '14px 16px' }}>
+              <div style={{ fontWeight: 700, fontSize: 13, color: '#1E40AF', marginBottom: 6 }}>Option 1 — Download APK</div>
+              <div style={{ fontSize: 13, color: '#64748B', lineHeight: 1.7 }}>
+                Download directly. If blocked go to <strong>Settings → Security → Enable Unknown Sources</strong> then Install.{' '}
+                <a href="https://github.com/PritomDash/carely/releases/latest/download/Carely.apk" style={{ color: '#2B7FFF', fontWeight: 600, textDecoration: 'none' }}>Download Carely.apk</a>
+              </div>
+            </div>
+            <div style={{ background: '#F7FAFF', borderRadius: 10, padding: '14px 16px' }}>
+              <div style={{ fontWeight: 700, fontSize: 13, color: '#1E40AF', marginBottom: 6 }}>Option 2 — Install from Chrome</div>
+              <div style={{ fontSize: 13, color: '#64748B', lineHeight: 1.7 }}>
+                Open in Chrome → tap ⋮ menu → Add to Home screen → tap Add
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <AppFooter />

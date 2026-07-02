@@ -842,6 +842,40 @@ img { max-width: 100%; height: auto; }
   .leaderboard-card { min-width: 130px !important; }
 }
 
+/* Premium landing page (LandingPage.js) */
+@keyframes landingBounce {
+  0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
+  40% { transform: translateX(-50%) translateY(-8px); }
+  60% { transform: translateX(-50%) translateY(-4px); }
+}
+.landing-scroll-indicator { animation: landingBounce 2s infinite; }
+
+@media (max-width: 768px) {
+  .landing-nav { padding: 0 16px !important; }
+  .landing-nav-blog { display: none !important; }
+  .landing-hero { padding: 100px 20px 60px !important; height: auto !important; min-height: 0 !important; }
+  .landing-hero-title { font-size: 32px !important; letter-spacing: -1px !important; }
+  .landing-stats-row { gap: 16px !important; }
+  .landing-stat-number { font-size: 24px !important; }
+  .landing-services-grid,
+  .landing-services-subgrid,
+  .landing-steps-grid,
+  .landing-showcase-grid,
+  .landing-features-grid,
+  .landing-download-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .landing-service-card-large,
+  .landing-service-card-medium,
+  .landing-service-card-small {
+    height: auto !important;
+    min-height: 220px;
+  }
+  .landing-cta-buttons { flex-direction: column !important; }
+  .landing-cta-buttons a { width: 100%; box-sizing: border-box; text-align: center; }
+  .landing-section { padding: 48px 20px !important; }
+}
+
 /* Location selector: stack dropdowns full-width on mobile */
 @media (max-width: 768px) {
   .location-selector-grid { grid-template-columns: 1fr !important; }
