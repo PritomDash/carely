@@ -1,8 +1,33 @@
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
-import AppNavbar from '../components/AppNavbar';
 import AppFooter from '../components/AppFooter';
 import { articles } from '../data/blogArticles';
+
+const PublicNavbar = () => (
+  <nav style={{
+    background: '#FFFFFF',
+    borderBottom: '1px solid #E8EDF3',
+    boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+    padding: '0 28px',
+    height: 60,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    position: 'sticky',
+    top: 0,
+    zIndex: 100,
+  }}>
+    <a href="/" style={{ display:'flex', alignItems:'center', gap:8, textDecoration:'none' }}>
+      <span style={{ fontSize:24 }}>💙</span>
+      <span style={{ fontSize:20, fontWeight:800, color:'#1A1A2E' }}>Carely</span>
+    </a>
+    <div style={{ display:'flex', gap:12, alignItems:'center' }}>
+      <a href="/blog" style={{ color:'#64748B', fontSize:14, fontWeight:500, textDecoration:'none' }}>Blog</a>
+      <a href="/login" style={{ padding:'8px 20px', border:'1.5px solid #2B7FFF', borderRadius:8, color:'#2B7FFF', fontWeight:700, fontSize:14, textDecoration:'none' }}>Sign In</a>
+      <a href="/register" style={{ padding:'8px 20px', background:'#2B7FFF', borderRadius:8, color:'white', fontWeight:700, fontSize:14, textDecoration:'none' }}>Get Started</a>
+    </div>
+  </nav>
+);
 
 export default function BlogPost() {
   const { slug } = useParams();
@@ -11,7 +36,7 @@ export default function BlogPost() {
   if (!article) {
     return (
       <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
-        <AppNavbar />
+        <PublicNavbar />
         <div style={{ maxWidth: 700, margin: '0 auto', padding: '60px 20px', textAlign: 'center' }}>
           <p className="text-muted">Article not found.</p>
           <Link to="/blog" className="btn btn-primary" style={{ marginTop: 16 }}>Back to Blog</Link>
@@ -31,7 +56,7 @@ export default function BlogPost() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
-      <AppNavbar />
+      <PublicNavbar />
 
       <div style={{ background: article.color, padding: '48px 20px 40px', textAlign: 'center' }}>
         <div style={{ fontSize: 64, marginBottom: 14 }}>{article.emoji}</div>
