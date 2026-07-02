@@ -56,13 +56,16 @@ export default function LandingPage() {
           <a
             href="https://github.com/PritomDash/carely/releases/latest/download/Carely.apk"
             style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              fontSize: 13, color: 'rgba(255,255,255,0.85)',
-              textDecoration: 'none', borderBottom: '1px solid rgba(255,255,255,0.4)',
-              paddingBottom: 1,
+              fontSize: 14,
+              color: '#2B7FFF',
+              textDecoration: 'underline',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              fontWeight: 500,
             }}
           >
-            📱 Download Android App
+            📱 Download Android App (APK)
           </a>
         </div>
       </div>
