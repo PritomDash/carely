@@ -23,22 +23,19 @@ export default function AppFooter() {
 
           <div>
             <h4 style={{ fontWeight:700, marginBottom:16, fontSize:15 }}>Services</h4>
-            {['Child Care','Aged Care','Nurse','Physiotherapist'].map(s => (
-              <div key={s} style={{ color:'#94A3B8', fontSize:14, marginBottom:8, cursor:'pointer' }}>{s}</div>
-            ))}
+            <a href="/register" style={{ display:'block', color:'#94A3B8', fontSize:14, marginBottom:8, textDecoration:'none' }}>Child Care</a>
+            <a href="/register" style={{ display:'block', color:'#94A3B8', fontSize:14, marginBottom:8, textDecoration:'none' }}>Aged Care</a>
+            <a href="/register" style={{ display:'block', color:'#94A3B8', fontSize:14, marginBottom:8, textDecoration:'none' }}>Nurse</a>
+            <a href="/register" style={{ display:'block', color:'#94A3B8', fontSize:14, marginBottom:8, textDecoration:'none' }}>Physiotherapist</a>
           </div>
 
           <div>
             <h4 style={{ fontWeight:700, marginBottom:16, fontSize:15 }}>Company</h4>
-            {[
-              { label:'Home', path:'/' },
-              { label:'Find Professionals', path:'/home' },
-              { label:'Post a Job', path:'/create-job-post' },
-              { label:'Register', path:'/register' },
-              { label:'Blog', path:'/blog' },
-            ].map(l => (
-              <a key={l.path} href={l.path} style={{ display:'block', color:'#94A3B8', fontSize:14, marginBottom:8, textDecoration:'none' }}>{l.label}</a>
-            ))}
+            <a href="/" style={{ display:'block', color:'#94A3B8', fontSize:14, marginBottom:8, textDecoration:'none' }}>Home</a>
+            <a href="/register" style={{ display:'block', color:'#94A3B8', fontSize:14, marginBottom:8, textDecoration:'none' }}>Find Professionals</a>
+            <a href="/register" style={{ display:'block', color:'#94A3B8', fontSize:14, marginBottom:8, textDecoration:'none' }}>Post a Job</a>
+            <a href="/register" style={{ display:'block', color:'#94A3B8', fontSize:14, marginBottom:8, textDecoration:'none' }}>Register</a>
+            <a href="/blog" style={{ display:'block', color:'#94A3B8', fontSize:14, marginBottom:8, textDecoration:'none' }}>Blog</a>
           </div>
 
           <div>
