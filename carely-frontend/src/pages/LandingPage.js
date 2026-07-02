@@ -113,7 +113,10 @@ export default function LandingPage() {
             <div style={{ flex: 1, minWidth: 200 }}>
               <div style={{ fontWeight: 700, fontSize: 13, color: '#1E40AF', marginBottom: 4 }}>Option 1 — Download APK</div>
               <div style={{ fontSize: 13, color: '#64748B', lineHeight: 1.6 }}>
-                Download directly without Play Store.{' '}
+                Download directly without Play Store.
+                After downloading tap the file — if blocked go to{' '}
+                <strong>Settings → Security → Enable Unknown Sources</strong>
+                {' '}then tap Install.{' '}
                 <a
                   href="https://github.com/PritomDash/carely/releases/latest/download/Carely.apk"
                   style={{ color: '#2B7FFF', fontWeight: 600, textDecoration: 'none' }}
