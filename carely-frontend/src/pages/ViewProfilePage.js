@@ -3,7 +3,6 @@ import api, { API_BASE } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { formatBDT } from '../utils/currency';
-import SafetyDisclaimer from '../components/SafetyDisclaimer';
 import AppNavbar from '../components/AppNavbar';
 import { Star, MessageCircle, MapPin } from 'lucide-react';
 
@@ -208,8 +207,6 @@ export default function ViewProfilePage() {
               </div>
             )}
           </div>
-
-          <SafetyDisclaimer />
         </div>
 
         <div style={{ position: 'sticky', top: 80 }}>

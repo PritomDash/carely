@@ -121,9 +121,12 @@ export default function AppNavbar() {
             </div>
           </div>
         ) : (
-          <div style={{ display:'flex', gap:10 }}>
-            <Link to="/login" style={{ padding:'9px 22px', border:'1.5px solid #2B7FFF', borderRadius:8, color:'#2B7FFF', fontWeight:700, fontSize:14, textDecoration:'none', transition:'all 0.15s' }}>Sign In</Link>
-            <Link to="/register" style={{ padding:'9px 22px', background:'linear-gradient(135deg,#2B7FFF,#60A5FA)', borderRadius:8, color:'#fff', fontWeight:700, fontSize:14, textDecoration:'none', boxShadow:'0 2px 8px rgba(43,127,255,0.3)' }}>Get Started</Link>
+          <div style={{ display:'flex', alignItems:'center', gap:20 }}>
+            <Link to="/blog" style={{ color:'#64748B', fontSize:14, fontWeight:500, textDecoration:'none' }}>Blog</Link>
+            <div style={{ display:'flex', gap:10 }}>
+              <Link to="/login" style={{ padding:'9px 22px', border:'1.5px solid #2B7FFF', borderRadius:8, color:'#2B7FFF', fontWeight:700, fontSize:14, textDecoration:'none', transition:'all 0.15s' }}>Sign In</Link>
+              <Link to="/register" style={{ padding:'9px 22px', background:'linear-gradient(135deg,#2B7FFF,#60A5FA)', borderRadius:8, color:'#fff', fontWeight:700, fontSize:14, textDecoration:'none', boxShadow:'0 2px 8px rgba(43,127,255,0.3)' }}>Get Started</Link>
+            </div>
           </div>
         )}
       </div>

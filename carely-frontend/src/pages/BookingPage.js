@@ -5,7 +5,6 @@ import api, { API_BASE } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { formatBDT } from '../utils/currency';
-import SafetyDisclaimer from '../components/SafetyDisclaimer';
 import AppNavbar from '../components/AppNavbar';
 import { MapPin, Star } from 'lucide-react';
 
@@ -455,8 +454,6 @@ export default function BookingPage() {
               </button>
             </form>
           </div>
-
-          <SafetyDisclaimer />
         </div>
       </div>
       </div>

@@ -24,6 +24,7 @@ export default function RegisterPage() {
   const [role, setRole] = useState('customer');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -346,13 +347,30 @@ export default function RegisterPage() {
             </>
           )}
 
+          <div style={{ display:'flex', alignItems:'flex-start', gap:10, margin:'16px 0' }}>
+            <input
+              type="checkbox"
+              id="terms"
+              checked={agreedToTerms}
+              onChange={e => setAgreedToTerms(e.target.checked)}
+              style={{ marginTop:3, width:16, height:16, cursor:'pointer', accentColor:'#2B7FFF' }}
+            />
+            <label htmlFor="terms" style={{ fontSize:13, color:'#374151', lineHeight:1.6, cursor:'pointer' }}>
+              I have read and agree to Carely's{' '}
+              <a href="/terms" target="_blank" rel="noreferrer" style={{ color:'#2B7FFF', fontWeight:600 }}>Terms & Conditions</a>
+              {' '}and{' '}
+              <a href="/privacy" target="_blank" rel="noreferrer" style={{ color:'#2B7FFF', fontWeight:600 }}>Privacy Policy</a>.
+              I understand that Carely is a marketplace platform and not responsible for service outcomes.
+            </label>
+          </div>
+
           <button
             type="submit"
             className="btn-primary"
-            disabled={loading}
-            style={{ width: '100%', marginTop: 8 }}
+            disabled={!agreedToTerms || loading}
+            style={{ width: '100%', marginTop: 8, opacity: agreedToTerms ? 1 : 0.5, cursor: agreedToTerms ? 'pointer' : 'not-allowed' }}
           >
-            {loading ? 'Creating account...' : role === 'professional' ? 'Create Professional Account' : 'Register'}
+            {loading ? 'Creating Account...' : role === 'professional' ? 'Create Professional Account' : 'Register'}
           </button>
         </form>
 

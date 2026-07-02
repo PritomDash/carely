@@ -31,6 +31,8 @@ import Privacy            from './pages/Privacy';
 import ReferralPage       from './pages/ReferralPage';
 import NotificationsPage  from './pages/NotificationsPage';
 import InstallBanner      from './components/InstallBanner';
+import BlogPage           from './pages/BlogPage';
+import BlogPost           from './pages/BlogPost';
 
 function App() {
   return (
@@ -64,6 +66,8 @@ function App() {
           <Route path="/privacy"                element={<Privacy />} />
           <Route path="/ref/:code"              element={<ReferralPage />} />
           <Route path="/notifications"          element={<NotificationsPage />} />
+          <Route path="/blog"                   element={<BlogPage />} />
+          <Route path="/blog/:slug"             element={<BlogPost />} />
           <Route path="*"                       element={<NotFoundPage />} />
         </Routes>
         <InstallBanner />

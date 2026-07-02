@@ -35,6 +35,7 @@ export default function AppFooter() {
               { label:'Find Professionals', path:'/home' },
               { label:'Post a Job', path:'/create-job-post' },
               { label:'Register', path:'/register' },
+              { label:'Blog', path:'/blog' },
             ].map(l => (
               <a key={l.path} href={l.path} style={{ display:'block', color:'#94A3B8', fontSize:14, marginBottom:8, textDecoration:'none' }}>{l.label}</a>
             ))}
@@ -48,11 +49,6 @@ export default function AppFooter() {
             ].map(l => (
               <a key={l.path} href={l.path} style={{ display:'block', color:'#94A3B8', fontSize:14, marginBottom:8, textDecoration:'none' }}>{l.label}</a>
             ))}
-            <div style={{ marginTop:16, padding:'12px 14px', background:'#FEF2F2', borderRadius:8 }}>
-              <p style={{ color:'#991B1B', fontSize:12, lineHeight:1.6, margin:0, fontWeight:500 }}>
-                ⚠️ Carely is a marketplace only. Always verify professionals yourself. Not responsible for service outcomes.
-              </p>
-            </div>
           </div>
 
         </div>
@@ -60,6 +56,18 @@ export default function AppFooter() {
         <div style={{ borderTop:'1px solid #2D3748', paddingTop:24, display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
           <p style={{ color:'#64748B', fontSize:13, margin:0 }}>© 2025 Carely Bangladesh. All rights reserved.</p>
           <p style={{ color:'#64748B', fontSize:13, margin:0 }}>Made with 💙 for Bangladesh</p>
+        </div>
+
+        <div style={{ borderTop:'1px solid #2D3748', paddingTop:20, marginTop:20 }}>
+          <p style={{ color:'#475569', fontSize:12, textAlign:'center', lineHeight:1.8, margin:0 }}>
+            Carely is a marketplace platform connecting customers with independent care professionals.
+            Carely does not employ, verify, or supervise professionals.
+            By using Carely you agree to our{' '}
+            <a href="/terms" style={{ color:'#60A5FA', textDecoration:'none' }}>Terms & Conditions</a>
+            {' '}and{' '}
+            <a href="/privacy" style={{ color:'#60A5FA', textDecoration:'none' }}>Privacy Policy</a>.
+            © 2025 Carely Bangladesh. All rights reserved.
+          </p>
         </div>
       </div>
     </footer>
