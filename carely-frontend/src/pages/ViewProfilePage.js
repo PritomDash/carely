@@ -79,7 +79,7 @@ export default function ViewProfilePage() {
     return (
       <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
         <AppNavbar />
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
+        <div className="app-page-content" style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
           <p className="text-muted">Loading profile...</p>
         </div>
       </div>
@@ -90,7 +90,7 @@ export default function ViewProfilePage() {
     return (
       <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
         <AppNavbar />
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
+        <div className="app-page-content" style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
           <div className="card" style={{ textAlign: 'center', padding: 40 }}>
             <p className="text-muted">Professional not found.</p>
             <Link to="/home" className="btn btn-secondary" style={{ marginTop: 16 }}>Back to Home</Link>
@@ -103,7 +103,7 @@ export default function ViewProfilePage() {
   return (
     <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
       <AppNavbar />
-      <div style={{ maxWidth: 1000, margin: '0 auto', padding: '28px 20px' }}>
+      <div className="app-page-content" style={{ maxWidth: 1000, margin: '0 auto', padding: '28px 20px' }}>
       <div className="card" style={{ marginBottom: 20 }}>
         <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', alignItems: 'center' }}>
           <div style={{

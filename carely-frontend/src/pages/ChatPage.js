@@ -91,7 +91,7 @@ export default function ChatPage() {
     return (
       <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
         <AppNavbar />
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
+        <div className="app-page-content" style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
           <p className="text-muted">Loading conversation...</p>
         </div>
       </div>
@@ -101,8 +101,8 @@ export default function ChatPage() {
   return (
     <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
       <AppNavbar />
-      <div style={{ maxWidth: 640, margin: '0 auto', padding: '28px 20px' }}>
-      <div className="card" style={{ display: 'flex', flexDirection: 'column', height: '70vh', padding: 0, overflow: 'hidden' }}>
+      <div className="app-page-content" style={{ maxWidth: 640, margin: '0 auto', padding: '28px 20px' }}>
+      <div className="card chat-card" style={{ display: 'flex', flexDirection: 'column', height: '70vh', padding: 0, overflow: 'hidden' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', borderBottom: '1px solid #e5e7eb' }}>
           <div style={{ width: 36, height: 36, borderRadius: '50%', overflow: 'hidden', background: '#f3f4f6', flexShrink: 0 }}>
             {otherUser?.profilePhoto && (
@@ -112,7 +112,7 @@ export default function ChatPage() {
           <strong>{otherUser?.name || 'Conversation'}</strong>
         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div className="chat-messages" style={{ flex: 1, overflowY: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
           {messages.length === 0 ? (
             <p className="text-muted" style={{ textAlign: 'center', marginTop: 20 }}>No messages yet. Say hello!</p>
           ) : (
@@ -144,7 +144,7 @@ export default function ChatPage() {
           <div className="badge badge-red" style={{ display: 'block', margin: '0 16px 8px', padding: '6px 10px' }}>{error}</div>
         )}
 
-        <form onSubmit={handleSend} style={{ display: 'flex', gap: 8, padding: 12, borderTop: '1px solid #e5e7eb' }}>
+        <form onSubmit={handleSend} className="chat-input-bar" style={{ display: 'flex', gap: 8, padding: 12, borderTop: '1px solid #e5e7eb' }}>
           <input
             type="text"
             value={text}

@@ -66,6 +66,7 @@ function Leaderboard() {
         {leaders.map((p, i) => (
           <div
             key={p._id}
+            className="leaderboard-card"
             style={{
               minWidth: 150, flexShrink: 0, background: 'white', border: '1px solid #E8EDF3',
               borderRadius: 14, padding: '18px 14px 14px', textAlign: 'center', position: 'relative',
@@ -259,7 +260,7 @@ export default function HomePage() {
   return (
     <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
       <AppNavbar />
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
+      <div className="app-page-content" style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
         <ProfessionalsSearch />
       </div>
       <AppFooter />

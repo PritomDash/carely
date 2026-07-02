@@ -163,6 +163,50 @@ function UsersTab() {
           </tbody>
         </table>
       </div>
+
+      <div className="admin-mobile-cards">
+        {users.map((u) => (
+          <div key={u._id} style={{ background: 'white', border: '1px solid #E8EDF3', borderRadius: 10, padding: 14, marginBottom: 10 }}>
+            <div style={{ fontWeight: 700 }}>{u.name}</div>
+            <div style={{ color: '#64748B', fontSize: 13 }}>{u.email}</div>
+            <div style={{ marginTop: 6, display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+              <span className="badge badge-gray" style={{ textTransform: 'capitalize' }}>{u.role}</span>
+              <span className="text-muted">{formatLocation(u.location)}</span>
+              <span className={`badge ${u.isVerified ? 'badge-green' : 'badge-gray'}`}>
+                {u.isVerified ? 'Verified' : 'Unverified'}
+              </span>
+            </div>
+            <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {u.role !== 'admin' && !u.isVerified && (
+                <button className="btn btn-primary" style={{ padding: '6px 10px', fontSize: 12 }} disabled={busyId === u._id} onClick={() => handleVerify(u._id)}>
+                  Verify
+                </button>
+              )}
+              {u.role !== 'admin' && (
+                <button className="btn btn-outline" style={{ padding: '6px 10px', fontSize: 12 }} disabled={busyId === u._id} onClick={() => handleSuspend(u._id)}>
+                  {u.isVerified ? 'Suspend' : 'Reactivate'}
+                </button>
+              )}
+              {u.role !== 'admin' && (
+                confirmDeleteId === u._id ? (
+                  <>
+                    <button className="btn btn-danger" style={{ padding: '6px 10px', fontSize: 12 }} disabled={busyId === u._id} onClick={() => handleDelete(u._id)}>
+                      Confirm
+                    </button>
+                    <button className="btn btn-secondary" style={{ padding: '6px 10px', fontSize: 12 }} onClick={() => setConfirmDeleteId(null)}>
+                      Cancel
+                    </button>
+                  </>
+                ) : (
+                  <button className="btn btn-danger" style={{ padding: '6px 10px', fontSize: 12 }} onClick={() => setConfirmDeleteId(u._id)}>
+                    Delete
+                  </button>
+                )
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -206,6 +250,22 @@ function BookingsTab() {
           </tbody>
         </table>
       </div>
+
+      <div className="admin-mobile-cards">
+        {bookings.map((b) => (
+          <div key={b._id} style={{ background: 'white', border: '1px solid #E8EDF3', borderRadius: 10, padding: 14, marginBottom: 10 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'flex-start' }}>
+              <div style={{ fontWeight: 700 }}>{b.customer?.name || '—'}</div>
+              <span className={`badge ${STATUS_BADGE[b.status] || 'badge-gray'}`}>{b.status}</span>
+            </div>
+            <div style={{ color: '#64748B', fontSize: 13, marginTop: 4 }}>with {b.professional?.name || '—'}</div>
+            <div style={{ marginTop: 6, display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+              <span className="text-muted">{b.date?.slice(0, 10)}</span>
+              <strong>{formatBDT(b.amount)}</strong>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -242,6 +302,19 @@ function JobPostsTab() {
             ))}
           </tbody>
         </table>
+      </div>
+
+      <div className="admin-mobile-cards">
+        {posts.map((p) => (
+          <div key={p._id} style={{ background: 'white', border: '1px solid #E8EDF3', borderRadius: 10, padding: 14, marginBottom: 10 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'flex-start' }}>
+              <div style={{ fontWeight: 700 }}>{p.title}</div>
+              <span className={`badge ${STATUS_BADGE[p.status] || 'badge-gray'}`}>{p.status}</span>
+            </div>
+            <div style={{ color: '#64748B', fontSize: 13, marginTop: 4 }}>{p.customer?.name || '—'}</div>
+            <div className="text-muted" style={{ marginTop: 4 }}>{formatLocation(p.location)}</div>
+          </div>
+        ))}
       </div>
     </div>
   );

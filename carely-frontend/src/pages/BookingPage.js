@@ -234,7 +234,7 @@ export default function BookingPage() {
     return (
       <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
         <AppNavbar />
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
+        <div className="app-page-content" style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
           <p className="text-muted">Loading...</p>
         </div>
       </div>
@@ -245,7 +245,7 @@ export default function BookingPage() {
     return (
       <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
         <AppNavbar />
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
+        <div className="app-page-content" style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
           <div className="card" style={{ textAlign: 'center', padding: 40 }}>
             <p className="text-muted">{error || 'Professional not found.'}</p>
             <Link to="/home" className="btn btn-secondary" style={{ marginTop: 16 }}>Back to Home</Link>
@@ -259,7 +259,7 @@ export default function BookingPage() {
     return (
       <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
         <AppNavbar />
-        <div style={{ maxWidth: 480, margin: '0 auto', padding: '28px 20px' }}>
+        <div className="app-page-content" style={{ maxWidth: 480, margin: '0 auto', padding: '28px 20px' }}>
           <div className="card" style={{ textAlign: 'center', padding: 40 }}>
             <h2 style={{ color: '#16A34A', marginBottom: 12 }}>Booking Requested!</h2>
             <p className="text-muted" style={{ marginBottom: 8 }}>
@@ -278,7 +278,7 @@ export default function BookingPage() {
   return (
     <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
       <AppNavbar />
-      <div style={{ maxWidth: 1000, margin: '0 auto', padding: '28px 20px' }}>
+      <div className="app-page-content" style={{ maxWidth: 1000, margin: '0 auto', padding: '28px 20px' }}>
       <div className="booking-layout">
         <div className="card">
           <div style={{

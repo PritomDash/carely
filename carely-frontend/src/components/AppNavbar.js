@@ -90,7 +90,7 @@ export default function AppNavbar() {
   return (
     <nav style={{ position:'sticky', top:0, zIndex:200, background:'#FFFFFF', boxShadow:'0 2px 8px rgba(0,0,0,0.08)' }}>
 
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 28px', height:64, borderBottom:'1px solid #F1F5F9' }}>
+      <div className="navbar-row1" style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 28px', height:64, borderBottom:'1px solid #F1F5F9' }}>
 
         <Link to={user ? '/home' : '/'} style={{ display:'flex', alignItems:'center', gap:10, textDecoration:'none' }}>
           <span style={{ fontSize:26 }}>💙</span>
@@ -107,7 +107,7 @@ export default function AppNavbar() {
                 </span>
               )}
             </div>
-            <span style={{ fontSize:14, fontWeight:600, color:'#374151' }}>{user.name}</span>
+            <span className="hide-mobile" style={{ fontSize:14, fontWeight:600, color:'#374151' }}>{user.name}</span>
             <div ref={ref} style={{ position:'relative' }}>
               <div onClick={() => setOpen(!open)} style={{ width:40, height:40, borderRadius:'50%', background:'linear-gradient(135deg,#2B7FFF,#60A5FA)', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:800, fontSize:15, cursor:'pointer', boxShadow:'0 2px 8px rgba(43,127,255,0.35)', userSelect:'none' }}>
                 {initials(user.name)}
@@ -143,7 +143,14 @@ export default function AppNavbar() {
       </div>
 
       {user && tabs.length > 0 && (
-        <div style={{ display:'flex', alignItems:'center', padding:'0 28px', height:46, overflowX:'auto', scrollbarWidth:'none', background:'#FAFBFF' }}>
+        <div
+          className="navbar-tabs"
+          style={{
+            display:'flex', alignItems:'center', padding:'0 28px', height:46,
+            overflowX:'auto', scrollbarWidth:'none', msOverflowStyle:'none',
+            WebkitOverflowScrolling:'touch', background:'#FAFBFF',
+          }}
+        >
           {tabs.map(tab => (
             <Link key={tab.path} to={tab.path} style={tabStyle(tab.path)}>
               <span>{tab.icon}</span>

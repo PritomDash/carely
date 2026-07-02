@@ -92,7 +92,7 @@ export default function MyJobPosts() {
     return (
       <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
         <AppNavbar />
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
+        <div className="app-page-content" style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
           <p className="text-muted">Loading your job posts...</p>
         </div>
       </div>
@@ -102,7 +102,7 @@ export default function MyJobPosts() {
   return (
     <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
       <AppNavbar />
-      <div style={{ maxWidth: 720, margin: '0 auto', padding: '28px 20px' }}>
+      <div className="app-page-content" style={{ maxWidth: 720, margin: '0 auto', padding: '28px 20px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
         <h2>My Job Posts</h2>
         <Link to="/create-job-post" className="btn btn-primary">Post a Job</Link>

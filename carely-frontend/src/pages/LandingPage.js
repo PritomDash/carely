@@ -88,7 +88,7 @@ export default function LandingPage() {
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 20px' }}>
           <h2 className="section-title">Our Services</h2>
           <p className="section-subtitle">Professionals across four essential care categories</p>
-          <div className="grid-4">
+          <div className="grid-4 services-grid">
             {SERVICES.map((s) => (
               <div key={s.title} className="feature-card">
                 <div className="feature-icon"><s.icon size={26} /></div>

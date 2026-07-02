@@ -719,3 +719,125 @@ input, select, textarea { font-family: inherit; }
 .legal-page h2:first-child { margin-top: 0; }
 .legal-page p, .legal-page li { color: #334155; line-height: 1.7; margin-bottom: 10px; }
 .legal-page ul { padding-left: 20px; }
+
+/* ─────────────────────────────────────────────────────────────────
+   MOBILE RESPONSIVE — target width 360px to 414px
+   ───────────────────────────────────────────────────────────────── */
+
+img { max-width: 100%; height: auto; }
+
+@media (max-width: 768px) {
+  .app-page-content { padding: 16px !important; }
+  .page { padding: 16px 12px; }
+  .grid-2 { grid-template-columns: 1fr; }
+  .grid-3 { grid-template-columns: 1fr; }
+  .grid-4 { grid-template-columns: 1fr 1fr; }
+  .card { padding: 14px; }
+  .pro-card { padding: 14px; }
+  .search-bar { flex-direction: column; gap: 8px; }
+  .search-input { width: 100%; }
+  .search-select { width: 100%; }
+  .hero h1 { font-size: 26px; }
+  .hero p { font-size: 14px; }
+  .page-title { font-size: 20px; }
+  .sidebar-card { display: none; }
+}
+
+@media (max-width: 480px) {
+  .grid-4 { grid-template-columns: 1fr; }
+  .pros-grid { grid-template-columns: 1fr 1fr !important; }
+  .hero { padding: 40px 16px; }
+  .trust-pill { font-size: 11px; padding: 4px 10px; }
+  .hero-btn-green, .hero-btn-blue { flex: 1 1 140px; max-width: 180px; padding: 12px 20px; font-size: 14px; }
+  .services-grid { grid-template-columns: 1fr 1fr !important; }
+}
+
+/* Touch targets + iOS zoom prevention */
+@media (max-width: 768px) {
+  .btn-primary, .btn-outline, .btn-danger, .btn-success, .btn-warning, .btn-gray, .btn {
+    min-height: 44px;
+    font-size: 14px;
+  }
+  .form-input,
+  .search-input,
+  .search-select,
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    min-height: 44px;
+    font-size: 16px;
+  }
+  .pro-card-buttons button {
+    font-size: 11px;
+    padding: 6px 4px;
+    min-height: 38px;
+  }
+  .pro-avatar { width: 44px; height: 44px; font-size: 15px; }
+  .badge { font-size: 11px; }
+}
+
+/* Navbar: hide name text + shrink tab bar on mobile */
+@media (max-width: 600px) {
+  .hide-mobile { display: none !important; }
+}
+
+@media (max-width: 600px) {
+  .navbar-tabs { padding: 0 8px !important; height: 48px !important; }
+  .navbar-tabs a {
+    padding: 0 10px !important;
+    font-size: 11px !important;
+    gap: 3px !important;
+  }
+}
+.navbar-tabs::-webkit-scrollbar { display: none; }
+
+@media (max-width: 480px) {
+  .navbar-row1 { padding: 0 14px !important; }
+  .navbar-row1 > div { gap: 12px !important; }
+}
+
+/* Footer: stack columns on mobile */
+@media (max-width: 768px) {
+  .footer-grid { grid-template-columns: 1fr !important; gap: 28px !important; }
+}
+
+/* Chat: fixed input bar + scroll clearance on mobile */
+@media (max-width: 768px) {
+  .chat-card { height: calc(100vh - 130px) !important; }
+  .chat-messages { padding-bottom: 80px !important; }
+  .chat-input-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 12px 16px;
+    background: #fff;
+    border-top: 1px solid #E8EDF3;
+    z-index: 100;
+  }
+}
+
+/* Admin tables → stacked cards on mobile */
+.admin-mobile-cards { display: none; }
+@media (max-width: 768px) {
+  .table-scroll { display: none; }
+  .admin-mobile-cards { display: block; }
+}
+
+/* Legal pages (Terms/Privacy): tighter padding + smaller type on mobile */
+@media (max-width: 768px) {
+  .legal-header { padding: 28px 20px !important; }
+  .legal-header h1 { font-size: 24px !important; }
+  .legal-section-card { padding: 16px !important; }
+  .legal-section-card p { font-size: 14px !important; }
+}
+
+/* Dropdowns: never overflow small viewports */
+@media (max-width: 480px) {
+  .profile-dropdown { max-width: calc(100vw - 24px); }
+}
+
+/* Home leaderboard: narrower cards on mobile */
+@media (max-width: 480px) {
+  .leaderboard-card { min-width: 130px !important; }
+}

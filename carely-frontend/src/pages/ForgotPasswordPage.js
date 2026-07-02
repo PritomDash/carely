@@ -27,7 +27,7 @@ export default function ForgotPasswordPage() {
   return (
     <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
       <AppNavbar />
-      <div style={{ maxWidth: 420, margin: '0 auto', padding: '28px 20px' }}>
+      <div className="app-page-content" style={{ maxWidth: 420, margin: '0 auto', padding: '28px 20px' }}>
       <div className="card">
         <h2 style={{ marginBottom: 20, textAlign: 'center' }}>Forgot Password</h2>
         <p className="text-muted" style={{ marginBottom: 20, textAlign: 'center' }}>

@@ -53,7 +53,7 @@ export default function RatingPage() {
     return (
       <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
         <AppNavbar />
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
+        <div className="app-page-content" style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
           <p className="text-muted">Loading...</p>
         </div>
       </div>
@@ -63,7 +63,7 @@ export default function RatingPage() {
   return (
     <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
       <AppNavbar />
-      <div style={{ maxWidth: 480, margin: '0 auto', padding: '28px 20px' }}>
+      <div className="app-page-content" style={{ maxWidth: 480, margin: '0 auto', padding: '28px 20px' }}>
       <div className="card">
         <h2 style={{ marginBottom: 8 }}>Rate Your Experience</h2>
         {booking?.professional?.name && (

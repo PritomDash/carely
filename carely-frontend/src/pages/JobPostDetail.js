@@ -53,7 +53,7 @@ export default function JobPostDetail() {
     return (
       <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
         <AppNavbar />
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
+        <div className="app-page-content" style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
           <p className="text-muted">Loading...</p>
         </div>
       </div>
@@ -64,7 +64,7 @@ export default function JobPostDetail() {
     return (
       <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
         <AppNavbar />
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
+        <div className="app-page-content" style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
           <div className="card" style={{ textAlign: 'center', padding: 40 }}>
             <p className="text-muted">{error || 'Job post not found.'}</p>
             <Link to="/job-posts" className="btn btn-secondary" style={{ marginTop: 16 }}>Back to Job Posts</Link>
@@ -85,7 +85,7 @@ export default function JobPostDetail() {
   return (
     <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
       <AppNavbar />
-      <div style={{ maxWidth: 640, margin: '0 auto', padding: '28px 20px' }}>
+      <div className="app-page-content" style={{ maxWidth: 640, margin: '0 auto', padding: '28px 20px' }}>
       <div className="card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8 }}>
           <h2>{post.title}</h2>

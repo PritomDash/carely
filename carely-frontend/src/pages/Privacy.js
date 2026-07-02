@@ -61,14 +61,14 @@ export default function Privacy() {
       <AppNavbar />
       <div style={{ maxWidth: 860, margin: '40px auto', padding: '0 20px 60px' }}>
 
-        <div style={{ background: 'linear-gradient(135deg,#7C3AED,#A78BFA)', borderRadius: 20, padding: '40px 48px', color: 'white', marginBottom: 32, textAlign: 'center' }}>
+        <div className="legal-header" style={{ background: 'linear-gradient(135deg,#7C3AED,#A78BFA)', borderRadius: 20, padding: '40px 48px', color: 'white', marginBottom: 32, textAlign: 'center' }}>
           <div style={{ fontSize: 48, marginBottom: 12 }}>🔒</div>
           <h1 style={{ fontSize: 32, fontWeight: 800, marginBottom: 8 }}>Privacy Policy</h1>
           <p style={{ opacity: 0.9, fontSize: 15 }}>Effective date: January 2025 | BTRC Compliant</p>
         </div>
 
         {SECTIONS.map((section, i) => (
-          <div key={i} style={{ background: 'white', border: '1px solid #E8EDF3', borderRadius: 14, padding: '20px 24px', marginBottom: 12, boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}>
+          <div key={i} className="legal-section-card" style={{ background: 'white', border: '1px solid #E8EDF3', borderRadius: 14, padding: '20px 24px', marginBottom: 12, boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}>
             <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1A1A2E', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 10 }}>
               <span>{section.icon}</span> {section.title}
             </h2>

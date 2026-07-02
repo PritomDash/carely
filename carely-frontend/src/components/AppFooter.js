@@ -4,7 +4,7 @@ export default function AppFooter() {
   return (
     <footer style={{ background:'#1A1A2E', color:'white', padding:'48px 28px 28px' }}>
       <div style={{ maxWidth:1200, margin:'0 auto' }}>
-        <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr 1fr 1fr', gap:40, marginBottom:40 }}>
+        <div className="footer-grid" style={{ display:'grid', gridTemplateColumns:'2fr 1fr 1fr 1fr', gap:40, marginBottom:40 }}>
 
           <div>
             <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:16 }}>
