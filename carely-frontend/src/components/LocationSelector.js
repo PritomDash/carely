@@ -21,7 +21,7 @@ export default function LocationSelector({ value = {}, onChange, required = fals
   const sel = { padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6, width: '100%', fontSize: 14 };
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+    <div className="location-selector-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
       <div>
         <label style={{ fontSize: 13, color: '#374151', display: 'block', marginBottom: 4 }}>Division {required && <span style={{color:'red'}}>*</span>}</label>
         <select style={sel} value={value.division || ''} onChange={e => handleChange('division', e.target.value)} required={required}>

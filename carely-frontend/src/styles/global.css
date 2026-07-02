@@ -841,3 +841,8 @@ img { max-width: 100%; height: auto; }
 @media (max-width: 480px) {
   .leaderboard-card { min-width: 130px !important; }
 }
+
+/* Location selector: stack dropdowns full-width on mobile */
+@media (max-width: 768px) {
+  .location-selector-grid { grid-template-columns: 1fr !important; }
+}

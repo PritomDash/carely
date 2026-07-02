@@ -140,20 +140,30 @@ export default function RegisterPage() {
 
         {error && <div className="msg-error">{error}</div>}
 
-        <button
-          type="button"
-          onClick={handleGoogleSignup}
-          className="btn-gray"
-          style={{ width: '100%', background: '#fff', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 20 }}
-        >
-          <GoogleIcon /> Sign up with Google
-        </button>
+        {role === 'customer' && (
+          <div>
+            <button
+              type="button"
+              onClick={handleGoogleSignup}
+              className="btn-gray"
+              style={{ width: '100%', background: '#fff', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 20 }}
+            >
+              <GoogleIcon /> Sign up with Google
+            </button>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-          <div style={{ flex: 1, height: 1, background: '#E8EDF3' }} />
-          <span className="text-muted">or</span>
-          <div style={{ flex: 1, height: 1, background: '#E8EDF3' }} />
-        </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+              <div style={{ flex: 1, height: 1, background: '#E8EDF3' }} />
+              <span className="text-muted">or</span>
+              <div style={{ flex: 1, height: 1, background: '#E8EDF3' }} />
+            </div>
+          </div>
+        )}
+
+        {role === 'professional' && (
+          <div style={{ background: '#F0F7FF', border: '1px solid #BFDBFE', borderRadius: 8, padding: '12px 14px', marginBottom: 20, fontSize: 13, color: '#1E40AF' }}>
+            💼 Professionals must register with email to set up their profile with location, rates, availability and documents.
+          </div>
+        )}
 
         <div className="grid-2" style={{ marginBottom: 24 }}>
           <div

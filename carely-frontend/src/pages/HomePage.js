@@ -31,6 +31,16 @@ const formatLocation = (loc) => {
 const getInitials = (name = '') =>
   name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase()).join('') || '?';
 
+const useWindowWidth = () => {
+  const [width, setWidth] = useState(window.innerWidth);
+  useEffect(() => {
+    const handleResize = () => setWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  return width;
+};
+
 const Stars = ({ rating = 0 }) => (
   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
     {[1, 2, 3, 4, 5].map((n) => (
@@ -48,6 +58,8 @@ const Stars = ({ rating = 0 }) => (
 
 function Leaderboard() {
   const [leaders, setLeaders] = useState([]);
+  const width = useWindowWidth();
+  const isMobile = width < 480;
 
   useEffect(() => {
     api.get('/api/users/leaderboard')
@@ -68,8 +80,8 @@ function Leaderboard() {
             key={p._id}
             className="leaderboard-card"
             style={{
-              minWidth: 150, flexShrink: 0, background: 'white', border: '1px solid #E8EDF3',
-              borderRadius: 14, padding: '18px 14px 14px', textAlign: 'center', position: 'relative',
+              minWidth: isMobile ? 130 : 150, flexShrink: 0, background: 'white', border: '1px solid #E8EDF3',
+              borderRadius: 14, padding: isMobile ? '16px 12px 12px' : '18px 14px 14px', textAlign: 'center', position: 'relative',
               boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
             }}
           >
@@ -79,7 +91,7 @@ function Leaderboard() {
               </div>
             )}
             <div style={{
-              width: 56, height: 56, borderRadius: '50%', overflow: 'hidden', margin: '0 auto 8px',
+              width: isMobile ? 42 : 56, height: isMobile ? 42 : 56, borderRadius: '50%', overflow: 'hidden', margin: '0 auto 8px',
               background: '#EBF3FF', display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontWeight: 700, color: '#2B7FFF',
             }}>
@@ -87,7 +99,7 @@ function Leaderboard() {
                 <img src={fileUrl(p.profilePhoto)} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : getInitials(p.name)}
             </div>
-            <div style={{ fontWeight: 700, fontSize: 13 }}>{p.name}</div>
+            <div style={{ fontWeight: 700, fontSize: isMobile ? 12 : 13 }}>{p.name}</div>
             <div style={{ fontSize: 11, color: '#64748B', marginTop: 2 }}>{p.professionalType}</div>
             <div style={{ marginTop: 4, fontSize: 12, color: '#F59E0B' }}>
               ★ {p.rating ? p.rating.toFixed(1) : 'New'}
@@ -106,6 +118,10 @@ function ProfessionalsSearch() {
   const [serviceType, setServiceType] = useState('');
   const [professionals, setProfessionals] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const width = useWindowWidth();
+  const cols = width < 480 ? 1 : width < 700 ? 2 : width < 1024 ? 3 : 4;
+  const isMobile = width < 768;
 
   const runSearch = useCallback(() => {
     setLoading(true);
@@ -146,20 +162,32 @@ function ProfessionalsSearch() {
         Find Your Care Professional
       </h1>
 
-      <form className="search-bar" onSubmit={handleSubmit}>
+      <form
+        className="search-bar"
+        onSubmit={handleSubmit}
+        style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 10, flexWrap: 'wrap' }}
+      >
         <input
           className="search-input"
           type="text"
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
           placeholder="Search by name..."
+          style={isMobile ? { width: '100%' } : undefined}
         />
-        <LocationSelector value={location} onChange={setLocation} />
-        <select className="search-select" value={serviceType} onChange={(e) => setServiceType(e.target.value)}>
+        <div style={isMobile ? { width: '100%' } : undefined}>
+          <LocationSelector value={location} onChange={setLocation} />
+        </div>
+        <select
+          className="search-select"
+          value={serviceType}
+          onChange={(e) => setServiceType(e.target.value)}
+          style={isMobile ? { width: '100%' } : undefined}
+        >
           <option value="">All Types</option>
           {PROFESSIONAL_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
         </select>
-        <button type="submit" className="btn-primary">
+        <button type="submit" className="btn-primary" style={isMobile ? { width: '100%' } : undefined}>
           <Search size={16} style={{ verticalAlign: 'middle', marginRight: 6 }} /> Search
         </button>
       </form>
@@ -173,11 +201,17 @@ function ProfessionalsSearch() {
           <p className="text-muted">No professionals found. Try a different search or location.</p>
         </div>
       ) : (
-        <div className="pros-grid">
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: cols === 1 ? 12 : 16 }}>
           {professionals.map((p) => {
             const typeColor = TYPE_COLORS[p.professionalType] || { bg: '#F1F5F9', text: '#475569' };
+            const compact = cols <= 2;
+            const avatarSize = compact ? 48 : 60;
             return (
-              <div key={p._id} className="pro-card" style={{ position: 'relative' }}>
+              <div
+                key={p._id}
+                className="pro-card"
+                style={{ position: 'relative', padding: compact ? 12 : 18 }}
+              >
                 {p.isFeatured && (
                   <span style={{
                     position: 'absolute', top: 10, right: 10, background: '#FEF3C7', color: '#B45309',
@@ -188,12 +222,12 @@ function ProfessionalsSearch() {
                 )}
                 <div className="pro-card-header">
                   {p.profilePhoto ? (
-                    <img className="pro-avatar" src={fileUrl(p.profilePhoto)} alt={p.name} />
+                    <img className="pro-avatar" src={fileUrl(p.profilePhoto)} alt={p.name} style={{ width: avatarSize, height: avatarSize }} />
                   ) : (
-                    <div className="pro-avatar">{getInitials(p.name)}</div>
+                    <div className="pro-avatar" style={{ width: avatarSize, height: avatarSize }}>{getInitials(p.name)}</div>
                   )}
                   <div>
-                    <div className="pro-name">{p.name}</div>
+                    <div className="pro-name" style={{ fontSize: compact ? 14 : 16 }}>{p.name}</div>
                     <div className="pro-meta">
                       <MapPin size={12} style={{ verticalAlign: 'middle', marginRight: 4 }} />
                       {formatLocation(p.location)}
@@ -223,9 +257,27 @@ function ProfessionalsSearch() {
                 </div>
 
                 <div className="pro-card-buttons">
-                  <button className="btn-primary" onClick={() => navigate(`/view-profile/${p._id}`)}>View Profile</button>
-                  <button className="btn-primary" onClick={() => navigate(`/book/${p._id}`)}>Book</button>
-                  <button className="btn-gray" onClick={() => navigate(`/chat/${p._id}`)}>Chat</button>
+                  <button
+                    className="btn-primary"
+                    style={{ fontSize: compact ? 12 : 13, padding: compact ? '7px 4px' : '8px 0' }}
+                    onClick={() => navigate(`/view-profile/${p._id}`)}
+                  >
+                    View Profile
+                  </button>
+                  <button
+                    className="btn-primary"
+                    style={{ fontSize: compact ? 12 : 13, padding: compact ? '7px 4px' : '8px 0' }}
+                    onClick={() => navigate(`/book/${p._id}`)}
+                  >
+                    Book
+                  </button>
+                  <button
+                    className="btn-gray"
+                    style={{ fontSize: compact ? 12 : 13, padding: compact ? '7px 4px' : '8px 0' }}
+                    onClick={() => navigate(`/chat/${p._id}`)}
+                  >
+                    Chat
+                  </button>
                 </div>
               </div>
             );
