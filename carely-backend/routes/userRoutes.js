@@ -143,6 +143,20 @@ router.get('/all-professionals', async (req, res) => {
   }
 });
 
+router.post('/push-subscription', authMiddleware, async (req, res) => {
+  try {
+    const { subscription } = req.body;
+    await User.findByIdAndUpdate(req.user._id, { pushSubscription: subscription });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to save subscription' });
+  }
+});
+
+router.get('/vapid-public-key', (req, res) => {
+  res.json({ publicKey: process.env.VAPID_PUBLIC_KEY || '' });
+});
+
 router.get('/:id', async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select('-password');

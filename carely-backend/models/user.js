@@ -63,6 +63,7 @@ const userSchema = new mongoose.Schema({
   referredBy:    { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   isFeatured:    { type: Boolean, default: false },
   featuredUntil: { type: Date, default: null },
+  pushSubscription: { type: Object, default: null },
 }, { timestamps: true });
 
 userSchema.index({ role: 1, 'location.thana': 1, professionalType: 1 });

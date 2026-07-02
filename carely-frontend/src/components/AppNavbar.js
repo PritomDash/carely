@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import socket from '../socket';
+import { setupPushNotifications } from '../utils/pushManager';
 
 export default function AppNavbar() {
   const { user, logout } = useAuth();
@@ -30,6 +31,16 @@ export default function AppNavbar() {
     socket.on('newNotification', handleNewNotification);
     return () => socket.off('newNotification', handleNewNotification);
   }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    const token = localStorage.getItem('carelyToken');
+    if (token) {
+      setTimeout(() => {
+        setupPushNotifications(token).catch(() => {});
+      }, 2000);
+    }
+  }, [user?._id]);
 
   useEffect(() => {
     const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
