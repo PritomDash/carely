@@ -1,6 +1,27 @@
 import React from 'react';
-import AppNavbar from '../components/AppNavbar';
 import AppFooter from '../components/AppFooter';
+
+const PublicNavbar = () => (
+  <nav style={{
+    background: '#FFFFFF',
+    borderBottom: '1px solid #E8EDF3',
+    boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+    padding: '0 28px',
+    height: 60,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  }}>
+    <a href="/" style={{ display:'flex', alignItems:'center', gap:8, textDecoration:'none' }}>
+      <span style={{ fontSize:24 }}>💙</span>
+      <span style={{ fontSize:20, fontWeight:800, color:'#1A1A2E' }}>Carely</span>
+    </a>
+    <div style={{ display:'flex', gap:12 }}>
+      <a href="/" style={{ padding:'8px 16px', color:'#64748B', fontSize:14, fontWeight:500, textDecoration:'none' }}>Home</a>
+      <a href="/login" style={{ padding:'8px 20px', background:'#2B7FFF', color:'white', borderRadius:8, fontSize:14, fontWeight:700, textDecoration:'none' }}>Sign In</a>
+    </div>
+  </nav>
+);
 
 const SECTIONS = [
   {
@@ -58,7 +79,7 @@ const SECTIONS = [
 export default function Privacy() {
   return (
     <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
-      <AppNavbar />
+      <PublicNavbar />
       <div style={{ maxWidth: 860, margin: '40px auto', padding: '0 20px 60px' }}>
 
         <div className="legal-header" style={{ background: 'linear-gradient(135deg,#7C3AED,#A78BFA)', borderRadius: 20, padding: '40px 48px', color: 'white', marginBottom: 32, textAlign: 'center' }}>
