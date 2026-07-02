@@ -30,6 +30,7 @@ import Terms              from './pages/Terms';
 import Privacy            from './pages/Privacy';
 import ReferralPage       from './pages/ReferralPage';
 import NotificationsPage  from './pages/NotificationsPage';
+import InstallBanner      from './components/InstallBanner';
 
 function App() {
   return (
@@ -65,6 +66,7 @@ function App() {
           <Route path="/notifications"          element={<NotificationsPage />} />
           <Route path="*"                       element={<NotFoundPage />} />
         </Routes>
+        <InstallBanner />
       </AuthProvider>
     </BrowserRouter>
   );

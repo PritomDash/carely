@@ -1,0 +1,24 @@
+{
+  "short_name": "Carely",
+  "name": "Carely - Care Professionals Bangladesh",
+  "description": "Find trusted child care, aged care, nursing and physiotherapy professionals in Bangladesh",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#2B7FFF",
+  "background_color": "#FFFFFF",
+  "orientation": "portrait"
+}
