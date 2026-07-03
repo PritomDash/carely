@@ -52,31 +52,32 @@ export default function AppNavbar() {
   const active = (p) => location.pathname === p;
 
   const customerTabs = [
-    { icon:'🏠', label:'Home', path:'/home' },
-    { icon:'📋', label:'My Bookings', path:'/my-bookings' },
-    { icon:'📝', label:'Post a Job', path:'/create-job-post' },
-    { icon:'📌', label:'My Posts', path:'/my-posts' },
-    { icon:'💬', label:'Chat', path:'/chat-inbox' },
-    { icon:'👤', label:'My Profile', path:'/edit-profile' },
+    { icon:'🏠', label:'Home', shortLabel:'Home', path:'/home' },
+    { icon:'📋', label:'My Bookings', shortLabel:'Bookings', path:'/my-bookings' },
+    { icon:'📝', label:'Post a Job', shortLabel:'Post', path:'/create-job-post' },
+    { icon:'📌', label:'My Posts', shortLabel:'Posts', path:'/my-posts' },
+    { icon:'💬', label:'Chat', shortLabel:'Chat', path:'/chat-inbox' },
+    { icon:'👤', label:'My Profile', shortLabel:'Profile', path:'/edit-profile' },
   ];
 
   const proTabs = [
-    { icon:'🏠', label:'Home', path:'/home' },
-    { icon:'📋', label:'My Bookings', path:'/my-bookings' },
-    { icon:'📢', label:'Job Feed', path:'/job-posts' },
-    { icon:'💬', label:'Chat', path:'/chat-inbox' },
-    { icon:'👤', label:'My Profile', path:'/edit-profile' },
-    { icon:'💰', label:'Earnings', path:'/earnings' },
-    { icon:'📄', label:'Documents', path:'/upload-documents' },
-    { icon:'🔗', label:'Share & Earn', path:'/my-credits' },
+    { icon:'🏠', label:'Home', shortLabel:'Home', path:'/home' },
+    { icon:'📋', label:'My Bookings', shortLabel:'Bookings', path:'/my-bookings' },
+    { icon:'📢', label:'Job Feed', shortLabel:'Jobs', path:'/job-posts' },
+    { icon:'💬', label:'Chat', shortLabel:'Chat', path:'/chat-inbox' },
+    { icon:'👤', label:'My Profile', shortLabel:'Profile', path:'/edit-profile' },
+    { icon:'💰', label:'Earnings', shortLabel:'Earn', path:'/earnings' },
+    { icon:'📄', label:'Documents', shortLabel:'Docs', path:'/upload-documents' },
+    { icon:'🔗', label:'Share & Earn', shortLabel:'Share', path:'/my-credits' },
   ];
 
   const adminTabs = [
-    { icon:'🏠', label:'Home', path:'/home' },
-    { icon:'🛡️', label:'Dashboard', path:'/admin' },
+    { icon:'🏠', label:'Home', shortLabel:'Home', path:'/home' },
+    { icon:'🛡️', label:'Dashboard', shortLabel:'Dashboard', path:'/admin' },
   ];
 
   const tabs = !user ? [] : user.role==='professional' ? proTabs : user.role==='admin' ? adminTabs : customerTabs;
+  const isMobile = window.innerWidth < 480;
 
   const tabStyle = (p) => ({
     display:'flex', alignItems:'center', gap:6,
@@ -151,12 +152,15 @@ export default function AppNavbar() {
             WebkitOverflowScrolling:'touch', background:'#FAFBFF',
           }}
         >
-          {tabs.map(tab => (
-            <Link key={tab.path} to={tab.path} style={tabStyle(tab.path)}>
-              <span>{tab.icon}</span>
-              <span>{tab.label}</span>
-            </Link>
-          ))}
+          {tabs.map(tab => {
+            const label = isMobile ? tab.shortLabel : tab.label;
+            return (
+              <Link key={tab.path} to={tab.path} style={tabStyle(tab.path)}>
+                <span>{tab.icon}</span>
+                <span>{label}</span>
+              </Link>
+            );
+          })}
         </div>
       )}
 

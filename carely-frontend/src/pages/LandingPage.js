@@ -40,7 +40,10 @@ export default function LandingPage() {
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <Link to="/login" className="landing-nav-btn" style={{ padding: '10px 22px', border: '1.5px solid', borderColor: scrolled ? '#2563EB' : 'rgba(255,255,255,0.6)', borderRadius: 10, color: scrolled ? '#2563EB' : '#FFFFFF', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>Sign In</Link>
-          <Link to="/register" className="landing-nav-btn" style={{ padding: '10px 22px', background: scrolled ? '#2563EB' : '#FFFFFF', borderRadius: 10, color: scrolled ? '#FFFFFF' : '#1E3A8A', fontWeight: 800, fontSize: 14, textDecoration: 'none', boxShadow: '0 2px 12px rgba(37,99,235,0.25)' }}>Get Started Free</Link>
+          <Link to="/register" className="landing-nav-btn" style={{ padding: '10px 22px', background: scrolled ? '#2563EB' : '#FFFFFF', borderRadius: 10, color: scrolled ? '#FFFFFF' : '#1E3A8A', fontWeight: 800, fontSize: 14, textDecoration: 'none', boxShadow: '0 2px 12px rgba(37,99,235,0.25)' }}>
+            <span className="landing-btn-text-full">Get Started Free</span>
+            <span className="landing-btn-text-short">Get Started</span>
+          </Link>
         </div>
       </nav>
 

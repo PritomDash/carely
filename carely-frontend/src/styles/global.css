@@ -859,10 +859,11 @@ img { max-width: 100%; height: auto; }
 }
 .landing-scroll-indicator { animation: landingBounce 2s infinite; }
 
+.landing-btn-text-short { display: none; }
+
 @media (max-width: 768px) {
   .landing-nav { padding: 0 16px !important; }
   .landing-nav-btn {
-    padding: 7px 14px !important;
     font-size: 13px !important;
     border-radius: 8px !important;
   }
@@ -896,6 +897,12 @@ img { max-width: 100%; height: auto; }
   .landing-cta-buttons { flex-direction: column !important; }
   .landing-cta-buttons a { width: 100%; box-sizing: border-box; text-align: center; }
   .landing-section { padding: 48px 20px !important; }
+}
+
+@media (max-width: 600px) {
+  .landing-nav-btn { padding: 8px 12px !important; }
+  .landing-btn-text-full { display: none; }
+  .landing-btn-text-short { display: inline; }
 }
 
 /* Login / Register premium split layout */

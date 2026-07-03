@@ -99,7 +99,18 @@ function Leaderboard() {
                 <img src={fileUrl(p.profilePhoto)} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : getInitials(p.name)}
             </div>
-            <div style={{ fontWeight: 700, fontSize: isMobile ? 12 : 13 }}>{p.name}</div>
+            <div style={{
+              fontWeight: 700,
+              fontSize: isMobile ? 12 : 13,
+              color: '#1A1A2E',
+              marginBottom: 4,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              width: '100%',
+            }}>
+              {p.name}
+            </div>
             <div style={{ fontSize: 11, color: '#64748B', marginTop: 2 }}>{p.professionalType}</div>
             <div style={{ marginTop: 4, fontSize: 12, color: '#F59E0B' }}>
               ★ {p.rating ? p.rating.toFixed(1) : 'New'}
