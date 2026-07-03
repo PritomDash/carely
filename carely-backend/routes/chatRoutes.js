@@ -8,7 +8,7 @@ const User = require('../models/user');
 const anyAuth = require('../middlewares/anyAuthMiddleware');
 const adminAuth = require('../middlewares/adminAuthMiddleware');
 
-// Send message - only allowed within a confirmed booking
+// Send message - only allowed once a confirmed booking exists between the two users
 router.post('/send', anyAuth, async (req, res) => {
   try {
     const { recipient, message, bookingId } = req.body;
@@ -17,15 +17,17 @@ router.post('/send', anyAuth, async (req, res) => {
     if (!recipient || !message?.trim())
       return res.status(400).json({ error: 'Recipient and message required' });
 
-    // If bookingId provided, verify it is confirmed and involves both parties
-    if (bookingId) {
+    // Admins can message anyone; otherwise a confirmed booking must exist between the pair.
+    if (req.user.role !== 'admin') {
       const booking = await Booking.findOne({
-        _id: bookingId,
         status: 'Confirmed',
-        $or: [{ customer: sender }, { professional: sender }]
+        $or: [
+          { customer: sender, professional: recipient },
+          { customer: recipient, professional: sender },
+        ]
       });
       if (!booking)
-        return res.status(403).json({ error: 'No confirmed booking found for this conversation' });
+        return res.status(403).json({ error: 'You can only chat after a confirmed booking with this user' });
     }
 
     const saved = await Chat.create({ sender, recipient, bookingId: bookingId || undefined, message });

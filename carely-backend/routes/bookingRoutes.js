@@ -342,19 +342,20 @@ router.post('/accept/:id', authMiddleware, async (req, res) => {
     let settings = await Settings.findOne();
     if (!settings) settings = await Settings.create({});
     if (settings.creditsEnabled) {
+      const cost = settings.bookingAcceptCreditCost ?? 1;
       const pro = await User.findById(req.user._id);
-      if (pro.credits < 1) {
+      if (pro.credits < cost) {
         return res.status(403).json({
           message: 'You do not have enough credits to accept this booking. Please top up your credits.',
           creditsEnabled: true,
           currentCredits: pro.credits,
         });
       }
-      pro.credits -= 1;
-      pro.totalCreditsUsed = (pro.totalCreditsUsed || 0) + 1;
+      pro.credits -= cost;
+      pro.totalCreditsUsed = (pro.totalCreditsUsed || 0) + cost;
       await pro.save();
       await CreditTransaction.create({
-        professional: pro._id, type: 'deduct', credits: 1,
+        professional: pro._id, type: 'deduct', credits: cost,
         note: 'Credit used to accept booking', bookingId: booking._id
       });
     }
@@ -472,6 +473,10 @@ router.post('/decline/:id', authMiddleware, async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id).populate('customer professional');
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
+
+    if (req.user.role !== 'professional' ||
+        booking.professional._id.toString() !== req.user._id.toString())
+      return res.status(403).json({ message: 'Not authorized' });
 
     booking.status = 'Declined';
     booking.isActive = false;

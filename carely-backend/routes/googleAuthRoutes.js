@@ -3,6 +3,8 @@ const router = express.Router();
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const User = require('../models/user');
+const CreditTransaction = require('../models/CreditTransaction');
+const Settings = require('../models/Settings');
 const jwt = require('jsonwebtoken');
 
 const googleConfigured = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
@@ -16,6 +18,10 @@ if (googleConfigured) {
     try {
       let user = await User.findOne({ email: profile.emails[0].value });
       if (!user) {
+        let settings = await Settings.findOne();
+        if (!settings) settings = await Settings.create({});
+        const startingCredits = settings.customerFreeCredits ?? 10;
+
         user = await User.create({
           name: profile.displayName,
           email: profile.emails[0].value,
@@ -24,7 +30,16 @@ if (googleConfigured) {
           role: 'customer',
           isVerified: true,
           profileApproved: true,
-          profilePhoto: profile.photos[0]?.value || null
+          profilePhoto: profile.photos[0]?.value || null,
+          credits: startingCredits,
+          totalCreditsReceived: startingCredits,
+        });
+
+        await CreditTransaction.create({
+          professional: user._id,
+          type: 'bonus',
+          credits: startingCredits,
+          note: 'Welcome bonus',
         });
       }
       return done(null, user);

@@ -3,6 +3,7 @@ const router = express.Router();
 const User = require('../models/user');
 const CreditTransaction = require('../models/CreditTransaction');
 const Notification = require('../models/Notification');
+const Settings = require('../models/Settings');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
@@ -29,6 +30,7 @@ router.post('/register', upload.fields([
       hourlyRate, weekdayRate, saturdayRate, sundayRate,
       location, availability,
       nidNumber, bmdc, bnmc, bkashNumber, nagadNumber,
+      referralCode: referralCodeFromBody,
     } = req.body;
 
     if (!name || !email || !password || !phone || !role)
@@ -70,12 +72,33 @@ router.post('/register', upload.fields([
     const user = new User(userData);
     await user.save();
 
+    let settings = await Settings.findOne();
+    if (!settings) settings = await Settings.create({});
+
+    const startingCredits = userData.role === 'professional'
+      ? (settings.freeCreditsAmount ?? 500)
+      : (settings.customerFreeCredits ?? 10);
+
+    user.credits = startingCredits;
+    user.totalCreditsReceived = startingCredits;
+    await user.save();
+
+    await CreditTransaction.create({
+      professional: user._id,
+      type: 'bonus',
+      credits: startingCredits,
+      note: 'Welcome bonus',
+    });
+
     const prefix = user.name.split(' ')[0].toUpperCase().slice(0, 4);
     const suffix = Math.random().toString(36).slice(2, 6).toUpperCase();
     user.referralCode = prefix + suffix;
     await user.save();
 
-    const refCode = req.cookies?.referralCode;
+    // referralCode is sent explicitly in the register form (cross-origin cookies
+    // between the Vercel frontend and Render backend are not reliable), falling
+    // back to the cookie for the direct /api/auth/ref/:code redirect flow.
+    const refCode = referralCodeFromBody || req.cookies?.referralCode;
     if (refCode) {
       const referrer = await User.findOne({ referralCode: refCode });
       if (referrer && String(referrer._id) !== String(user._id)) {
@@ -83,10 +106,9 @@ router.post('/register', upload.fields([
         await user.save();
         referrer.referralCount += 1;
         referrer.referralScore += 10;
-        const Settings = require('../models/Settings');
-        const settings = await Settings.findOne();
         if (settings?.creditsEnabled) {
           referrer.credits += 1;
+          referrer.totalCreditsReceived = (referrer.totalCreditsReceived || 0) + 1;
           await CreditTransaction.create({
             professional: referrer._id,
             type: 'bonus',

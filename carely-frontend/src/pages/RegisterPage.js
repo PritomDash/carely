@@ -98,6 +98,9 @@ export default function RegisterPage() {
       formData.append('phone', phone);
       formData.append('role', role);
 
+      const referralCode = localStorage.getItem('carelyReferralCode');
+      if (referralCode) formData.append('referralCode', referralCode);
+
       if (role === 'professional') {
         formData.append('professionalType', professionalType);
         formData.append('experience', experience);
@@ -127,6 +130,7 @@ export default function RegisterPage() {
       }
 
       await api.post('/api/auth/register', formData);
+      localStorage.removeItem('carelyReferralCode');
 
       navigate('/login', { state: { success: 'Account created successfully! Please log in.' } });
     } catch (err) {

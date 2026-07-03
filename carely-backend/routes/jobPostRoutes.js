@@ -19,12 +19,35 @@ router.post('/', authMiddleware, async (req, res) => {
       return res.status(400).json({ message: 'Emergency posts are not currently available' });
     }
 
+    const emergencyCost = settings?.emergencyPostCreditCost ?? 1;
+    let customer;
+    if (isEmergency) {
+      customer = await User.findById(req.user._id);
+      if (customer.credits < emergencyCost) {
+        return res.status(403).json({
+          message: 'You do not have enough credits to post an emergency job. Please top up your credits.',
+          currentCredits: customer.credits,
+        });
+      }
+    }
+
     const post = await JobPost.create({
       customer: req.user._id,
       title, description, serviceType, location, schedule,
       bookingType, budgetBDT,
       isEmergency: !!isEmergency
     });
+
+    if (isEmergency) {
+      customer.credits -= emergencyCost;
+      customer.totalCreditsUsed = (customer.totalCreditsUsed || 0) + emergencyCost;
+      await customer.save();
+      await CreditTransaction.create({
+        professional: customer._id, type: 'deduct', credits: emergencyCost,
+        note: 'Emergency post: ' + title,
+        jobPostId: post._id,
+      });
+    }
 
     if (isEmergency && req.io) {
       const pros = await User.find({
@@ -155,11 +178,12 @@ router.post('/:id/select/:proId', authMiddleware, async (req, res) => {
 
     const settings = await Settings.findOne();
     const creditsEnabled = settings?.creditsEnabled ?? false;
+    const cost = settings?.jobSelectCreditCost ?? 1;
 
     const pro = await User.findById(req.params.proId);
     if (!pro) return res.status(404).json({ message: 'Professional not found' });
 
-    if (creditsEnabled && pro.credits < 1) {
+    if (creditsEnabled && pro.credits < cost) {
       await Notification.create({
         user: pro._id, type: 'jobpost',
         message: 'You were selected for "' + post.title + '" but have insufficient credits. Top up within 24h to confirm.',
@@ -170,11 +194,11 @@ router.post('/:id/select/:proId', authMiddleware, async (req, res) => {
 
     // Deduct credit if enabled
     if (creditsEnabled) {
-      pro.credits -= 1;
-      pro.totalCreditsUsed += 1;
+      pro.credits -= cost;
+      pro.totalCreditsUsed = (pro.totalCreditsUsed || 0) + cost;
       await pro.save();
       await CreditTransaction.create({
-        professional: pro._id, type: 'deduct', credits: 1,
+        professional: pro._id, type: 'deduct', credits: cost,
         note: 'Selected for job post: ' + post.title,
         jobPostId: post._id
       });

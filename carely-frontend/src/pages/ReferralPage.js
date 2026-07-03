@@ -19,7 +19,10 @@ export default function ReferralPage() {
 
   useEffect(() => {
     if (code) {
-      document.cookie = 'referralCode=' + code + '; max-age=' + (7 * 24 * 60 * 60) + '; path=/';
+      // The frontend (Vercel) and backend (Render) are different origins, so a
+      // cookie set here can never reach the backend. Store it same-origin in
+      // localStorage instead and have RegisterPage.js send it explicitly.
+      localStorage.setItem('carelyReferralCode', code);
     }
   }, [code]);
 
