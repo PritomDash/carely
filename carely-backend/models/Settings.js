@@ -1,28 +1,56 @@
 const mongoose = require('mongoose');
 
 const creditPackSchema = new mongoose.Schema({
-  credits: Number, price: Number, label: String
+  credits: Number,
+  priceBDT: Number,
+  label: String,
+  popular: Boolean,
 }, { _id: false });
 
 const settingsSchema = new mongoose.Schema({
   creditsEnabled:         { type: Boolean, default: false },
   emergencyPostEnabled:   { type: Boolean, default: false },
   cashPaymentEnabled:     { type: Boolean, default: false },
-  paymentGatewayEnabled:  { type: Boolean, default: false },
   featuredListingEnabled: { type: Boolean, default: false },
   subscriptionEnabled:    { type: Boolean, default: false },
   commissionRate:   { type: Number, default: 15 },
   emergencyPostFee: { type: Number, default: 75 },
+
+  // Credit settings
+  freeCreditsEnabled:      { type: Boolean, default: true },
+  freeCreditsAmount:       { type: Number, default: 500 },
+  customerFreeCredits:     { type: Number, default: 10 },
+  bookingAcceptCreditCost: { type: Number, default: 1 },
+  jobSelectCreditCost:     { type: Number, default: 1 },
+  emergencyPostCreditCost: { type: Number, default: 1 },
+
+  // Credit packs
   creditPacks: {
     type: [creditPackSchema],
     default: [
-      { credits: 10, price: 500,  label: '10 credits - 500 BDT' },
-      { credits: 20, price: 900,  label: '20 credits - 900 BDT' },
-      { credits: 50, price: 2000, label: '50 credits - 2000 BDT' },
+      { credits: 50,  priceBDT: 200,  label: '50 credits',  popular: false },
+      { credits: 150, priceBDT: 500,  label: '150 credits', popular: true  },
+      { credits: 400, priceBDT: 1200, label: '400 credits', popular: false },
     ]
   },
+
+  // Manual top up (always available)
+  manualTopUpEnabled: { type: Boolean, default: true },
   platformBkash: { type: String, default: '' },
   platformNagad: { type: String, default: '' },
+
+  // Payment gateway (disabled until merchant account ready)
+  paymentGatewayEnabled:  { type: Boolean, default: false },
+  paymentGatewayProvider: { type: String, enum: ['shurjopay', 'sslcommerz', 'none'], default: 'none' },
+
+  // ShurjoPay credentials (empty until merchant account)
+  shurjopayUsername:     { type: String, default: '' },
+  shurjopayPassword:     { type: String, default: '' },
+  shurjopayClientId:     { type: String, default: '' },
+  shurjopayClientSecret: { type: String, default: '' },
+  shurjopayBaseUrl:      { type: String, default: 'https://sandbox.shurjopayment.com' },
+
+  // SSLCommerz credentials (empty until merchant account)
   sslcommerzStoreId:  { type: String, default: '' },
   sslcommerzPassword: { type: String, default: '' },
   sslcommerzSandbox:  { type: Boolean, default: true },

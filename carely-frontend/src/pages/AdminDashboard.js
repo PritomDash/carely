@@ -320,94 +320,642 @@ function JobPostsTab() {
   );
 }
 
-function CreditsTab() {
-  const [pros, setPros] = useState([]);
+function PaymentGatewaySection() {
+  const [settings, setSettings] = useState(null);
+  const [provider, setProvider] = useState('shurjopay');
+  const [fields, setFields] = useState({});
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [testMsg, setTestMsg] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [amounts, setAmounts] = useState({});
-  const [notes, setNotes] = useState({});
-  const [busyId, setBusyId] = useState(null);
 
-  const fetchCredits = useCallback(() => {
+  const fetchSettings = useCallback(() => {
     setLoading(true);
-    api.get('/api/admin/credits')
-      .then((res) => setPros(res.data || []))
-      .catch(() => setError('Failed to load credits'))
+    api.get('/api/admin/settings')
+      .then((res) => {
+        setSettings(res.data);
+        setProvider(res.data.paymentGatewayProvider !== 'none' ? res.data.paymentGatewayProvider : 'shurjopay');
+        setFields({
+          shurjopayUsername: res.data.shurjopayUsername || '',
+          shurjopayPassword: res.data.shurjopayPassword || '',
+          shurjopayClientId: res.data.shurjopayClientId || '',
+          shurjopayClientSecret: res.data.shurjopayClientSecret || '',
+          shurjopayBaseUrl: res.data.shurjopayBaseUrl || 'https://sandbox.shurjopayment.com',
+          sslcommerzStoreId: res.data.sslcommerzStoreId || '',
+          sslcommerzPassword: res.data.sslcommerzPassword || '',
+          sslcommerzSandbox: res.data.sslcommerzSandbox !== false,
+        });
+      })
+      .catch(() => setError('Failed to load settings'))
       .finally(() => setLoading(false));
   }, []);
 
-  useEffect(() => { fetchCredits(); }, [fetchCredits]);
+  useEffect(() => { fetchSettings(); }, [fetchSettings]);
 
-  const handleAdd = async (id) => {
+  const setFieldVal = (k, v) => setFields((f) => ({ ...f, [k]: v }));
+
+  const handleToggleEnabled = async () => {
     setError(''); setSuccess('');
-    const credits = Number(amounts[id]);
-    if (!credits) {
-      setError('Enter a non-zero credit amount.');
-      return;
-    }
-    setBusyId(id);
+    const next = !settings.paymentGatewayEnabled;
+    setSettings((s) => ({ ...s, paymentGatewayEnabled: next }));
     try {
-      await api.put(`/api/admin/credits/${id}`, { credits, note: notes[id] || '' });
-      setAmounts((a) => ({ ...a, [id]: '' }));
-      setNotes((n) => ({ ...n, [id]: '' }));
-      setSuccess('Credits updated.');
-      fetchCredits();
+      const res = await api.put('/api/admin/settings', { paymentGatewayEnabled: next, paymentGatewayProvider: provider });
+      setSettings(res.data);
+      setSuccess(next ? 'Payment gateway enabled.' : 'Payment gateway disabled.');
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to add credits.');
+      setSettings((s) => ({ ...s, paymentGatewayEnabled: !next }));
+      setError(err.response?.data?.error || 'Failed to update.');
+    }
+  };
+
+  const handleSaveCredentials = async () => {
+    setSaving(true); setError(''); setSuccess(''); setTestMsg('');
+    try {
+      const res = await api.put('/api/admin/settings', { paymentGatewayProvider: provider, ...fields });
+      setSettings(res.data);
+      setSuccess('Gateway credentials saved.');
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to save credentials.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleTestConnection = () => {
+    setTestMsg('');
+    if (provider === 'shurjopay') {
+      const missing = ['shurjopayUsername', 'shurjopayPassword', 'shurjopayClientId', 'shurjopayClientSecret', 'shurjopayBaseUrl']
+        .filter((k) => !fields[k]);
+      if (missing.length > 0) {
+        setTestMsg('⚠️ Missing fields: ' + missing.join(', '));
+        return;
+      }
+      setTestMsg('✓ Configuration looks complete. Save it, then enable the gateway — real connectivity is confirmed on the first live payment attempt.');
+    } else {
+      const missing = ['sslcommerzStoreId', 'sslcommerzPassword'].filter((k) => !fields[k]);
+      if (missing.length > 0) {
+        setTestMsg('⚠️ Missing fields: ' + missing.join(', '));
+        return;
+      }
+      setTestMsg('✓ Configuration looks complete. Save it, then enable the gateway — real connectivity is confirmed on the first live payment attempt.');
+    }
+  };
+
+  if (loading || !settings) return <p className="text-muted">Loading payment gateway...</p>;
+
+  const enabled = !!settings.paymentGatewayEnabled;
+
+  return (
+    <div className="card">
+      <h3 style={{ marginBottom: 12 }}>Payment Gateway Setup</h3>
+      {error && <div className="badge badge-red" style={{ display: 'block', marginBottom: 12, padding: '8px 12px' }}>{error}</div>}
+      {success && <div className="badge badge-green" style={{ display: 'block', marginBottom: 12, padding: '8px 12px' }}>{success}</div>}
+
+      <div style={{
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12,
+        padding: '16px', borderRadius: 12, marginBottom: 16,
+        background: enabled ? '#DCFCE7' : '#F1F5F9',
+      }}>
+        <div>
+          <div style={{ fontWeight: 800, fontSize: 15, color: enabled ? '#15803D' : '#475569' }}>
+            Payment Gateway: {enabled ? `ACTIVE via ${settings.paymentGatewayProvider}` : 'DISABLED'}
+          </div>
+          <div className="text-muted" style={{ marginTop: 4 }}>
+            {enabled ? 'Payments are being processed automatically.' : 'Enable to accept automatic online payments.'}
+          </div>
+        </div>
+        <Toggle label="" description="" value={enabled} onChange={handleToggleEnabled} />
+      </div>
+
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+        <button type="button" className={provider === 'shurjopay' ? 'btn-primary' : 'btn-gray'} onClick={() => setProvider('shurjopay')}>ShurjoPay</button>
+        <button type="button" className={provider === 'sslcommerz' ? 'btn-primary' : 'btn-gray'} onClick={() => setProvider('sslcommerz')}>SSLCommerz</button>
+      </div>
+
+      {provider === 'shurjopay' ? (
+        <div>
+          <div className="form-group">
+            <label>Username</label>
+            <input type="text" value={fields.shurjopayUsername} onChange={(e) => setFieldVal('shurjopayUsername', e.target.value)} />
+          </div>
+          <div className="form-group">
+            <label>Password</label>
+            <input type="password" value={fields.shurjopayPassword} onChange={(e) => setFieldVal('shurjopayPassword', e.target.value)} />
+          </div>
+          <div className="grid-2">
+            <div className="form-group">
+              <label>Client ID</label>
+              <input type="text" value={fields.shurjopayClientId} onChange={(e) => setFieldVal('shurjopayClientId', e.target.value)} />
+            </div>
+            <div className="form-group">
+              <label>Client Secret</label>
+              <input type="password" value={fields.shurjopayClientSecret} onChange={(e) => setFieldVal('shurjopayClientSecret', e.target.value)} />
+            </div>
+          </div>
+          <div className="form-group">
+            <label>Base URL</label>
+            <input type="text" value={fields.shurjopayBaseUrl} onChange={(e) => setFieldVal('shurjopayBaseUrl', e.target.value)} placeholder="https://sandbox.shurjopayment.com" />
+          </div>
+        </div>
+      ) : (
+        <div>
+          <div className="form-group">
+            <label>Store ID</label>
+            <input type="text" value={fields.sslcommerzStoreId} onChange={(e) => setFieldVal('sslcommerzStoreId', e.target.value)} />
+          </div>
+          <div className="form-group">
+            <label>Store Password</label>
+            <input type="password" value={fields.sslcommerzPassword} onChange={(e) => setFieldVal('sslcommerzPassword', e.target.value)} />
+          </div>
+          <Toggle
+            label="Sandbox mode"
+            description="Use SSLCommerz sandbox environment for testing"
+            value={!!fields.sslcommerzSandbox}
+            onChange={(v) => setFieldVal('sslcommerzSandbox', v)}
+          />
+        </div>
+      )}
+
+      {testMsg && <div className="badge badge-blue" style={{ display: 'block', margin: '12px 0', padding: '8px 12px' }}>{testMsg}</div>}
+
+      <div style={{ display: 'flex', gap: 10, marginTop: 16, flexWrap: 'wrap' }}>
+        <button type="button" className="btn btn-outline" onClick={handleTestConnection}>Test Connection</button>
+        <button type="button" className="btn btn-primary" disabled={saving} onClick={handleSaveCredentials}>
+          {saving ? 'Saving...' : 'Save Credentials'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ManualTopUpSection() {
+  const [settings, setSettings] = useState(null);
+  const [platformBkash, setPlatformBkash] = useState('');
+  const [platformNagad, setPlatformNagad] = useState('');
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [busyId, setBusyId] = useState(null);
+  const [rejectingId, setRejectingId] = useState(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  const fetchAll = useCallback(() => {
+    setLoading(true);
+    Promise.all([
+      api.get('/api/admin/settings'),
+      api.get('/api/admin/topup-requests'),
+    ]).then(([settingsRes, reqRes]) => {
+      setSettings(settingsRes.data);
+      setPlatformBkash(settingsRes.data.platformBkash || '');
+      setPlatformNagad(settingsRes.data.platformNagad || '');
+      setRequests(reqRes.data || []);
+    }).catch(() => setError('Failed to load top up data'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  const handleToggle = async () => {
+    setError(''); setSuccess('');
+    const next = !settings.manualTopUpEnabled;
+    setSettings((s) => ({ ...s, manualTopUpEnabled: next }));
+    try {
+      const res = await api.put('/api/admin/settings', { manualTopUpEnabled: next });
+      setSettings(res.data);
+    } catch (err) {
+      setSettings((s) => ({ ...s, manualTopUpEnabled: !next }));
+      setError('Failed to update.');
+    }
+  };
+
+  const handleSaveNumbers = async () => {
+    setSaving(true); setError(''); setSuccess('');
+    try {
+      const res = await api.put('/api/admin/settings', { platformBkash, platformNagad });
+      setSettings(res.data);
+      setSuccess('Platform numbers saved.');
+    } catch (err) {
+      setError('Failed to save.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleApprove = async (id) => {
+    setBusyId(id); setError(''); setSuccess('');
+    try {
+      await api.put(`/api/admin/topup-requests/${id}/approve`);
+      setSuccess('Top up approved.');
+      fetchAll();
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to approve.');
     } finally {
       setBusyId(null);
     }
   };
 
-  if (loading) return <p className="text-muted">Loading credits...</p>;
+  const handleReject = async (id) => {
+    setBusyId(id); setError(''); setSuccess('');
+    try {
+      await api.put(`/api/admin/topup-requests/${id}/reject`, { reason: rejectReason || 'Could not verify transaction' });
+      setSuccess('Top up rejected.');
+      setRejectingId(null);
+      setRejectReason('');
+      fetchAll();
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to reject.');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  if (loading || !settings) return <p className="text-muted">Loading manual top up...</p>;
+
+  const sortedOldestFirst = [...requests].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
 
   return (
-    <div>
-      <h2 style={{ marginBottom: 16 }}>Professional Credits</h2>
-      {error && <div className="badge badge-red" style={{ display: 'block', marginBottom: 16, padding: '8px 12px' }}>{error}</div>}
-      {success && <div className="badge badge-green" style={{ display: 'block', marginBottom: 16, padding: '8px 12px' }}>{success}</div>}
+    <div className="card" style={{ marginTop: 16 }}>
+      <h3 style={{ marginBottom: 12 }}>Manual Top Up Requests</h3>
+      {error && <div className="badge badge-red" style={{ display: 'block', marginBottom: 12, padding: '8px 12px' }}>{error}</div>}
+      {success && <div className="badge badge-green" style={{ display: 'block', marginBottom: 12, padding: '8px 12px' }}>{success}</div>}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {pros.map((p) => (
-          <div key={p._id} className="card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-              <div>
-                <div style={{ fontWeight: 600 }}>{p.name}</div>
-                <div className="text-muted">{p.email}</div>
-              </div>
-              <div style={{ fontSize: 20, fontWeight: 700, color: p.credits < 3 ? '#dc2626' : '#16a34a' }}>
-                {p.credits} credits
-              </div>
-            </div>
+      <Toggle
+        label="Manual Top Up Enabled"
+        description="Allow users to submit bKash/Nagad transaction IDs for manual approval"
+        value={!!settings.manualTopUpEnabled}
+        onChange={handleToggle}
+      />
 
-            <div className="grid-2" style={{ marginTop: 12 }}>
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label>Add/Remove Credits</label>
-                <input
-                  type="number"
-                  value={amounts[p._id] || ''}
-                  onChange={(e) => setAmounts((a) => ({ ...a, [p._id]: e.target.value }))}
-                  placeholder="e.g. 10 or -5"
-                />
-              </div>
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label>Note</label>
-                <input
-                  type="text"
-                  value={notes[p._id] || ''}
-                  onChange={(e) => setNotes((n) => ({ ...n, [p._id]: e.target.value }))}
-                  placeholder="Reason"
-                />
-              </div>
-            </div>
+      <div className="grid-2" style={{ marginTop: 12 }}>
+        <div className="form-group">
+          <label>Platform bKash Number</label>
+          <input type="text" value={platformBkash} onChange={(e) => setPlatformBkash(e.target.value)} placeholder="01XXXXXXXXX" />
+        </div>
+        <div className="form-group">
+          <label>Platform Nagad Number</label>
+          <input type="text" value={platformNagad} onChange={(e) => setPlatformNagad(e.target.value)} placeholder="01XXXXXXXXX" />
+        </div>
+      </div>
+      <button className="btn btn-primary" disabled={saving} onClick={handleSaveNumbers}>
+        {saving ? 'Saving...' : 'Save Numbers'}
+      </button>
 
-            <button className="btn btn-primary" style={{ marginTop: 12 }} disabled={busyId === p._id} onClick={() => handleAdd(p._id)}>
-              {busyId === p._id ? 'Saving...' : 'Update Credits'}
+      <div style={{ marginTop: 20, borderTop: '1px solid #F1F5F9', paddingTop: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+          <h4 style={{ margin: 0 }}>Pending Requests</h4>
+          <span className="badge badge-yellow">{sortedOldestFirst.length} pending</span>
+        </div>
+
+        {sortedOldestFirst.length === 0 ? (
+          <p className="text-muted">No pending requests.</p>
+        ) : (
+          <div className="table-scroll">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>User</th><th>Role</th><th>Credits</th><th>Amount</th><th>Method</th><th>TRX ID</th><th>Submitted</th><th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedOldestFirst.map((r) => (
+                  <tr key={r._id}>
+                    <td>{r.user?.name || '—'}</td>
+                    <td style={{ textTransform: 'capitalize' }}>{r.user?.role}</td>
+                    <td>{r.credits}</td>
+                    <td>{formatBDT(r.amountBDT)}</td>
+                    <td style={{ textTransform: 'capitalize' }}>{r.paymentMethod}</td>
+                    <td>{r.transactionID}</td>
+                    <td>{new Date(r.createdAt).toLocaleString('en-BD')}</td>
+                    <td>
+                      {rejectingId === r._id ? (
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                          <input
+                            type="text"
+                            value={rejectReason}
+                            onChange={(e) => setRejectReason(e.target.value)}
+                            placeholder="Reason"
+                            style={{ width: 120, padding: '4px 8px', fontSize: 12 }}
+                          />
+                          <button className="btn btn-danger" style={{ padding: '4px 8px', fontSize: 12 }} disabled={busyId === r._id} onClick={() => handleReject(r._id)}>Confirm</button>
+                          <button className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: 12 }} onClick={() => setRejectingId(null)}>Cancel</button>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button className="btn btn-success" style={{ padding: '4px 8px', fontSize: 12 }} disabled={busyId === r._id} onClick={() => handleApprove(r._id)}>✓ Approve</button>
+                          <button className="btn btn-danger" style={{ padding: '4px 8px', fontSize: 12 }} disabled={busyId === r._id} onClick={() => { setRejectingId(r._id); setRejectReason(''); }}>✗ Reject</button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function RenewAllSection() {
+  const [settings, setSettings] = useState(null);
+  const [proAmount, setProAmount] = useState(500);
+  const [custAmount, setCustAmount] = useState(10);
+  const [confirming, setConfirming] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    api.get('/api/admin/settings').then((res) => {
+      setSettings(res.data);
+      setProAmount(res.data.freeCreditsAmount ?? 500);
+      setCustAmount(res.data.customerFreeCredits ?? 10);
+    }).catch(() => {});
+  }, []);
+
+  const handleRenew = async () => {
+    setSaving(true); setError(''); setResult(null);
+    try {
+      const res = await api.post('/api/admin/credits/renew-all', { proAmount: Number(proAmount), custAmount: Number(custAmount) });
+      setResult(res.data);
+      setConfirming(false);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Renewal failed.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!settings) return null;
+
+  return (
+    <div className="card" style={{ marginTop: 16 }}>
+      <h3 style={{ marginBottom: 12 }}>Give Free Credits to All Users</h3>
+      {error && <div className="badge badge-red" style={{ display: 'block', marginBottom: 12, padding: '8px 12px' }}>{error}</div>}
+      {result && (
+        <div className="badge badge-green" style={{ display: 'block', marginBottom: 12, padding: '8px 12px' }}>
+          Done! Updated {result.professionalsUpdated} professionals + {result.customersUpdated} customers
+        </div>
+      )}
+
+      <div className="grid-2">
+        <div className="form-group">
+          <label>Professional Credits</label>
+          <input type="number" min="0" value={proAmount} onChange={(e) => setProAmount(e.target.value)} />
+        </div>
+        <div className="form-group">
+          <label>Customer Credits</label>
+          <input type="number" min="0" value={custAmount} onChange={(e) => setCustAmount(e.target.value)} />
+        </div>
+      </div>
+
+      {confirming ? (
+        <div style={{ background: '#FEF3C7', borderRadius: 8, padding: 14 }}>
+          <p style={{ marginBottom: 12, color: '#92400E' }}>
+            Add {proAmount} credits to all professionals and {custAmount} credits to all customers?
+          </p>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn btn-danger" disabled={saving} onClick={handleRenew}>
+              {saving ? 'Renewing...' : 'Yes, Renew for Everyone'}
             </button>
+            <button className="btn btn-secondary" onClick={() => setConfirming(false)}>Cancel</button>
+          </div>
+        </div>
+      ) : (
+        <button className="btn btn-primary" onClick={() => { setConfirming(true); setResult(null); }}>
+          Renew Credits for Everyone
+        </button>
+      )}
+    </div>
+  );
+}
+
+function IndividualCreditsSection() {
+  const [query, setQuery] = useState('');
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState(null);
+  const [amount, setAmount] = useState('');
+  const [note, setNote] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  useEffect(() => {
+    api.get('/api/admin/users')
+      .then((res) => setUsers(res.data || []))
+      .catch(() => setError('Failed to load users'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const matches = query.trim().length === 0 ? [] : users.filter((u) =>
+    u.name?.toLowerCase().includes(query.toLowerCase()) || u.email?.toLowerCase().includes(query.toLowerCase())
+  ).slice(0, 8);
+
+  const handleAdd = async () => {
+    setError(''); setSuccess('');
+    const credits = Number(amount);
+    if (!credits) {
+      setError('Enter a non-zero credit amount.');
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await api.put(`/api/admin/credits/${selected._id}`, { credits, note });
+      setSuccess(`${credits > 0 ? '+' : ''}${credits} credits added. New balance: ${res.data.credits}`);
+      setSelected((s) => ({ ...s, credits: res.data.credits }));
+      setAmount('');
+      setNote('');
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to add credits.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="card" style={{ marginTop: 16 }}>
+      <h3 style={{ marginBottom: 12 }}>Individual User Credits</h3>
+      {error && <div className="badge badge-red" style={{ display: 'block', marginBottom: 12, padding: '8px 12px' }}>{error}</div>}
+      {success && <div className="badge badge-green" style={{ display: 'block', marginBottom: 12, padding: '8px 12px' }}>{success}</div>}
+
+      <div className="form-group">
+        <label>Search by name or email</label>
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => { setQuery(e.target.value); setSelected(null); }}
+          placeholder={loading ? 'Loading users...' : 'Type a name or email'}
+        />
+      </div>
+
+      {matches.length > 0 && !selected && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 12 }}>
+          {matches.map((u) => (
+            <button
+              key={u._id}
+              className="btn btn-secondary"
+              style={{ justifyContent: 'flex-start' }}
+              onClick={() => { setSelected(u); setQuery(u.name); }}
+            >
+              {u.name} <span className="text-muted" style={{ marginLeft: 6 }}>({u.role}) — {u.email}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {selected && (
+        <div style={{ background: '#F7FAFF', borderRadius: 10, padding: 14, marginBottom: 12 }}>
+          <div style={{ fontWeight: 700 }}>{selected.name}</div>
+          <div className="text-muted" style={{ textTransform: 'capitalize' }}>{selected.role}</div>
+          <div style={{ marginTop: 6, fontWeight: 700, color: '#2B7FFF' }}>{selected.credits ?? 0} credits</div>
+
+          <div className="grid-2" style={{ marginTop: 12 }}>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label>Credits to Add</label>
+              <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="e.g. 10 or -5" />
+            </div>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label>Note (optional)</label>
+              <input type="text" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Reason" />
+            </div>
+          </div>
+          <button className="btn btn-primary" style={{ marginTop: 12 }} disabled={saving} onClick={handleAdd}>
+            {saving ? 'Saving...' : 'Add Credits'}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CreditSettingsSection() {
+  const [settings, setSettings] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  useEffect(() => {
+    api.get('/api/admin/settings')
+      .then((res) => setSettings(res.data))
+      .catch(() => setError('Failed to load settings'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const setField = (field, value) => setSettings((s) => ({ ...s, [field]: value }));
+
+  const setPack = (i, field, value) => setSettings((s) => {
+    const packs = [...(s.creditPacks || [])];
+    packs[i] = { ...packs[i], [field]: value };
+    return { ...s, creditPacks: packs };
+  });
+
+  const handleSave = async () => {
+    setSaving(true); setError(''); setSuccess('');
+    try {
+      const res = await api.put('/api/admin/settings', {
+        freeCreditsEnabled: settings.freeCreditsEnabled,
+        freeCreditsAmount: settings.freeCreditsAmount,
+        customerFreeCredits: settings.customerFreeCredits,
+        bookingAcceptCreditCost: settings.bookingAcceptCreditCost,
+        jobSelectCreditCost: settings.jobSelectCreditCost,
+        emergencyPostCreditCost: settings.emergencyPostCreditCost,
+        creditPacks: settings.creditPacks,
+      });
+      setSettings(res.data);
+      setSuccess('Credit settings saved.');
+    } catch (err) {
+      setError('Failed to save settings.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading || !settings) return <p className="text-muted">Loading credit settings...</p>;
+
+  return (
+    <div className="card" style={{ marginTop: 16 }}>
+      <h3 style={{ marginBottom: 12 }}>Credit Settings</h3>
+      {error && <div className="badge badge-red" style={{ display: 'block', marginBottom: 12, padding: '8px 12px' }}>{error}</div>}
+      {success && <div className="badge badge-green" style={{ display: 'block', marginBottom: 12, padding: '8px 12px' }}>{success}</div>}
+
+      <Toggle
+        label="Free Credits Enabled"
+        description="Show 'Credits are FREE' banner to users"
+        value={!!settings.freeCreditsEnabled}
+        onChange={(v) => setField('freeCreditsEnabled', v)}
+      />
+
+      <div className="grid-2" style={{ marginTop: 12 }}>
+        <div className="form-group">
+          <label>Professional Starter Credits</label>
+          <input type="number" min="0" value={settings.freeCreditsAmount ?? 0} onChange={(e) => setField('freeCreditsAmount', Number(e.target.value))} />
+        </div>
+        <div className="form-group">
+          <label>Customer Starter Credits</label>
+          <input type="number" min="0" value={settings.customerFreeCredits ?? 0} onChange={(e) => setField('customerFreeCredits', Number(e.target.value))} />
+        </div>
+      </div>
+
+      <div className="grid-3">
+        <div className="form-group">
+          <label>Booking Accept Cost</label>
+          <input type="number" min="0" value={settings.bookingAcceptCreditCost ?? 1} onChange={(e) => setField('bookingAcceptCreditCost', Number(e.target.value))} />
+        </div>
+        <div className="form-group">
+          <label>Job Selection Cost</label>
+          <input type="number" min="0" value={settings.jobSelectCreditCost ?? 1} onChange={(e) => setField('jobSelectCreditCost', Number(e.target.value))} />
+        </div>
+        <div className="form-group">
+          <label>Emergency Post Cost</label>
+          <input type="number" min="0" value={settings.emergencyPostCreditCost ?? 1} onChange={(e) => setField('emergencyPostCreditCost', Number(e.target.value))} />
+        </div>
+      </div>
+
+      <h4 style={{ margin: '16px 0 10px' }}>Credit Packs</h4>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {(settings.creditPacks || []).map((pack, i) => (
+          <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', background: '#F7FAFF', padding: 10, borderRadius: 8 }}>
+            <span className="text-muted">Pack {i + 1}:</span>
+            <input
+              type="number" min="0" value={pack.credits ?? 0}
+              onChange={(e) => setPack(i, 'credits', Number(e.target.value))}
+              style={{ width: 90, padding: '6px 8px' }}
+            /> credits |{' '}
+            ৳<input
+              type="number" min="0" value={pack.priceBDT ?? 0}
+              onChange={(e) => setPack(i, 'priceBDT', Number(e.target.value))}
+              style={{ width: 90, padding: '6px 8px' }}
+            />
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+              <input type="checkbox" style={{ width: 'auto' }} checked={!!pack.popular} onChange={(e) => setPack(i, 'popular', e.target.checked)} />
+              Popular
+            </label>
           </div>
         ))}
       </div>
+
+      <button className="btn btn-primary" style={{ marginTop: 16 }} disabled={saving} onClick={handleSave}>
+        {saving ? 'Saving...' : 'Save Settings'}
+      </button>
+    </div>
+  );
+}
+
+function CreditsTab() {
+  return (
+    <div>
+      <h2 style={{ marginBottom: 16 }}>Credits & Payments</h2>
+      <PaymentGatewaySection />
+      <ManualTopUpSection />
+      <RenewAllSection />
+      <IndividualCreditsSection />
+      <CreditSettingsSection />
     </div>
   );
 }
@@ -479,8 +1027,6 @@ function SettingsTab() {
         subscriptionEnabled: settings.subscriptionEnabled,
         commissionRate: settings.commissionRate,
         emergencyPostFee: settings.emergencyPostFee,
-        platformBkash: settings.platformBkash,
-        platformNagad: settings.platformNagad,
       });
       setSettings(res.data);
       setSuccess('Settings saved.');
@@ -551,26 +1097,9 @@ function SettingsTab() {
             />
           </div>
         </div>
-        <div className="grid-2">
-          <div className="form-group">
-            <label>Platform bKash Number</label>
-            <input
-              type="text"
-              value={settings.platformBkash || ''}
-              onChange={(e) => setField('platformBkash', e.target.value)}
-              placeholder="01XXXXXXXXX"
-            />
-          </div>
-          <div className="form-group">
-            <label>Platform Nagad Number</label>
-            <input
-              type="text"
-              value={settings.platformNagad || ''}
-              onChange={(e) => setField('platformNagad', e.target.value)}
-              placeholder="01XXXXXXXXX"
-            />
-          </div>
-        </div>
+        <p className="text-muted" style={{ marginBottom: 12 }}>
+          bKash/Nagad numbers and credit pack pricing are managed in the Credits tab.
+        </p>
         <button className="btn btn-primary" disabled={saving} onClick={handleSave}>
           {saving ? 'Saving...' : 'Save Settings'}
         </button>

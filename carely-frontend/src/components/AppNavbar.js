@@ -10,6 +10,7 @@ export default function AppNavbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const [unread, setUnread] = useState(0);
+  const [credits, setCredits] = useState(null);
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -19,6 +20,13 @@ export default function AppNavbar() {
       .then(r => setUnread(r.data.unreadCount || 0))
       .catch(() => {});
   }, [user, location.pathname]);
+
+  useEffect(() => {
+    if (!user) return;
+    api.get('/api/credits/my-balance')
+      .then(r => setCredits(r.data.credits ?? 0))
+      .catch(() => {});
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
@@ -66,9 +74,8 @@ export default function AppNavbar() {
     { icon:'📢', label:'Job Feed', shortLabel:'Jobs', path:'/job-posts' },
     { icon:'💬', label:'Chat', shortLabel:'Chat', path:'/chat-inbox' },
     { icon:'👤', label:'My Profile', shortLabel:'Profile', path:'/edit-profile' },
-    { icon:'💰', label:'Earnings', shortLabel:'Earn', path:'/earnings' },
+    { icon:'💳', label:'Credits & Top Up', shortLabel:'Credits', path:'/my-credits' },
     { icon:'📄', label:'Documents', shortLabel:'Docs', path:'/upload-documents' },
-    { icon:'🔗', label:'Share & Earn', shortLabel:'Share', path:'/my-credits' },
   ];
 
   const adminTabs = [
@@ -122,6 +129,19 @@ export default function AppNavbar() {
                     <div style={{ fontWeight:700, fontSize:15, color:'#1A1A2E' }}>{user.name}</div>
                     <div style={{ fontSize:12, color:'#64748B', marginTop:3 }}>{user.email}</div>
                     <div style={{ marginTop:8, display:'inline-block', padding:'3px 14px', background:'#EBF3FF', color:'#1D4ED8', borderRadius:20, fontSize:12, fontWeight:700, textTransform:'capitalize' }}>{user.role}</div>
+                    {credits != null && (
+                      <div
+                        onClick={() => { navigate('/my-credits'); setOpen(false); }}
+                        style={{
+                          marginTop:10, display:'inline-flex', alignItems:'center', gap:6, cursor:'pointer',
+                          padding:'4px 14px', borderRadius:20, fontSize:12, fontWeight:700,
+                          background: credits < 5 ? '#FEE2E2' : '#EBF3FF',
+                          color: credits < 5 ? '#DC2626' : '#1D4ED8',
+                        }}
+                      >
+                        💳 {credits} credits{credits < 5 ? ' — Top up now' : ''}
+                      </div>
+                    )}
                   </div>
                   <div style={{ borderTop:'1px solid #F1F5F9', paddingTop:8 }}>
                     <button onClick={() => { logout(); navigate('/'); setOpen(false); }} style={{ width:'100%', padding:'11px 14px', background:'none', border:'1px solid #FEE2E2', borderRadius:8, color:'#EF4444', fontWeight:700, fontSize:14, cursor:'pointer', textAlign:'center' }}>

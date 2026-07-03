@@ -24,7 +24,7 @@ import JobPostFeed        from './pages/JobPostFeed';
 import CreateJobPost      from './pages/CreateJobPost';
 import MyJobPosts         from './pages/MyJobPosts';
 import JobPostDetail      from './pages/JobPostDetail';
-import MyCredits          from './pages/MyCredits';
+import CreditsPage        from './pages/CreditsPage';
 import NotFoundPage       from './pages/NotFoundPage';
 import Terms              from './pages/Terms';
 import Privacy            from './pages/Privacy';
@@ -61,7 +61,7 @@ function App() {
           <Route path="/job-posts/:id"          element={<JobPostDetail />} />
           <Route path="/create-job-post"        element={<CreateJobPost />} />
           <Route path="/my-posts"               element={<MyJobPosts />} />
-          <Route path="/my-credits"             element={<MyCredits />} />
+          <Route path="/my-credits"             element={<CreditsPage />} />
           <Route path="/terms"                  element={<Terms />} />
           <Route path="/privacy"                element={<Privacy />} />
           <Route path="/ref/:code"              element={<ReferralPage />} />

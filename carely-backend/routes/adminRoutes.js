@@ -7,6 +7,8 @@ const ChatMessage = require('../models/chatMessage');
 const JobPost = require('../models/JobPost');
 const Settings = require('../models/Settings');
 const CreditTransaction = require('../models/CreditTransaction');
+const TopUpRequest = require('../models/TopUpRequest');
+const { approveTopUp } = require('./creditRoutes');
 const adminAuth = require('../middlewares/adminAuthMiddleware');
 
 // Get all users
@@ -131,7 +133,13 @@ router.put('/settings', adminAuth, async (req, res) => {
       creditsEnabled, emergencyPostEnabled, cashPaymentEnabled,
       paymentGatewayEnabled, featuredListingEnabled, subscriptionEnabled,
       commissionRate, emergencyPostFee, creditPacks,
-      platformBkash, platformNagad
+      platformBkash, platformNagad,
+      freeCreditsEnabled, freeCreditsAmount, customerFreeCredits,
+      bookingAcceptCreditCost, jobSelectCreditCost, emergencyPostCreditCost,
+      manualTopUpEnabled,
+      paymentGatewayProvider,
+      shurjopayUsername, shurjopayPassword, shurjopayClientId, shurjopayClientSecret, shurjopayBaseUrl,
+      sslcommerzStoreId, sslcommerzPassword, sslcommerzSandbox,
     } = req.body;
 
     let settings = await Settings.findOne();
@@ -149,10 +157,143 @@ router.put('/settings', adminAuth, async (req, res) => {
     if (platformBkash          !== undefined) settings.platformBkash          = platformBkash;
     if (platformNagad          !== undefined) settings.platformNagad          = platformNagad;
 
+    if (freeCreditsEnabled      !== undefined) settings.freeCreditsEnabled      = freeCreditsEnabled;
+    if (freeCreditsAmount       !== undefined) settings.freeCreditsAmount       = Number(freeCreditsAmount);
+    if (customerFreeCredits     !== undefined) settings.customerFreeCredits     = Number(customerFreeCredits);
+    if (bookingAcceptCreditCost !== undefined) settings.bookingAcceptCreditCost = Number(bookingAcceptCreditCost);
+    if (jobSelectCreditCost     !== undefined) settings.jobSelectCreditCost     = Number(jobSelectCreditCost);
+    if (emergencyPostCreditCost !== undefined) settings.emergencyPostCreditCost = Number(emergencyPostCreditCost);
+    if (manualTopUpEnabled      !== undefined) settings.manualTopUpEnabled      = manualTopUpEnabled;
+
+    if (paymentGatewayProvider  !== undefined) settings.paymentGatewayProvider  = paymentGatewayProvider;
+    if (shurjopayUsername       !== undefined) settings.shurjopayUsername       = shurjopayUsername;
+    if (shurjopayPassword       !== undefined) settings.shurjopayPassword       = shurjopayPassword;
+    if (shurjopayClientId       !== undefined) settings.shurjopayClientId       = shurjopayClientId;
+    if (shurjopayClientSecret   !== undefined) settings.shurjopayClientSecret   = shurjopayClientSecret;
+    if (shurjopayBaseUrl        !== undefined) settings.shurjopayBaseUrl        = shurjopayBaseUrl;
+    if (sslcommerzStoreId       !== undefined) settings.sslcommerzStoreId       = sslcommerzStoreId;
+    if (sslcommerzPassword      !== undefined) settings.sslcommerzPassword      = sslcommerzPassword;
+    if (sslcommerzSandbox       !== undefined) settings.sslcommerzSandbox       = sslcommerzSandbox;
+
     await settings.save();
     res.json(settings);
   } catch (err) {
     res.status(500).json({ error: 'Failed to update settings' });
+  }
+});
+
+// Get pending top up requests
+router.get('/topup-requests', adminAuth, async (req, res) => {
+  try {
+    const requests = await TopUpRequest.find({ status: 'Pending' })
+      .populate('user', 'name email role phone')
+      .sort({ createdAt: 1 });
+    res.json(requests);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
+// Get all top up requests with filter
+router.get('/topup-requests/all', adminAuth, async (req, res) => {
+  try {
+    const { status } = req.query;
+    const filter = status ? { status } : {};
+    const requests = await TopUpRequest.find(filter)
+      .populate('user', 'name email role')
+      .sort({ createdAt: -1 })
+      .limit(100);
+    res.json(requests);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
+// Approve top up
+router.put('/topup-requests/:id/approve', adminAuth, async (req, res) => {
+  try {
+    const request = await TopUpRequest.findById(req.params.id);
+    if (!request) return res.status(404).json({ error: 'Not found' });
+    if (request.status === 'Approved') return res.status(400).json({ error: 'Already approved' });
+    await approveTopUp(request, req.admin._id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
+// Reject top up
+router.put('/topup-requests/:id/reject', adminAuth, async (req, res) => {
+  try {
+    const request = await TopUpRequest.findById(req.params.id)
+      .populate('user', '_id name');
+    if (!request) return res.status(404).json({ error: 'Not found' });
+
+    request.status = 'Rejected';
+    request.rejectedReason = req.body.reason || 'Could not verify transaction';
+    await request.save();
+
+    await Notification.create({
+      user: request.user._id,
+      type: 'payment',
+      message: 'Your top up request was rejected. Reason: ' + request.rejectedReason,
+      link: '/my-credits'
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
+// Renew all users credits
+router.post('/credits/renew-all', adminAuth, async (req, res) => {
+  try {
+    const { proAmount, custAmount } = req.body;
+    const settings = await Settings.findOne();
+    const proCredits = proAmount || settings?.freeCreditsAmount || 500;
+    const custCredits = custAmount || settings?.customerFreeCredits || 10;
+
+    const professionals = await User.find({ role: 'professional' });
+    const customers = await User.find({ role: 'customer' });
+
+    for (const user of professionals) {
+      user.credits += proCredits;
+      user.totalCreditsReceived = (user.totalCreditsReceived || 0) + proCredits;
+      await user.save();
+      await CreditTransaction.create({
+        professional: user._id, type: 'bonus', credits: proCredits,
+        note: 'Admin credit renewal', addedBy: req.admin._id,
+      });
+      await Notification.create({
+        user: user._id, type: 'payment',
+        message: proCredits + ' free credits added to your account by Carely!',
+        link: '/my-credits'
+      });
+    }
+
+    for (const user of customers) {
+      user.credits += custCredits;
+      user.totalCreditsReceived = (user.totalCreditsReceived || 0) + custCredits;
+      await user.save();
+      await CreditTransaction.create({
+        professional: user._id, type: 'bonus', credits: custCredits,
+        note: 'Admin credit renewal', addedBy: req.admin._id,
+      });
+      await Notification.create({
+        user: user._id, type: 'payment',
+        message: custCredits + ' free credits added to your account by Carely!',
+        link: '/my-credits'
+      });
+    }
+
+    res.json({
+      success: true,
+      professionalsUpdated: professionals.length,
+      customersUpdated: customers.length,
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Renewal failed' });
   }
 });
 
@@ -168,31 +309,33 @@ router.get('/credits', adminAuth, async (req, res) => {
   }
 });
 
-router.put('/credits/:professionalId', adminAuth, async (req, res) => {
+// Add credits to specific user
+router.put('/credits/:userId', adminAuth, async (req, res) => {
   try {
     const { credits, note } = req.body;
-    const pro = await User.findById(req.params.professionalId);
-    if (!pro) return res.status(404).json({ error: 'Professional not found' });
+    const user = await User.findById(req.params.userId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
 
-    pro.credits += Number(credits);
-    await pro.save();
+    user.credits += Number(credits);
+    user.totalCreditsReceived = (user.totalCreditsReceived || 0) + Number(credits);
+    await user.save();
 
     await CreditTransaction.create({
-      professional: pro._id, type: 'purchase',
+      professional: user._id, type: 'bonus',
       credits: Number(credits),
-      note: note || 'Manual credit addition by admin',
-      addedBy: req.admin._id
+      note: note || 'Credits added by admin',
+      addedBy: req.admin._id,
     });
 
     await Notification.create({
-      user: pro._id, type: 'payment',
-      message: credits + ' credits have been added to your account.',
+      user: user._id, type: 'payment',
+      message: credits + ' credits added to your account.',
       link: '/my-credits'
     });
 
-    res.json({ message: 'Credits added', credits: pro.credits });
+    res.json({ success: true, credits: user.credits });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to add credits' });
+    res.status(500).json({ error: 'Failed' });
   }
 });
 

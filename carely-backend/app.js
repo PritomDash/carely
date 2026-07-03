@@ -48,6 +48,7 @@ app.use('/api/admin',         require('./routes/adminRoutes'));
 app.use('/api/admin/chat',    require('./routes/adminChatRoutes'));
 app.use('/api/ads',           require('./routes/adRoutes'));
 app.use('/api/assets',        require('./routes/assetRoutes'));
+app.use('/api/credits',       require('./routes/creditRoutes'));
 
 app.get('/', (req, res) => res.send('🚀 Carely API running'));
 
