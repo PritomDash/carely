@@ -39,9 +39,8 @@ export default function LandingPage() {
           <span style={{ fontSize: 24, fontWeight: 900, color: scrolled ? '#1A1A2E' : '#FFFFFF', letterSpacing: '-0.5px' }}>Carely</span>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <Link to="/blog" className="landing-nav-blog" style={{ color: scrolled ? '#64748B' : 'rgba(255,255,255,0.85)', fontSize: 14, fontWeight: 500, textDecoration: 'none', padding: '8px 12px' }}>Blog</Link>
-          <Link to="/login" style={{ padding: '10px 22px', border: '1.5px solid', borderColor: scrolled ? '#2563EB' : 'rgba(255,255,255,0.6)', borderRadius: 10, color: scrolled ? '#2563EB' : '#FFFFFF', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>Sign In</Link>
-          <Link to="/register" style={{ padding: '10px 22px', background: scrolled ? '#2563EB' : '#FFFFFF', borderRadius: 10, color: scrolled ? '#FFFFFF' : '#1E3A8A', fontWeight: 800, fontSize: 14, textDecoration: 'none', boxShadow: '0 2px 12px rgba(37,99,235,0.25)' }}>Get Started Free</Link>
+          <Link to="/login" className="landing-nav-btn" style={{ padding: '10px 22px', border: '1.5px solid', borderColor: scrolled ? '#2563EB' : 'rgba(255,255,255,0.6)', borderRadius: 10, color: scrolled ? '#2563EB' : '#FFFFFF', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>Sign In</Link>
+          <Link to="/register" className="landing-nav-btn" style={{ padding: '10px 22px', background: scrolled ? '#2563EB' : '#FFFFFF', borderRadius: 10, color: scrolled ? '#FFFFFF' : '#1E3A8A', fontWeight: 800, fontSize: 14, textDecoration: 'none', boxShadow: '0 2px 12px rgba(37,99,235,0.25)' }}>Get Started Free</Link>
         </div>
       </nav>
 
@@ -71,24 +70,24 @@ export default function LandingPage() {
             <span style={{ color: '#93C5FD' }}>Professionals</span> Near You
           </h1>
 
-          <p style={{ fontSize: 19, color: 'rgba(255,255,255,0.88)', marginBottom: 40, lineHeight: 1.7, maxWidth: 560, margin: '0 auto 40px' }}>
+          <p className="landing-hero-subtitle" style={{ fontSize: 19, color: 'rgba(255,255,255,0.88)', marginBottom: 40, lineHeight: 1.7, maxWidth: 560, margin: '0 auto 40px' }}>
             Connect with verified child care, aged care, nursing, and physiotherapy professionals across all 64 districts of Bangladesh.
           </p>
 
-          <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 32 }}>
-            <Link to="/register" style={{
+          <div className="landing-hero-buttons" style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 32 }}>
+            <Link to="/register" className="landing-hero-btn" style={{
               padding: '18px 40px', background: '#FFFFFF', color: '#1E3A8A',
               borderRadius: 14, fontWeight: 900, fontSize: 18, textDecoration: 'none',
               boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
-              display: 'flex', alignItems: 'center', gap: 8,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
             }}>
               Get Started Free →
             </Link>
-            <Link to="/login" style={{
+            <Link to="/login" className="landing-hero-btn" style={{
               padding: '18px 40px', background: 'rgba(255,255,255,0.12)',
               color: '#FFFFFF', borderRadius: 14, fontWeight: 700, fontSize: 18,
               textDecoration: 'none', border: '2px solid rgba(255,255,255,0.35)',
-              backdropFilter: 'blur(8px)',
+              backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
               Sign In
             </Link>
@@ -101,9 +100,9 @@ export default function LandingPage() {
             </a>
           </div>
 
-          <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <div className="landing-hero-badges" style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
             {['✓ Verified Professionals', '🔒 Secure Booking', '💬 In-App Chat', '📍 All 64 Districts'].map(b => (
-              <div key={b} style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 20, padding: '7px 16px', color: 'rgba(255,255,255,0.9)', fontSize: 13, fontWeight: 500 }}>
+              <div key={b} className="landing-hero-badge" style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 20, padding: '7px 16px', color: 'rgba(255,255,255,0.9)', fontSize: 13, fontWeight: 500 }}>
                 {b}
               </div>
             ))}

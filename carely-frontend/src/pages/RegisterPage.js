@@ -182,10 +182,12 @@ export default function RegisterPage() {
         justifyContent: 'center', padding: '60px 48px',
         background: '#FFFFFF', overflowY: 'auto',
       }}>
-        <a href="/" className="auth-mobile-logo" style={{ display: 'none', alignItems: 'center', gap: 8, textDecoration: 'none', marginBottom: 32 }}>
-          <span style={{ fontSize: 30 }}>💙</span>
-          <span style={{ fontSize: 22, fontWeight: 900, color: '#1A1A2E' }}>Carely</span>
-        </a>
+        <div className="auth-mobile-logo-wrap" style={{ display: 'none', textAlign: 'center', marginBottom: 28 }}>
+          <a href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
+            <span style={{ fontSize: 28 }}>💙</span>
+            <span style={{ fontSize: 22, fontWeight: 900, color: '#1A1A2E' }}>Carely</span>
+          </a>
+        </div>
 
         <div style={{ marginBottom: 28 }}>
           <h1 style={{ fontSize: 30, fontWeight: 900, color: '#1A1A2E', marginBottom: 8 }}>Create Account</h1>
@@ -261,29 +263,29 @@ export default function RegisterPage() {
         <form onSubmit={handleSubmit}>
           <div>
             <label className="form-label">Full Name</label>
-            <input style={inputStyle} type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your full name" required />
+            <input className="auth-input" style={inputStyle} type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your full name" required />
           </div>
 
           <div>
             <label className="form-label">Email</label>
-            <input style={inputStyle} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required />
+            <input className="auth-input" style={inputStyle} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required />
           </div>
 
           <div>
             <label className="form-label">Password</label>
-            <input style={inputStyle} type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Choose a password" required />
+            <input className="auth-input" style={inputStyle} type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Choose a password" required />
           </div>
 
           <div>
             <label className="form-label">Phone Number</label>
-            <input style={inputStyle} type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="01XXXXXXXXX" required />
+            <input className="auth-input" style={inputStyle} type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="01XXXXXXXXX" required />
           </div>
 
           {role === 'professional' && (
             <>
               <div>
                 <label className="form-label">Professional Type</label>
-                <select style={inputStyle} value={professionalType} onChange={(e) => setProfessionalType(e.target.value)} required>
+                <select className="auth-input" style={inputStyle} value={professionalType} onChange={(e) => setProfessionalType(e.target.value)} required>
                   <option value="">Select a type</option>
                   {PROFESSIONAL_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
                 </select>
@@ -291,32 +293,32 @@ export default function RegisterPage() {
 
               <div>
                 <label className="form-label">Experience (years)</label>
-                <input style={inputStyle} type="text" value={experience} onChange={(e) => setExperience(e.target.value)} placeholder="e.g. 3 years" />
+                <input className="auth-input" style={inputStyle} type="text" value={experience} onChange={(e) => setExperience(e.target.value)} placeholder="e.g. 3 years" />
               </div>
 
               <div>
                 <label className="form-label">About / Bio</label>
-                <textarea style={{ ...inputStyle, resize: 'vertical' }} rows={4} value={about} onChange={(e) => setAbout(e.target.value)} placeholder="Tell customers about yourself" />
+                <textarea className="auth-input" style={{ ...inputStyle, resize: 'vertical' }} rows={4} value={about} onChange={(e) => setAbout(e.target.value)} placeholder="Tell customers about yourself" />
               </div>
 
               <div className="grid-2">
                 <div>
                   <label className="form-label">Hourly Rate (৳ BDT)</label>
-                  <input style={inputStyle} type="number" min="0" value={hourlyRate} onChange={(e) => setHourlyRate(e.target.value)} placeholder="e.g. 500" />
+                  <input className="auth-input" style={inputStyle} type="number" min="0" value={hourlyRate} onChange={(e) => setHourlyRate(e.target.value)} placeholder="e.g. 500" />
                 </div>
                 <div>
                   <label className="form-label">Weekday Rate (৳ BDT)</label>
-                  <input style={inputStyle} type="number" min="0" value={weekdayRate} onChange={(e) => setWeekdayRate(e.target.value)} placeholder="e.g. 500" />
+                  <input className="auth-input" style={inputStyle} type="number" min="0" value={weekdayRate} onChange={(e) => setWeekdayRate(e.target.value)} placeholder="e.g. 500" />
                 </div>
               </div>
               <div className="grid-2">
                 <div>
                   <label className="form-label">Saturday Rate (৳ BDT)</label>
-                  <input style={inputStyle} type="number" min="0" value={saturdayRate} onChange={(e) => setSaturdayRate(e.target.value)} placeholder="e.g. 600" />
+                  <input className="auth-input" style={inputStyle} type="number" min="0" value={saturdayRate} onChange={(e) => setSaturdayRate(e.target.value)} placeholder="e.g. 600" />
                 </div>
                 <div>
                   <label className="form-label">Sunday Rate (৳ BDT)</label>
-                  <input style={inputStyle} type="number" min="0" value={sundayRate} onChange={(e) => setSundayRate(e.target.value)} placeholder="e.g. 600" />
+                  <input className="auth-input" style={inputStyle} type="number" min="0" value={sundayRate} onChange={(e) => setSundayRate(e.target.value)} placeholder="e.g. 600" />
                 </div>
               </div>
 
@@ -327,7 +329,7 @@ export default function RegisterPage() {
 
               <div>
                 <label className="form-label">Area (optional)</label>
-                <input style={inputStyle} type="text" value={area} onChange={(e) => setArea(e.target.value)} placeholder="e.g. Road 5, House 12" />
+                <input className="auth-input" style={inputStyle} type="text" value={area} onChange={(e) => setArea(e.target.value)} placeholder="e.g. Road 5, House 12" />
               </div>
 
               <div style={{ marginBottom: 16 }}>
@@ -389,30 +391,30 @@ export default function RegisterPage() {
               {isNurseOrPhysio && (
                 <div>
                   <label className="form-label">BMDC Registration Number</label>
-                  <input style={inputStyle} type="text" value={bmdc} onChange={(e) => setBmdc(e.target.value)} placeholder="BMDC registration number" />
+                  <input className="auth-input" style={inputStyle} type="text" value={bmdc} onChange={(e) => setBmdc(e.target.value)} placeholder="BMDC registration number" />
                 </div>
               )}
 
               {isNurse && (
                 <div>
                   <label className="form-label">BNMC Registration Number</label>
-                  <input style={inputStyle} type="text" value={bnmc} onChange={(e) => setBnmc(e.target.value)} placeholder="BNMC registration number" />
+                  <input className="auth-input" style={inputStyle} type="text" value={bnmc} onChange={(e) => setBnmc(e.target.value)} placeholder="BNMC registration number" />
                 </div>
               )}
 
               <div>
                 <label className="form-label">NID Number</label>
-                <input style={inputStyle} type="text" value={nidNumber} onChange={(e) => setNidNumber(e.target.value)} placeholder="National ID number" />
+                <input className="auth-input" style={inputStyle} type="text" value={nidNumber} onChange={(e) => setNidNumber(e.target.value)} placeholder="National ID number" />
               </div>
 
               <div className="grid-2">
                 <div>
                   <label className="form-label">bKash Number</label>
-                  <input style={inputStyle} type="text" value={bkashNumber} onChange={(e) => setBkashNumber(e.target.value)} placeholder="01XXXXXXXXX" />
+                  <input className="auth-input" style={inputStyle} type="text" value={bkashNumber} onChange={(e) => setBkashNumber(e.target.value)} placeholder="01XXXXXXXXX" />
                 </div>
                 <div>
                   <label className="form-label">Nagad Number</label>
-                  <input style={inputStyle} type="text" value={nagadNumber} onChange={(e) => setNagadNumber(e.target.value)} placeholder="01XXXXXXXXX" />
+                  <input className="auth-input" style={inputStyle} type="text" value={nagadNumber} onChange={(e) => setNagadNumber(e.target.value)} placeholder="01XXXXXXXXX" />
                 </div>
               </div>
             </>

@@ -119,9 +119,9 @@ function SearchHero({ keyword, setKeyword, location, setLocation, serviceType, s
   };
 
   return (
-    <div style={{ background: 'linear-gradient(135deg, #1E3A8A, #2563EB)', padding: '40px 24px' }}>
+    <div style={{ background: 'linear-gradient(135deg, #1E3A8A, #2563EB)', padding: isMobile ? '28px 16px' : '40px 24px' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-        <h1 style={{ color: 'white', fontSize: 28, fontWeight: 800, marginBottom: 6 }}>
+        <h1 style={{ color: 'white', fontSize: isMobile ? 20 : 28, fontWeight: 800, marginBottom: 6 }}>
           Find Care Professionals Near You
         </h1>
         <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: 15, marginBottom: 24 }}>
@@ -192,6 +192,86 @@ function ProfessionalsGrid({ professionals, loading, cols }) {
         const typeColor = TYPE_COLORS[p.professionalType] || { bg: '#F1F5F9', text: '#475569' };
         const compact = cols <= 2;
         const avatarSize = compact ? 48 : 60;
+
+        const buttons = (fontSize, padding) => (
+          <div className="pro-card-buttons" style={{ display: 'flex', gap: 8 }}>
+            <button
+              className="btn-primary"
+              style={{ flex: 1, fontSize, padding }}
+              onClick={() => navigate(`/view-profile/${p._id}`)}
+            >
+              View Profile
+            </button>
+            <button
+              className="btn-primary"
+              style={{ flex: 1, fontSize, padding }}
+              onClick={() => navigate(`/book/${p._id}`)}
+            >
+              Book
+            </button>
+            <button
+              className="btn-gray"
+              style={{ flex: 1, fontSize, padding }}
+              onClick={() => navigate(`/chat/${p._id}`)}
+            >
+              Chat
+            </button>
+          </div>
+        );
+
+        if (cols === 1) {
+          return (
+            <div
+              key={p._id}
+              style={{
+                display: 'flex', gap: 14, alignItems: 'flex-start',
+                background: 'white', border: '1px solid #E8EDF3', borderRadius: 14,
+                padding: 14, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', position: 'relative',
+              }}
+            >
+              {p.isFeatured && (
+                <span style={{
+                  position: 'absolute', top: 10, right: 10, background: '#FEF3C7', color: '#B45309',
+                  fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 999,
+                }}>
+                  ⭐ Featured
+                </span>
+              )}
+              <div style={{ flexShrink: 0 }}>
+                {p.profilePhoto ? (
+                  <img className="pro-avatar" src={fileUrl(p.profilePhoto)} alt={p.name} style={{ width: 56, height: 56 }} />
+                ) : (
+                  <div className="pro-avatar" style={{ width: 56, height: 56 }}>{getInitials(p.name)}</div>
+                )}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="pro-name" style={{ fontSize: 15, fontWeight: 700 }}>{p.name}</div>
+                <div className="pro-meta" style={{ fontSize: 12 }}>
+                  <MapPin size={11} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                  {formatLocation(p.location)}
+                </div>
+                <div style={{ marginTop: 4 }}>
+                  <span className="badge" style={{ background: typeColor.bg, color: typeColor.text, fontSize: 10 }}>
+                    {p.professionalType}
+                  </span>
+                  {p.isVerified && <span className="badge badge-blue" style={{ fontSize: 10, marginLeft: 4 }}>Verified</span>}
+                </div>
+                <div className="pro-meta" style={{ fontSize: 12, marginTop: 4 }}>
+                  <Clock size={11} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                  {p.experience || 'Experience not specified'}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                  <Stars rating={p.rating} />
+                </div>
+                <div style={{ fontWeight: 800, color: '#2B7FFF', fontSize: 14, marginTop: 4, marginBottom: 8 }}>
+                  {formatBDT(p.weekdayRate || p.hourlyRate)}/hr
+                </div>
+                {buttons(12, '8px 0')}
+              </div>
+            </div>
+          );
+        }
+
         return (
           <div
             key={p._id}
@@ -242,29 +322,7 @@ function ProfessionalsGrid({ professionals, loading, cols }) {
               {formatBDT(p.weekdayRate || p.hourlyRate)}/hr
             </div>
 
-            <div className="pro-card-buttons">
-              <button
-                className="btn-primary"
-                style={{ fontSize: compact ? 12 : 13, padding: compact ? '7px 4px' : '8px 0' }}
-                onClick={() => navigate(`/view-profile/${p._id}`)}
-              >
-                View Profile
-              </button>
-              <button
-                className="btn-primary"
-                style={{ fontSize: compact ? 12 : 13, padding: compact ? '7px 4px' : '8px 0' }}
-                onClick={() => navigate(`/book/${p._id}`)}
-              >
-                Book
-              </button>
-              <button
-                className="btn-gray"
-                style={{ fontSize: compact ? 12 : 13, padding: compact ? '7px 4px' : '8px 0' }}
-                onClick={() => navigate(`/chat/${p._id}`)}
-              >
-                Chat
-              </button>
-            </div>
+            {buttons(compact ? 12 : 13, compact ? '7px 4px' : '8px 0')}
           </div>
         );
       })}
@@ -287,7 +345,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
 
   const width = useWindowWidth();
-  const cols = width < 480 ? 1 : width < 700 ? 2 : width < 1024 ? 3 : 4;
+  const cols = width < 600 ? 1 : width < 900 ? 2 : width < 1200 ? 3 : 4;
   const isMobile = width < 768;
 
   const runSearch = useCallback(() => {

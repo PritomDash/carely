@@ -119,10 +119,12 @@ export default function LoginPage() {
         justifyContent: 'center', padding: '60px 48px',
         background: '#FFFFFF', overflowY: 'auto',
       }}>
-        <a href="/" className="auth-mobile-logo" style={{ display: 'none', alignItems: 'center', gap: 8, textDecoration: 'none', marginBottom: 32 }}>
-          <span style={{ fontSize: 30 }}>💙</span>
-          <span style={{ fontSize: 22, fontWeight: 900, color: '#1A1A2E' }}>Carely</span>
-        </a>
+        <div className="auth-mobile-logo-wrap" style={{ display: 'none', textAlign: 'center', marginBottom: 28 }}>
+          <a href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
+            <span style={{ fontSize: 28 }}>💙</span>
+            <span style={{ fontSize: 22, fontWeight: 900, color: '#1A1A2E' }}>Carely</span>
+          </a>
+        </div>
 
         <div style={{ marginBottom: 36 }}>
           <h1 style={{ fontSize: 30, fontWeight: 900, color: '#1A1A2E', marginBottom: 8 }}>Sign In</h1>
@@ -160,6 +162,7 @@ export default function LoginPage() {
           <div>
             <label className="form-label">Email</label>
             <input
+              className="auth-input"
               style={inputStyle}
               type="email"
               value={email}
@@ -172,6 +175,7 @@ export default function LoginPage() {
           <div style={{ position: 'relative' }}>
             <label className="form-label">Password</label>
             <input
+              className="auth-input"
               style={{ ...inputStyle, paddingRight: 60 }}
               type={showPassword ? 'text' : 'password'}
               value={password}

@@ -17,12 +17,20 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background: #F5F7FA;
   color: #1A1A2E;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
 a { color: inherit; text-decoration: none; }
@@ -756,6 +764,7 @@ img { max-width: 100%; height: auto; }
 @media (max-width: 768px) {
   .btn-primary, .btn-outline, .btn-danger, .btn-success, .btn-warning, .btn-gray, .btn {
     min-height: 44px;
+    min-width: 44px;
     font-size: 14px;
   }
   .form-input,
@@ -852,10 +861,23 @@ img { max-width: 100%; height: auto; }
 
 @media (max-width: 768px) {
   .landing-nav { padding: 0 16px !important; }
-  .landing-nav-blog { display: none !important; }
+  .landing-nav-btn {
+    padding: 7px 14px !important;
+    font-size: 13px !important;
+    border-radius: 8px !important;
+  }
   .landing-hero { padding: 100px 20px 60px !important; height: auto !important; min-height: 0 !important; }
-  .landing-hero-title { font-size: 32px !important; letter-spacing: -1px !important; }
-  .landing-stats-row { gap: 16px !important; }
+  .landing-hero-title { font-size: 32px !important; letter-spacing: -0.5px !important; }
+  .landing-hero-subtitle { font-size: 15px !important; }
+  .landing-hero-buttons { flex-direction: column !important; gap: 10px !important; }
+  .landing-hero-btn { width: 100%; box-sizing: border-box; padding: 15px 20px !important; }
+  .landing-hero-badges { gap: 6px !important; }
+  .landing-hero-badge { font-size: 11px !important; padding: 5px 12px !important; }
+  .landing-stats-row {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 20px 16px !important;
+  }
   .landing-stat-number { font-size: 24px !important; }
   .landing-services-grid,
   .landing-services-subgrid,
@@ -868,8 +890,8 @@ img { max-width: 100%; height: auto; }
   .landing-service-card-large,
   .landing-service-card-medium,
   .landing-service-card-small {
-    height: auto !important;
-    min-height: 220px;
+    height: 200px !important;
+    min-height: 0;
   }
   .landing-cta-buttons { flex-direction: column !important; }
   .landing-cta-buttons a { width: 100%; box-sizing: border-box; text-align: center; }
@@ -879,8 +901,14 @@ img { max-width: 100%; height: auto; }
 /* Login / Register premium split layout */
 @media (max-width: 768px) {
   .auth-left-panel { display: none !important; }
-  .auth-right-panel { width: 100% !important; padding: 40px 24px !important; }
-  .auth-mobile-logo { display: flex !important; }
+  .auth-right-panel { width: 100% !important; padding: 32px 20px !important; }
+  .auth-mobile-logo-wrap { display: block !important; }
+  .auth-input {
+    padding-top: 13px !important;
+    padding-bottom: 13px !important;
+    padding-left: 14px !important;
+    font-size: 16px !important;
+  }
 }
 
 /* Location selector: stack dropdowns full-width on mobile */
