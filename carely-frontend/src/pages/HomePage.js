@@ -111,8 +111,175 @@ function Leaderboard() {
   );
 }
 
-function ProfessionalsSearch() {
+function SearchHero({ keyword, setKeyword, location, setLocation, serviceType, setServiceType, onSubmit, isMobile }) {
+  const fieldStyle = {
+    padding: '12px 14px', border: '1.5px solid #E2E8F0', borderRadius: 10,
+    fontSize: 14, outline: 'none', background: 'white', color: '#374151',
+    width: isMobile ? '100%' : undefined,
+  };
+
+  return (
+    <div style={{ background: 'linear-gradient(135deg, #1E3A8A, #2563EB)', padding: '40px 24px' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+        <h1 style={{ color: 'white', fontSize: 28, fontWeight: 800, marginBottom: 6 }}>
+          Find Care Professionals Near You
+        </h1>
+        <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: 15, marginBottom: 24 }}>
+          Search by location and service type
+        </p>
+
+        <form
+          onSubmit={onSubmit}
+          style={{
+            background: 'white', borderRadius: 16, padding: 16,
+            display: 'flex', flexDirection: isMobile ? 'column' : 'row',
+            gap: 10, flexWrap: 'wrap', alignItems: isMobile ? 'stretch' : 'flex-end',
+          }}
+        >
+          <input
+            type="text"
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            placeholder="Search by name..."
+            style={{ ...fieldStyle, flex: isMobile ? undefined : '1 1 160px' }}
+          />
+          <div style={{ flex: isMobile ? undefined : '2 1 360px', width: isMobile ? '100%' : undefined }}>
+            <LocationSelector value={location} onChange={setLocation} />
+          </div>
+          <select
+            value={serviceType}
+            onChange={(e) => setServiceType(e.target.value)}
+            style={{ ...fieldStyle, flex: isMobile ? undefined : '1 1 160px', cursor: 'pointer' }}
+          >
+            <option value="">All Types</option>
+            {PROFESSIONAL_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+          </select>
+          <button
+            type="submit"
+            style={{
+              background: '#2563EB', color: 'white', border: 'none',
+              padding: '14px 28px', borderRadius: 10, fontWeight: 800, fontSize: 14,
+              cursor: 'pointer', width: isMobile ? '100%' : undefined,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            }}
+          >
+            <Search size={16} /> Search
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function ProfessionalsGrid({ professionals, loading, cols }) {
   const navigate = useNavigate();
+
+  if (loading) {
+    return <p className="text-muted">Loading professionals...</p>;
+  }
+
+  if (professionals.length === 0) {
+    return (
+      <div className="card" style={{ textAlign: 'center', padding: 40 }}>
+        <p className="text-muted">No professionals found. Try a different search or location.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: cols === 1 ? 12 : 16 }}>
+      {professionals.map((p) => {
+        const typeColor = TYPE_COLORS[p.professionalType] || { bg: '#F1F5F9', text: '#475569' };
+        const compact = cols <= 2;
+        const avatarSize = compact ? 48 : 60;
+        return (
+          <div
+            key={p._id}
+            className="pro-card"
+            style={{ position: 'relative', padding: compact ? 12 : 18 }}
+          >
+            {p.isFeatured && (
+              <span style={{
+                position: 'absolute', top: 10, right: 10, background: '#FEF3C7', color: '#B45309',
+                fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 999,
+              }}>
+                ⭐ Featured
+              </span>
+            )}
+            <div className="pro-card-header">
+              {p.profilePhoto ? (
+                <img className="pro-avatar" src={fileUrl(p.profilePhoto)} alt={p.name} style={{ width: avatarSize, height: avatarSize }} />
+              ) : (
+                <div className="pro-avatar" style={{ width: avatarSize, height: avatarSize }}>{getInitials(p.name)}</div>
+              )}
+              <div>
+                <div className="pro-name" style={{ fontSize: compact ? 14 : 16 }}>{p.name}</div>
+                <div className="pro-meta">
+                  <MapPin size={12} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                  {formatLocation(p.location)}
+                </div>
+              </div>
+              {p.isVerified && <span className="badge badge-blue" style={{ marginLeft: 'auto' }}>Verified</span>}
+            </div>
+
+            <div>
+              <span className="badge" style={{ background: typeColor.bg, color: typeColor.text }}>
+                {p.professionalType}
+              </span>
+            </div>
+
+            <div className="pro-meta">
+              <Clock size={12} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+              {p.experience || 'Experience not specified'}
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Stars rating={p.rating} />
+              <span className="pro-meta">({p.ratings?.length || 0} reviews)</span>
+            </div>
+
+            <div style={{ fontWeight: 800, color: '#2B7FFF', fontSize: 16 }}>
+              {formatBDT(p.weekdayRate || p.hourlyRate)}/hr
+            </div>
+
+            <div className="pro-card-buttons">
+              <button
+                className="btn-primary"
+                style={{ fontSize: compact ? 12 : 13, padding: compact ? '7px 4px' : '8px 0' }}
+                onClick={() => navigate(`/view-profile/${p._id}`)}
+              >
+                View Profile
+              </button>
+              <button
+                className="btn-primary"
+                style={{ fontSize: compact ? 12 : 13, padding: compact ? '7px 4px' : '8px 0' }}
+                onClick={() => navigate(`/book/${p._id}`)}
+              >
+                Book
+              </button>
+              <button
+                className="btn-gray"
+                style={{ fontSize: compact ? 12 : 13, padding: compact ? '7px 4px' : '8px 0' }}
+                onClick={() => navigate(`/chat/${p._id}`)}
+              >
+                Chat
+              </button>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+export default function HomePage() {
+  const { user: contextUser } = useAuth();
+  const navigate = useNavigate();
+
+  const storedUser = localStorage.getItem('carelyUser');
+  const localUser = storedUser ? JSON.parse(storedUser) : null;
+  const user = contextUser || localUser;
+
   const [keyword, setKeyword] = useState('');
   const [location, setLocation] = useState({});
   const [serviceType, setServiceType] = useState('');
@@ -139,164 +306,6 @@ function ProfessionalsSearch() {
   }, [location, serviceType, keyword]);
 
   useEffect(() => {
-    runSearch();
-    // eslint-disable-next-line
-  }, []);
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    runSearch();
-  };
-
-  return (
-    <div>
-      <h1 className="home-search-heading" style={{
-        fontSize: 32,
-        fontWeight: 800,
-        color: '#1A1A2E',
-        marginBottom: 20,
-        marginTop: 32,
-        letterSpacing: '-0.5px',
-        lineHeight: 1.2,
-      }}>
-        Find Your Care Professional
-      </h1>
-
-      <form
-        className="search-bar"
-        onSubmit={handleSubmit}
-        style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 10, flexWrap: 'wrap' }}
-      >
-        <input
-          className="search-input"
-          type="text"
-          value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
-          placeholder="Search by name..."
-          style={isMobile ? { width: '100%' } : undefined}
-        />
-        <div style={isMobile ? { width: '100%' } : undefined}>
-          <LocationSelector value={location} onChange={setLocation} />
-        </div>
-        <select
-          className="search-select"
-          value={serviceType}
-          onChange={(e) => setServiceType(e.target.value)}
-          style={isMobile ? { width: '100%' } : undefined}
-        >
-          <option value="">All Types</option>
-          {PROFESSIONAL_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-        </select>
-        <button type="submit" className="btn-primary" style={isMobile ? { width: '100%' } : undefined}>
-          <Search size={16} style={{ verticalAlign: 'middle', marginRight: 6 }} /> Search
-        </button>
-      </form>
-
-      <Leaderboard />
-
-      {loading ? (
-        <p className="text-muted">Loading professionals...</p>
-      ) : professionals.length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', padding: 40 }}>
-          <p className="text-muted">No professionals found. Try a different search or location.</p>
-        </div>
-      ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: cols === 1 ? 12 : 16 }}>
-          {professionals.map((p) => {
-            const typeColor = TYPE_COLORS[p.professionalType] || { bg: '#F1F5F9', text: '#475569' };
-            const compact = cols <= 2;
-            const avatarSize = compact ? 48 : 60;
-            return (
-              <div
-                key={p._id}
-                className="pro-card"
-                style={{ position: 'relative', padding: compact ? 12 : 18 }}
-              >
-                {p.isFeatured && (
-                  <span style={{
-                    position: 'absolute', top: 10, right: 10, background: '#FEF3C7', color: '#B45309',
-                    fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 999,
-                  }}>
-                    ⭐ Featured
-                  </span>
-                )}
-                <div className="pro-card-header">
-                  {p.profilePhoto ? (
-                    <img className="pro-avatar" src={fileUrl(p.profilePhoto)} alt={p.name} style={{ width: avatarSize, height: avatarSize }} />
-                  ) : (
-                    <div className="pro-avatar" style={{ width: avatarSize, height: avatarSize }}>{getInitials(p.name)}</div>
-                  )}
-                  <div>
-                    <div className="pro-name" style={{ fontSize: compact ? 14 : 16 }}>{p.name}</div>
-                    <div className="pro-meta">
-                      <MapPin size={12} style={{ verticalAlign: 'middle', marginRight: 4 }} />
-                      {formatLocation(p.location)}
-                    </div>
-                  </div>
-                  {p.isVerified && <span className="badge badge-blue" style={{ marginLeft: 'auto' }}>Verified</span>}
-                </div>
-
-                <div>
-                  <span className="badge" style={{ background: typeColor.bg, color: typeColor.text }}>
-                    {p.professionalType}
-                  </span>
-                </div>
-
-                <div className="pro-meta">
-                  <Clock size={12} style={{ verticalAlign: 'middle', marginRight: 4 }} />
-                  {p.experience || 'Experience not specified'}
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <Stars rating={p.rating} />
-                  <span className="pro-meta">({p.ratings?.length || 0} reviews)</span>
-                </div>
-
-                <div style={{ fontWeight: 800, color: '#2B7FFF', fontSize: 16 }}>
-                  {formatBDT(p.weekdayRate || p.hourlyRate)}/hr
-                </div>
-
-                <div className="pro-card-buttons">
-                  <button
-                    className="btn-primary"
-                    style={{ fontSize: compact ? 12 : 13, padding: compact ? '7px 4px' : '8px 0' }}
-                    onClick={() => navigate(`/view-profile/${p._id}`)}
-                  >
-                    View Profile
-                  </button>
-                  <button
-                    className="btn-primary"
-                    style={{ fontSize: compact ? 12 : 13, padding: compact ? '7px 4px' : '8px 0' }}
-                    onClick={() => navigate(`/book/${p._id}`)}
-                  >
-                    Book
-                  </button>
-                  <button
-                    className="btn-gray"
-                    style={{ fontSize: compact ? 12 : 13, padding: compact ? '7px 4px' : '8px 0' }}
-                    onClick={() => navigate(`/chat/${p._id}`)}
-                  >
-                    Chat
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-export default function HomePage() {
-  const { user: contextUser } = useAuth();
-  const navigate = useNavigate();
-
-  const storedUser = localStorage.getItem('carelyUser');
-  const localUser = storedUser ? JSON.parse(storedUser) : null;
-  const user = contextUser || localUser;
-
-  useEffect(() => {
     if (!user) {
       navigate('/login');
     }
@@ -307,13 +316,36 @@ export default function HomePage() {
     socket.emit('joinRoom', user._id);
   }, [user]);
 
+  useEffect(() => {
+    runSearch();
+    // eslint-disable-next-line
+  }, []);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    runSearch();
+  };
+
   if (!user) return null;
 
   return (
     <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
       <AppNavbar />
+
+      <SearchHero
+        keyword={keyword}
+        setKeyword={setKeyword}
+        location={location}
+        setLocation={setLocation}
+        serviceType={serviceType}
+        setServiceType={setServiceType}
+        onSubmit={handleSubmit}
+        isMobile={isMobile}
+      />
+
       <div className="app-page-content" style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
-        <ProfessionalsSearch />
+        <Leaderboard />
+        <ProfessionalsGrid professionals={professionals} loading={loading} cols={cols} />
       </div>
       <AppFooter />
     </div>

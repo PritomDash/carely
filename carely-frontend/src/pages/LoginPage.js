@@ -11,6 +11,14 @@ const GoogleIcon = () => (
   </svg>
 );
 
+const inputStyle = {
+  width: '100%', padding: '14px 16px',
+  border: '1.5px solid #E2E8F0', borderRadius: 10,
+  fontSize: 15, outline: 'none',
+  transition: 'border 0.2s',
+  marginBottom: 16,
+};
+
 export default function LoginPage() {
   const navigate = useNavigate();
   const routerLocation = useLocation();
@@ -65,14 +73,64 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="page" style={{ maxWidth: 420 }}>
-      <div className="card">
-        <div style={{ textAlign: 'center', marginBottom: 20 }}>
-          <Link to="/" className="navbar-brand" style={{ justifyContent: 'center', fontSize: 22 }}>
-            <span className="heart">💙</span> Carely
-          </Link>
+    <div style={{ minHeight: '100vh', display: 'flex' }}>
+
+      {/* LEFT SIDE - Photo and branding */}
+      <div className="auth-left-panel" style={{
+        flex: 1, position: 'relative', display: 'flex',
+        flexDirection: 'column', justifyContent: 'center',
+        alignItems: 'center', padding: '60px 48px',
+        background: 'linear-gradient(135deg, #0F172A 0%, #1E3A8A 50%, #2563EB 100%)',
+        overflow: 'hidden',
+      }}>
+        {/* Background photo */}
+        <img
+          src="https://images.unsplash.com/photo-1584515933487-779824d29309?w=800&q=80"
+          alt="Care professional"
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.2 }}
+        />
+        <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', maxWidth: 380 }}>
+          <a href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginBottom: 48 }}>
+            <span style={{ fontSize: 36 }}>💙</span>
+            <span style={{ fontSize: 28, fontWeight: 900, color: '#FFFFFF' }}>Carely</span>
+          </a>
+          <h2 style={{ fontSize: 36, fontWeight: 900, color: '#FFFFFF', marginBottom: 16, lineHeight: 1.2 }}>
+            Welcome Back to Bangladesh's Care Marketplace
+          </h2>
+          <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.75)', lineHeight: 1.8, marginBottom: 40 }}>
+            Connect with verified child care, aged care, nursing, and physiotherapy professionals near you.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {[
+              '✓ Verified care professionals',
+              '✓ Available across all 64 districts',
+              '✓ Book in minutes',
+              '✓ Free for customers',
+            ].map(f => (
+              <div key={f} style={{ color: 'rgba(255,255,255,0.85)', fontSize: 15, textAlign: 'left' }}>{f}</div>
+            ))}
+          </div>
         </div>
-        <h2 style={{ marginBottom: 20, textAlign: 'center' }}>Welcome Back</h2>
+      </div>
+
+      {/* RIGHT SIDE - Login form */}
+      <div className="auth-right-panel" style={{
+        width: 480, display: 'flex', flexDirection: 'column',
+        justifyContent: 'center', padding: '60px 48px',
+        background: '#FFFFFF', overflowY: 'auto',
+      }}>
+        <a href="/" className="auth-mobile-logo" style={{ display: 'none', alignItems: 'center', gap: 8, textDecoration: 'none', marginBottom: 32 }}>
+          <span style={{ fontSize: 30 }}>💙</span>
+          <span style={{ fontSize: 22, fontWeight: 900, color: '#1A1A2E' }}>Carely</span>
+        </a>
+
+        <div style={{ marginBottom: 36 }}>
+          <h1 style={{ fontSize: 30, fontWeight: 900, color: '#1A1A2E', marginBottom: 8 }}>Sign In</h1>
+          <p style={{ fontSize: 15, color: '#64748B' }}>
+            Don't have an account?{' '}
+            <Link to="/register" style={{ color: '#2563EB', fontWeight: 700, textDecoration: 'none' }}>Create one free</Link>
+          </p>
+        </div>
 
         {error && <div className="msg-error">{error}</div>}
         {success && <div className="msg-success">{success}</div>}
@@ -80,23 +138,29 @@ export default function LoginPage() {
         <button
           type="button"
           onClick={handleGoogleLogin}
-          className="btn-gray"
-          style={{ width: '100%', background: '#fff', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 20 }}
+          style={{
+            width: '100%', padding: 14,
+            background: 'white', border: '1.5px solid #E2E8F0',
+            borderRadius: 12, fontSize: 15, fontWeight: 600,
+            cursor: 'pointer', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', gap: 10, color: '#374151',
+            marginTop: 12,
+          }}
         >
           <GoogleIcon /> Continue with Google
         </button>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '20px 0' }}>
           <div style={{ flex: 1, height: 1, background: '#E8EDF3' }} />
           <span className="text-muted">or</span>
           <div style={{ flex: 1, height: 1, background: '#E8EDF3' }} />
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: 16 }}>
+          <div>
             <label className="form-label">Email</label>
             <input
-              className="form-input"
+              style={inputStyle}
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -105,52 +169,61 @@ export default function LoginPage() {
             />
           </div>
 
-          <div style={{ marginBottom: 16 }}>
+          <div style={{ position: 'relative' }}>
             <label className="form-label">Password</label>
-            <div style={{ position: 'relative' }}>
-              <input
-                className="form-input"
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Your password"
-                style={{ paddingRight: 60 }}
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="text-muted"
-                style={{
-                  position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
-                  background: 'none', border: 'none', fontSize: 13, fontWeight: 500
-                }}
-              >
-                {showPassword ? 'Hide' : 'Show'}
-              </button>
-            </div>
-          </div>
-
-          <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
             <input
-              type="checkbox"
-              id="isAdmin"
-              checked={isAdmin}
-              onChange={(e) => setIsAdmin(e.target.checked)}
-              style={{ width: 'auto' }}
+              style={{ ...inputStyle, paddingRight: 60 }}
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Your password"
+              required
             />
-            <label htmlFor="isAdmin" style={{ margin: 0 }}>Admin Login</label>
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="text-muted"
+              style={{
+                position: 'absolute', right: 10, top: 34, transform: 'translateY(0)',
+                background: 'none', border: 'none', fontSize: 13, fontWeight: 500
+              }}
+            >
+              {showPassword ? 'Hide' : 'Show'}
+            </button>
           </div>
 
-          <button type="submit" className="btn-primary" disabled={loading} style={{ width: '100%', marginTop: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#374151', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={isAdmin}
+                onChange={(e) => setIsAdmin(e.target.checked)}
+                style={{ width: 'auto' }}
+              />
+              Admin Login
+            </label>
+            <Link to="/forgot-password" style={{ color: '#2563EB', fontSize: 13, textDecoration: 'none' }}>Forgot password?</Link>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              width: '100%', padding: 16,
+              background: 'linear-gradient(135deg, #2563EB, #3B82F6)',
+              color: 'white', border: 'none', borderRadius: 12,
+              fontSize: 16, fontWeight: 800, cursor: loading ? 'not-allowed' : 'pointer',
+              boxShadow: '0 4px 20px rgba(37,99,235,0.35)',
+              marginTop: 8, opacity: loading ? 0.7 : 1,
+            }}
+          >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
 
-        <div style={{ marginTop: 20, textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <Link to="/forgot-password" className="text-muted">Forgot password?</Link>
+        <div style={{ marginTop: 24, textAlign: 'center' }}>
           <span className="text-muted">
-            Don't have an account? <Link to="/register" className="text-primary">Register</Link>
+            Don't have an account? <Link to="/register" style={{ color: '#2563EB', fontWeight: 700, textDecoration: 'none' }}>Sign up →</Link>
           </span>
         </div>
       </div>

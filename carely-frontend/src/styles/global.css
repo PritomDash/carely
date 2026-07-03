@@ -876,6 +876,13 @@ img { max-width: 100%; height: auto; }
   .landing-section { padding: 48px 20px !important; }
 }
 
+/* Login / Register premium split layout */
+@media (max-width: 768px) {
+  .auth-left-panel { display: none !important; }
+  .auth-right-panel { width: 100% !important; padding: 40px 24px !important; }
+  .auth-mobile-logo { display: flex !important; }
+}
+
 /* Location selector: stack dropdowns full-width on mobile */
 @media (max-width: 768px) {
   .location-selector-grid { grid-template-columns: 1fr !important; }
