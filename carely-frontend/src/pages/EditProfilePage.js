@@ -131,7 +131,7 @@ export default function EditProfilePage() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+      <div className="app-shell" style={{ minHeight: '100vh', background: '#F7FAFF' }}>
         <AppNavbar />
         <div className="app-page-content" style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
           <p className="text-muted">Loading profile...</p>
@@ -141,7 +141,7 @@ export default function EditProfilePage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+    <div className="app-shell" style={{ minHeight: '100vh', background: '#F7FAFF' }}>
       <AppNavbar />
       <div className="app-page-content" style={{ maxWidth: 720, margin: '0 auto', padding: '28px 20px' }}>
       <div className="card">

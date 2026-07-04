@@ -90,7 +90,7 @@ export default function JobPostFeed() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+      <div className="app-shell" style={{ minHeight: '100vh', background: '#F7FAFF' }}>
         <AppNavbar />
         <div className="app-page-content" style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
           <p className="text-muted">Loading job posts...</p>
@@ -100,7 +100,7 @@ export default function JobPostFeed() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+    <div className="app-shell" style={{ minHeight: '100vh', background: '#F7FAFF' }}>
       <AppNavbar />
       <div className="app-page-content" style={{ maxWidth: 720, margin: '0 auto', padding: '28px 20px' }}>
       <h2 style={{ marginBottom: 16 }}>Job Posts</h2>

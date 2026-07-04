@@ -149,7 +149,7 @@ export default function CreditsPage() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+      <div className="app-shell" style={{ minHeight: '100vh', background: '#F7FAFF' }}>
         <AppNavbar />
         <div className="app-page-content" style={{ maxWidth: 800, margin: '0 auto', padding: '28px 20px' }}>
           <p className="text-muted">Loading credits...</p>
@@ -163,7 +163,7 @@ export default function CreditsPage() {
   const isProfessional = user?.role === 'professional';
 
   return (
-    <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+    <div className="app-shell" style={{ minHeight: '100vh', background: '#F7FAFF' }}>
       <AppNavbar />
       <div className="app-page-content" style={{ maxWidth: 800, margin: '0 auto', padding: '28px 20px' }}>
         <h2 style={{ marginBottom: 20 }}>My Credits</h2>

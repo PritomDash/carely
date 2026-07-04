@@ -37,7 +37,7 @@ export default function ChatInbox() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+      <div className="app-shell" style={{ minHeight: '100vh', background: '#F7FAFF' }}>
         <AppNavbar />
         <div className="app-page-content" style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
           <p className="text-muted">Loading conversations...</p>
@@ -51,7 +51,7 @@ export default function ChatInbox() {
   );
 
   return (
-    <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+    <div className="app-shell" style={{ minHeight: '100vh', background: '#F7FAFF' }}>
       <AppNavbar />
       <div className="app-page-content" style={{ maxWidth: 640, margin: '0 auto', padding: '28px 20px' }}>
       <h2 style={{ marginBottom: 16 }}>Messages</h2>

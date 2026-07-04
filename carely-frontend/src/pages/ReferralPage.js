@@ -37,7 +37,7 @@ export default function ReferralPage() {
   }, [code]);
 
   return (
-    <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+    <div className="app-shell" style={{ minHeight: '100vh', background: '#F7FAFF' }}>
       <AppNavbar />
 
       <div style={{ maxWidth: 600, margin: '0 auto', padding: '48px 20px 60px' }}>

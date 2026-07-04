@@ -89,7 +89,7 @@ export default function MyBookingsPage() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+      <div className="app-shell" style={{ minHeight: '100vh', background: '#F7FAFF' }}>
         <AppNavbar />
         <div className="app-page-content" style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
           <p className="text-muted">Loading bookings...</p>
@@ -109,7 +109,7 @@ export default function MyBookingsPage() {
   });
 
   return (
-    <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+    <div className="app-shell" style={{ minHeight: '100vh', background: '#F7FAFF' }}>
       <AppNavbar />
       <div className="app-page-content" style={{ maxWidth: 800, margin: '0 auto', padding: '28px 20px' }}>
       <h2 className="page-title">My Bookings</h2>

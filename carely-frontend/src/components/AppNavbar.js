@@ -84,7 +84,8 @@ export default function AppNavbar() {
   ];
 
   const tabs = !user ? [] : user.role==='professional' ? proTabs : user.role==='admin' ? adminTabs : customerTabs;
-  const isMobile = window.innerWidth < 480;
+  const isSmallMobile = window.innerWidth < 480;
+  const isMobile = window.innerWidth < 768;
 
   const tabStyle = (p) => ({
     display:'flex', alignItems:'center', gap:6,
@@ -163,7 +164,7 @@ export default function AppNavbar() {
         )}
       </div>
 
-      {user && tabs.length > 0 && (
+      {!isMobile && user && tabs.length > 0 && (
         <div
           className="navbar-tabs"
           style={{
@@ -173,7 +174,7 @@ export default function AppNavbar() {
           }}
         >
           {tabs.map(tab => {
-            const label = isMobile ? tab.shortLabel : tab.label;
+            const label = isSmallMobile ? tab.shortLabel : tab.label;
             return (
               <Link key={tab.path} to={tab.path} style={tabStyle(tab.path)}>
                 <span>{tab.icon}</span>
@@ -184,6 +185,199 @@ export default function AppNavbar() {
         </div>
       )}
 
+      {isMobile && user && <BottomNav />}
+
     </nav>
   );
 }
+
+const BottomNav = () => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [showSheet, setShowSheet] = useState(false);
+  const [credits, setCredits] = useState(null);
+
+  useEffect(() => {
+    if (user) {
+      api.get('/api/credits/my-balance')
+        .then(r => setCredits(r.data.credits))
+        .catch(() => {});
+    }
+  }, [user]);
+
+  const isActive = (path) => location.pathname === path;
+
+  const customerMenu = [
+    { icon: '📋', label: 'My Bookings', path: '/my-bookings' },
+    { icon: '📝', label: 'Post a Job', path: '/create-job-post' },
+    { icon: '📌', label: 'My Posts', path: '/my-posts' },
+    { icon: '👤', label: 'Edit Profile', path: '/edit-profile' },
+  ];
+
+  const proMenu = [
+    { icon: '📋', label: 'My Bookings', path: '/my-bookings' },
+    { icon: '📢', label: 'Job Feed', path: '/job-posts' },
+    { icon: '💳', label: 'Credits & Top Up', path: '/my-credits' },
+    { icon: '📄', label: 'Documents', path: '/upload-documents' },
+    { icon: '👤', label: 'Edit Profile', path: '/edit-profile' },
+    { icon: '🔗', label: 'Share & Earn', path: '/my-credits' },
+  ];
+
+  const menuItems = user?.role === 'professional' ? proMenu : customerMenu;
+
+  const navItems = [
+    { icon: '🏠', label: 'Home', path: '/home' },
+    { icon: '💬', label: 'Chat', path: '/chat-inbox' },
+    { icon: '🔔', label: 'Alerts', path: '/notifications' },
+    { icon: '👤', label: 'Account', path: null },
+  ];
+
+  return (
+    <>
+      {/* Bottom nav bar */}
+      <div style={{
+        position: 'fixed',
+        bottom: 0, left: 0, right: 0,
+        height: 64,
+        background: '#FFFFFF',
+        borderTop: '1px solid #E8EDF3',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-around',
+        zIndex: 200,
+        boxShadow: '0 -4px 20px rgba(0,0,0,0.08)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+      }}>
+        {navItems.map(item => (
+          <button
+            key={item.label}
+            onClick={() => {
+              if (item.path) {
+                navigate(item.path);
+                setShowSheet(false);
+              } else {
+                setShowSheet(!showSheet);
+              }
+            }}
+            style={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 3,
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '8px 0',
+              color: item.path && isActive(item.path) ? '#2563EB' : '#64748B',
+            }}
+          >
+            <span style={{ fontSize: 22 }}>{item.icon}</span>
+            <span style={{
+              fontSize: 11,
+              fontWeight: item.path && isActive(item.path) ? 700 : 500,
+              color: item.path && isActive(item.path) ? '#2563EB' : '#64748B',
+            }}>
+              {item.label}
+            </span>
+            {item.path && isActive(item.path) && (
+              <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#2563EB', marginTop: 1 }} />
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Account bottom sheet overlay */}
+      {showSheet && (
+        <div
+          onClick={() => setShowSheet(false)}
+          style={{
+            position: 'fixed', inset: 0,
+            background: 'rgba(0,0,0,0.4)',
+            zIndex: 300,
+          }}
+        />
+      )}
+
+      {/* Account bottom sheet */}
+      <div style={{
+        position: 'fixed',
+        bottom: showSheet ? 64 : '-100%',
+        left: 0, right: 0,
+        background: '#FFFFFF',
+        borderRadius: '20px 20px 0 0',
+        zIndex: 400,
+        transition: 'bottom 0.3s ease',
+        maxHeight: '75vh',
+        overflowY: 'auto',
+        paddingBottom: 20,
+      }}>
+        {/* Handle bar */}
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px' }}>
+          <div style={{ width: 40, height: 4, background: '#E2E8F0', borderRadius: 2 }} />
+        </div>
+
+        {/* User info */}
+        <div style={{ padding: '12px 20px 16px', borderBottom: '1px solid #F1F5F9' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{
+              width: 48, height: 48, borderRadius: '50%',
+              background: 'linear-gradient(135deg, #2563EB, #60A5FA)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: 'white', fontWeight: 800, fontSize: 18,
+            }}>
+              {user?.name?.charAt(0)?.toUpperCase()}
+            </div>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 15, color: '#1A1A2E' }}>{user?.name}</div>
+              <div style={{ fontSize: 12, color: '#64748B', textTransform: 'capitalize' }}>{user?.role}</div>
+            </div>
+            <div style={{ marginLeft: 'auto', background: '#EBF3FF', borderRadius: 8, padding: '4px 12px' }}>
+              <div style={{ fontSize: 11, color: '#64748B' }}>Credits</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: '#2563EB' }}>{credits ?? '...'}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Menu items */}
+        <div style={{ padding: '8px 0' }}>
+          {menuItems.map(item => (
+            <button
+              key={item.path}
+              onClick={() => { navigate(item.path); setShowSheet(false); }}
+              style={{
+                width: '100%', padding: '14px 20px',
+                display: 'flex', alignItems: 'center', gap: 14,
+                background: 'none', border: 'none', cursor: 'pointer',
+                textAlign: 'left',
+                borderBottom: '1px solid #F8FAFF',
+              }}
+            >
+              <span style={{ fontSize: 20 }}>{item.icon}</span>
+              <span style={{ fontSize: 15, fontWeight: 500, color: '#1A1A2E' }}>{item.label}</span>
+              <span style={{ marginLeft: 'auto', color: '#CBD5E1', fontSize: 18 }}>›</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Logout */}
+        <div style={{ padding: '8px 20px 0' }}>
+          <button
+            onClick={() => { logout(); navigate('/'); setShowSheet(false); }}
+            style={{
+              width: '100%', padding: '14px 0',
+              background: '#FEF2F2', border: '1px solid #FECACA',
+              borderRadius: 12, color: '#EF4444', fontWeight: 700,
+              fontSize: 15, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            }}
+          >
+            🚪 Logout
+          </button>
+        </div>
+      </div>
+    </>
+  );
+};

@@ -3,7 +3,7 @@ import api, { API_BASE } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { formatBDT } from '../utils/currency';
-import LocationSelector from '../components/LocationSelector';
+import { getAllThanas } from '../utils/locations';
 import AppNavbar from '../components/AppNavbar';
 import AppFooter from '../components/AppFooter';
 import socket from '../socket';
@@ -122,7 +122,17 @@ function Leaderboard() {
   );
 }
 
-function SearchHero({ keyword, setKeyword, location, setLocation, serviceType, setServiceType, onSubmit, isMobile }) {
+const ALL_THANAS = getAllThanas();
+
+function SearchHero({
+  keyword, setKeyword,
+  locationQuery, setLocationQuery,
+  selectedLocation, setSelectedLocation,
+  serviceType, setServiceType,
+  onSubmit, isMobile,
+}) {
+  const [suggestions, setSuggestions] = useState([]);
+
   const fieldStyle = {
     padding: '12px 14px', border: '1.5px solid #E2E8F0', borderRadius: 10,
     fontSize: 14, outline: 'none', background: 'white', color: '#374151',
@@ -154,9 +164,92 @@ function SearchHero({ keyword, setKeyword, location, setLocation, serviceType, s
             placeholder="Search by name..."
             style={{ ...fieldStyle, flex: isMobile ? undefined : '1 1 160px' }}
           />
-          <div style={{ flex: isMobile ? undefined : '2 1 360px', width: isMobile ? '100%' : undefined }}>
-            <LocationSelector value={location} onChange={setLocation} />
+
+          <div style={{ position: 'relative', flex: isMobile ? undefined : '2 1 360px', width: isMobile ? '100%' : undefined }}>
+            <div style={{ position: 'relative' }}>
+              <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', fontSize: 16 }}>📍</span>
+              <input
+                type="text"
+                placeholder="Search area... e.g. Gulshan, Mirpur, Chittagong"
+                value={locationQuery}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setLocationQuery(val);
+                  setSelectedLocation(null);
+                  if (val.length > 1) {
+                    const matches = ALL_THANAS.filter(t =>
+                      t.thana.toLowerCase().includes(val.toLowerCase()) ||
+                      t.district.toLowerCase().includes(val.toLowerCase()) ||
+                      t.division.toLowerCase().includes(val.toLowerCase())
+                    ).slice(0, 8);
+                    setSuggestions(matches);
+                  } else {
+                    setSuggestions([]);
+                  }
+                }}
+                style={{
+                  width: '100%',
+                  padding: '13px 16px 13px 42px',
+                  border: '1.5px solid #E2E8F0',
+                  borderRadius: 10,
+                  fontSize: 14,
+                  outline: 'none',
+                  background: 'white',
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#2563EB'}
+                onBlur={(e) => {
+                  e.target.style.borderColor = '#E2E8F0';
+                  setTimeout(() => setSuggestions([]), 200);
+                }}
+              />
+              {locationQuery && (
+                <button
+                  type="button"
+                  onClick={() => { setLocationQuery(''); setSelectedLocation(null); setSuggestions([]); }}
+                  style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#94A3B8' }}
+                >
+                  ×
+                </button>
+              )}
+            </div>
+
+            {suggestions.length > 0 && (
+              <div style={{
+                position: 'absolute', top: '100%', left: 0, right: 0,
+                background: 'white', border: '1px solid #E2E8F0',
+                borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                zIndex: 500, maxHeight: 260, overflowY: 'auto', marginTop: 4,
+              }}>
+                {suggestions.map((s, i) => (
+                  <div
+                    key={i}
+                    onMouseDown={() => {
+                      setSelectedLocation(s);
+                      setLocationQuery(s.thana + ', ' + s.district);
+                      setSuggestions([]);
+                    }}
+                    style={{
+                      padding: '11px 16px',
+                      cursor: 'pointer',
+                      borderBottom: i < suggestions.length - 1 ? '1px solid #F8FAFF' : 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = '#F0F7FF'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                  >
+                    <span style={{ fontSize: 14 }}>📍</span>
+                    <div>
+                      <span style={{ fontWeight: 700, fontSize: 14, color: '#1A1A2E' }}>{s.thana}</span>
+                      <span style={{ color: '#64748B', fontSize: 12 }}>{', '}{s.district}{', '}{s.division}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
+
           <select
             value={serviceType}
             onChange={(e) => setServiceType(e.target.value)}
@@ -350,7 +443,8 @@ export default function HomePage() {
   const user = contextUser || localUser;
 
   const [keyword, setKeyword] = useState('');
-  const [location, setLocation] = useState({});
+  const [locationQuery, setLocationQuery] = useState('');
+  const [selectedLocation, setSelectedLocation] = useState(null);
   const [serviceType, setServiceType] = useState('');
   const [professionals, setProfessionals] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -362,9 +456,23 @@ export default function HomePage() {
   const runSearch = useCallback(() => {
     setLoading(true);
     const params = {};
-    if (location.division) params.division = location.division;
-    if (location.district) params.district = location.district;
-    if (location.thana) params.thana = location.thana;
+
+    let resolvedLocation = selectedLocation;
+    if (!resolvedLocation && locationQuery.trim()) {
+      const q = locationQuery.trim().toLowerCase();
+      resolvedLocation = ALL_THANAS.find(t =>
+        t.thana.toLowerCase().includes(q) ||
+        t.district.toLowerCase().includes(q) ||
+        t.division.toLowerCase().includes(q)
+      ) || null;
+    }
+
+    if (resolvedLocation) {
+      params.division = resolvedLocation.division;
+      params.district = resolvedLocation.district;
+      params.thana = resolvedLocation.thana;
+    }
+
     if (serviceType) params.serviceType = serviceType;
     if (keyword.trim()) params.search = keyword.trim();
 
@@ -372,7 +480,7 @@ export default function HomePage() {
       .then((res) => setProfessionals(res.data || []))
       .catch(() => setProfessionals([]))
       .finally(() => setLoading(false));
-  }, [location, serviceType, keyword]);
+  }, [selectedLocation, locationQuery, serviceType, keyword]);
 
   useEffect(() => {
     if (!user) {
@@ -398,14 +506,16 @@ export default function HomePage() {
   if (!user) return null;
 
   return (
-    <div style={{ minHeight: '100vh', background: '#F7FAFF' }}>
+    <div className="app-shell" style={{ minHeight: '100vh', background: '#F7FAFF' }}>
       <AppNavbar />
 
       <SearchHero
         keyword={keyword}
         setKeyword={setKeyword}
-        location={location}
-        setLocation={setLocation}
+        locationQuery={locationQuery}
+        setLocationQuery={setLocationQuery}
+        selectedLocation={selectedLocation}
+        setSelectedLocation={setSelectedLocation}
         serviceType={serviceType}
         setServiceType={setServiceType}
         onSubmit={handleSubmit}
