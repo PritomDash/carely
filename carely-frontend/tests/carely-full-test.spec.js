@@ -104,6 +104,33 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
       await rateInputs.nth(i).fill('500').catch(() => {});
     }
 
+    // Location is a required field (native <select required>) - leaving it unselected
+    // silently blocks form submission via HTML5 constraint validation with no visible
+    // error, which is exactly what caused test 03 to hang on submit indefinitely.
+    const locationGrid = page.locator('.location-selector-grid');
+    if (await locationGrid.isVisible({ timeout: 2000 }).catch(() => false)) {
+      const divisionSelect = locationGrid.locator('select').nth(0);
+      const districtSelect = locationGrid.locator('select').nth(1);
+      const thanaSelect = locationGrid.locator('select').nth(2);
+      await divisionSelect.selectOption({ index: 1 }).catch(() => {});
+      await page.waitForTimeout(300);
+      await districtSelect.selectOption({ index: 1 }).catch(() => {});
+      await page.waitForTimeout(300);
+      await thanaSelect.selectOption({ index: 1 }).catch(() => {});
+    }
+
+    // ID Document is also required (native <input type="file" required>) - a 1x1 PNG
+    // is enough to satisfy the browser's constraint validation and the backend's
+    // multer upload handler.
+    const TEST_PNG = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+      'base64'
+    );
+    const idDocInput = page.locator('input[type="file"]').nth(1);
+    if (await idDocInput.count().catch(() => 0)) {
+      await idDocInput.setInputFiles({ name: 'test-id.png', mimeType: 'image/png', buffer: TEST_PNG }).catch(() => {});
+    }
+
     // Enable every day's availability so the professional is bookable on any date the
     // customer picks later. Each day row is `<div><span>{day}</span><label class="toggle-switch">
     // <input type="checkbox"/>...</label>{enabled && <two time inputs>}</div>` - the checkbox
