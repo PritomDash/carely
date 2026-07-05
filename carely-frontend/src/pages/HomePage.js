@@ -5,7 +5,6 @@ import { useNavigate } from 'react-router-dom';
 import { formatBDT } from '../utils/currency';
 import { getAllThanas } from '../utils/locations';
 import AppNavbar from '../components/AppNavbar';
-import AppFooter from '../components/AppFooter';
 import socket from '../socket';
 import { Search, MapPin, Clock, Star } from 'lucide-react';
 
@@ -526,7 +525,6 @@ export default function HomePage() {
         <Leaderboard />
         <ProfessionalsGrid professionals={professionals} loading={loading} cols={cols} />
       </div>
-      <AppFooter />
     </div>
   );
 }

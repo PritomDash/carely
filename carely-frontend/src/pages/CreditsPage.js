@@ -4,7 +4,6 @@ import { useAuth } from '../context/AuthContext';
 import { useSearchParams } from 'react-router-dom';
 import { formatBDT } from '../utils/currency';
 import AppNavbar from '../components/AppNavbar';
-import AppFooter from '../components/AppFooter';
 
 const timeAgo = (dateStr) => {
   const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
@@ -349,7 +348,6 @@ export default function CreditsPage() {
           )}
         </div>
       </div>
-      <AppFooter />
     </div>
   );
 }

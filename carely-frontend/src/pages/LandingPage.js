@@ -98,6 +98,7 @@ export default function LandingPage() {
 
           <div style={{ marginBottom: 40 }}>
             <a href="https://github.com/PritomDash/carely/releases/latest/download/Carely.apk"
+              download="Carely.apk"
               style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, textDecoration: 'none', borderBottom: '1px solid rgba(255,255,255,0.3)', paddingBottom: 2 }}>
               📱 Download Android App
             </a>
@@ -250,7 +251,7 @@ export default function LandingPage() {
                 </div>
               ))}
             </div>
-            <a href="https://github.com/PritomDash/carely/releases/latest/download/Carely.apk" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 28px', background: 'white', color: '#1E3A8A', borderRadius: 12, fontWeight: 800, fontSize: 15, textDecoration: 'none' }}>
+            <a href="https://github.com/PritomDash/carely/releases/latest/download/Carely.apk" download="Carely.apk" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 28px', background: 'white', color: '#1E3A8A', borderRadius: 12, fontWeight: 800, fontSize: 15, textDecoration: 'none' }}>
               📱 Download Android App
             </a>
           </div>
@@ -326,7 +327,7 @@ export default function LandingPage() {
               <div style={{ fontWeight: 700, fontSize: 13, color: '#1E40AF', marginBottom: 6 }}>Option 1 — Download APK</div>
               <div style={{ fontSize: 13, color: '#64748B', lineHeight: 1.7 }}>
                 Download directly. If blocked go to <strong>Settings → Security → Enable Unknown Sources</strong> then Install.{' '}
-                <a href="https://github.com/PritomDash/carely/releases/latest/download/Carely.apk" style={{ color: '#2B7FFF', fontWeight: 600, textDecoration: 'none' }}>Download Carely.apk</a>
+                <a href="https://github.com/PritomDash/carely/releases/latest/download/Carely.apk" download="Carely.apk" style={{ color: '#2B7FFF', fontWeight: 600, textDecoration: 'none' }}>Download Carely.apk</a>
               </div>
             </div>
             <div style={{ background: '#F7FAFF', borderRadius: 10, padding: '14px 16px' }}>

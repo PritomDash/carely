@@ -91,7 +91,9 @@ router.get('/professionals', async (req, res) => {
 
     let professionals = await User.find(query).select('-password');
 
-    if (division || district || thana) {
+    const hasLocationFilter = !!(division || district || thana);
+
+    if (hasLocationFilter) {
       professionals = findNearbyProfessionals(
         professionals,
         { division, district, thana },
@@ -108,9 +110,23 @@ router.get('/professionals', async (req, res) => {
       );
     }
 
+    const locationScore = (pro) => {
+      if (!pro.location) return 0;
+      if (thana && pro.location.thana === thana) return 3;
+      if (district && pro.location.district === district) return 2;
+      if (division && pro.location.division === division) return 1;
+      return 0;
+    };
+
     professionals.sort((a, b) => {
       if (a.isFeatured && !b.isFeatured) return -1;
       if (!a.isFeatured && b.isFeatured) return 1;
+
+      if (hasLocationFilter) {
+        const proximityDiff = locationScore(b) - locationScore(a);
+        if (proximityDiff !== 0) return proximityDiff;
+      }
+
       const scoreA = (a.referralScore || 0) + (a.rating || 0) * 10 + (a.ratings?.length || 0);
       const scoreB = (b.referralScore || 0) + (b.rating || 0) * 10 + (b.ratings?.length || 0);
       return scoreB - scoreA;
