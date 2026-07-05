@@ -15,3 +15,6 @@ carely-backend/uploads/documents/*
 Thumbs.db
 *.log
 npm-debug.log*
+carely-frontend/test-results/
+carely-frontend/playwright-report/
+carely-frontend/playwright/.cache/

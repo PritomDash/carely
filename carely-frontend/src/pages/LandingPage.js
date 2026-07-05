@@ -96,14 +96,6 @@ export default function LandingPage() {
             </Link>
           </div>
 
-          <div style={{ marginBottom: 40 }}>
-            <a href="https://github.com/PritomDash/carely/releases/latest/download/Carely.apk"
-              download="Carely.apk"
-              style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, textDecoration: 'none', borderBottom: '1px solid rgba(255,255,255,0.3)', paddingBottom: 2 }}>
-              📱 Download Android App
-            </a>
-          </div>
-
           <div className="landing-hero-badges" style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
             {['✓ Verified Professionals', '🔒 Secure Booking', '💬 In-App Chat', '📍 All 64 Districts'].map(b => (
               <div key={b} className="landing-hero-badge" style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 20, padding: '7px 16px', color: 'rgba(255,255,255,0.9)', fontSize: 13, fontWeight: 500 }}>
@@ -242,8 +234,8 @@ export default function LandingPage() {
               {[
                 'Works on all Android phones',
                 'Instant install from Chrome browser',
-                'Download APK directly',
-                'Coming soon to Google Play Store',
+                'No app store download needed',
+                'Always up to date automatically',
               ].map(f => (
                 <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 12, color: 'rgba(255,255,255,0.85)', fontSize: 15 }}>
                   <div style={{ width: 24, height: 24, background: 'rgba(255,255,255,0.15)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>✓</div>
@@ -251,9 +243,6 @@ export default function LandingPage() {
                 </div>
               ))}
             </div>
-            <a href="https://github.com/PritomDash/carely/releases/latest/download/Carely.apk" download="Carely.apk" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 28px', background: 'white', color: '#1E3A8A', borderRadius: 12, fontWeight: 800, fontSize: 15, textDecoration: 'none' }}>
-              📱 Download Android App
-            </a>
           </div>
           <div style={{ position: 'relative' }}>
             {/* Laptop mockup */}
@@ -315,27 +304,28 @@ export default function LandingPage() {
         </div>
       </div>
 
-      {/* DOWNLOAD TIP */}
-      <div className="landing-section" style={{ background: '#F0F7FF', padding: '40px 40px' }}>
-        <div style={{ maxWidth: 700, margin: '0 auto', background: 'white', borderRadius: 16, padding: '24px 28px', border: '1.5px solid #BFDBFE' }}>
+      {/* INSTALL AS APP TIP */}
+      <div className="landing-section" style={{ background: '#F0F7FF', padding: '40px 24px' }}>
+        <div style={{ maxWidth: 700, margin: '0 auto', background: 'white', borderRadius: 16, padding: '24px 28px', border: '1.5px solid #BFDBFE', boxShadow: '0 2px 12px rgba(37,99,235,0.08)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-            <span style={{ fontSize: 22 }}>📱</span>
-            <span style={{ fontWeight: 800, fontSize: 17, color: '#1E40AF' }}>Use Carely on Your Android Phone</span>
+            <span style={{ fontSize: 24 }}>📱</span>
+            <span style={{ fontWeight: 800, fontSize: 17, color: '#1E40AF' }}>Install Carely as an App</span>
           </div>
-          <div className="landing-download-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-            <div style={{ background: '#F7FAFF', borderRadius: 10, padding: '14px 16px' }}>
-              <div style={{ fontWeight: 700, fontSize: 13, color: '#1E40AF', marginBottom: 6 }}>Option 1 — Download APK</div>
-              <div style={{ fontSize: 13, color: '#64748B', lineHeight: 1.7 }}>
-                Download directly. If blocked go to <strong>Settings → Security → Enable Unknown Sources</strong> then Install.{' '}
-                <a href="https://github.com/PritomDash/carely/releases/latest/download/Carely.apk" download="Carely.apk" style={{ color: '#2B7FFF', fontWeight: 600, textDecoration: 'none' }}>Download Carely.apk</a>
+          <p style={{ fontSize: 14, color: '#374151', lineHeight: 1.7, margin: '0 0 12px' }}>
+            Carely works as an app on your phone. Just open the website in Chrome browser and add to home screen — done in 10 seconds.
+          </p>
+          <div style={{ background: '#F7FAFF', borderRadius: 10, padding: '14px 16px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+            {[
+              { n: '1', text: 'Open in Chrome' },
+              { n: '2', text: 'Tap menu ⋮' },
+              { n: '3', text: 'Add to Home screen' },
+              { n: '4', text: 'Tap Add' },
+            ].map(s => (
+              <div key={s.n} style={{ textAlign: 'center' }}>
+                <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#2563EB', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, margin: '0 auto 6px', fontSize: 14 }}>{s.n}</div>
+                <div style={{ fontSize: 12, color: '#64748B' }}>{s.text}</div>
               </div>
-            </div>
-            <div style={{ background: '#F7FAFF', borderRadius: 10, padding: '14px 16px' }}>
-              <div style={{ fontWeight: 700, fontSize: 13, color: '#1E40AF', marginBottom: 6 }}>Option 2 — Install from Chrome</div>
-              <div style={{ fontSize: 13, color: '#64748B', lineHeight: 1.7 }}>
-                Open in Chrome → tap ⋮ menu → Add to Home screen → tap Add
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </div>
