@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import api, { API_BASE } from '../services/api';
+import React, { useState } from 'react';
+import api from '../services/api';
 import { useNavigate, Link } from 'react-router-dom';
 import LocationSelector from '../components/LocationSelector';
 import { User, Briefcase } from 'lucide-react';
+import { handleGoogleLogin } from '../utils/googleAuth';
 
 const PROFESSIONAL_TYPES = ['Child Care', 'Aged Care', 'Nurse', 'Physiotherapist'];
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -62,22 +63,7 @@ export default function RegisterPage() {
   const isNurseOrPhysio = professionalType === 'Nurse' || professionalType === 'Physiotherapist';
   const isNurse = professionalType === 'Nurse';
 
-  useEffect(() => {
-    const handleMessage = (event) => {
-      if (event.origin !== API_BASE) return;
-      if (event.data?.token) {
-        localStorage.setItem('carelyToken', event.data.token);
-        localStorage.setItem('carelyUser', JSON.stringify(event.data.user));
-        navigate('/home');
-      }
-    };
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, [navigate]);
-
-  const handleGoogleSignup = () => {
-    window.open(`${API_BASE}/api/auth/google`, 'google-login', 'width=500,height=600');
-  };
+  const handleGoogleSignup = () => handleGoogleLogin(navigate, setError);
 
   const toggleDay = (day) =>
     setAvailability((a) => ({ ...a, [day]: { ...a[day], enabled: !a[day].enabled } }));
