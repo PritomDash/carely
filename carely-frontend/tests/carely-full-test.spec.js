@@ -1,5 +1,7 @@
 const { test, expect } = require('@playwright/test');
 
+const BACKEND_URL = 'https://carely-backend-j4dn.onrender.com';
+
 // Shared test data across tests
 const timestamp = Date.now();
 const CUSTOMER = {
@@ -186,54 +188,57 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
     }
   });
 
-  test('08 - Create booking as customer', async ({ page }) => {
+  test('08 - Create booking as customer', async ({ page, request }) => {
     await page.goto('/login');
     await page.locator('input[type="email"]').fill(CUSTOMER.email);
     await page.locator('input[type="password"]').fill(CUSTOMER.password);
     await page.locator('button[type="submit"]').first().click();
     await page.waitForURL(/\/home/);
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(1000);
 
-    const bookBtn = page.getByRole('button', { name: 'Book', exact: true }).first();
-    if (await bookBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await bookBtn.click();
-      await page.waitForURL(/\/book/, { timeout: 10000 });
-      await page.waitForTimeout(2000);
+    // Resolve the exact PRO test account's id so the booking targets it specifically,
+    // instead of whichever professional card happens to sort first on the homepage.
+    const proLoginRes = await request.post(`${BACKEND_URL}/api/auth/login`, {
+      data: { email: PRO.email, password: PRO.password },
+    });
+    const { user: proUser } = await proLoginRes.json();
+    const proId = proUser._id;
 
-      // Fill date - 3 days from now
-      const dateInput = page.locator('input[type="date"], .react-datepicker__input-container input').first();
-      if (await dateInput.isVisible({ timeout: 3000 }).catch(() => false)) {
-        const futureDate = new Date();
-        futureDate.setDate(futureDate.getDate() + 5);
-        await dateInput.fill(futureDate.toISOString().split('T')[0]).catch(() => {});
-      }
+    await page.goto(`/book/${proId}`);
+    await page.waitForURL(/\/book/, { timeout: 10000 });
+    await page.waitForTimeout(2000);
 
-      await page.waitForTimeout(1500);
-
-      // Fill address
-      const addressField = page.locator('input[placeholder*="address" i], textarea[placeholder*="address" i]').first();
-      if (await addressField.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await addressField.fill('123 Test Street, Dhanmondi, Dhaka');
-      }
-
-      // Fill work description
-      const descField = page.locator('textarea[placeholder*="describ" i], textarea[placeholder*="work" i], textarea[placeholder*="what" i]').first();
-      if (await descField.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await descField.fill('Playwright automated test booking - please accept');
-      }
-
-      // Select a time slot if available
-      const timeBtn = page.locator('button:has-text(/^\\d+:\\d+/), .time-slot').first();
-      if (await timeBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await timeBtn.click().catch(() => {});
-      }
-
-      await page.locator('button:has-text("Submit"), button:has-text("Confirm"), button:has-text("Book Now")').last().click();
-      await page.waitForTimeout(4000);
-      console.log('✅ Booking submitted');
-    } else {
-      console.log('⚠️ No Book button found');
+    // Fill date - 3 days from now
+    const dateInput = page.locator('input[type="date"], .react-datepicker__input-container input').first();
+    if (await dateInput.isVisible({ timeout: 3000 }).catch(() => false)) {
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 5);
+      await dateInput.fill(futureDate.toISOString().split('T')[0]).catch(() => {});
     }
+
+    await page.waitForTimeout(1500);
+
+    // Fill address
+    const addressField = page.locator('input[placeholder*="address" i], textarea[placeholder*="address" i]').first();
+    if (await addressField.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await addressField.fill('123 Test Street, Dhanmondi, Dhaka');
+    }
+
+    // Fill work description
+    const descField = page.locator('textarea[placeholder*="describ" i], textarea[placeholder*="work" i], textarea[placeholder*="what" i]').first();
+    if (await descField.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await descField.fill('Playwright automated test booking - please accept');
+    }
+
+    // Select a time slot if available
+    const timeBtn = page.locator('button:has-text(/^\\d+:\\d+/), .time-slot').first();
+    if (await timeBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await timeBtn.click().catch(() => {});
+    }
+
+    await page.locator('button:has-text("Submit"), button:has-text("Confirm"), button:has-text("Book Now")').last().click();
+    await page.waitForTimeout(4000);
+    console.log('✅ Booking submitted');
   });
 
   test('09 - Professional login and see booking', async ({ page }) => {
@@ -246,7 +251,7 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
     await page.goto('/my-bookings');
     await page.waitForTimeout(3000);
 
-    const pendingBooking = page.locator('text=/AwaitingAcceptance|Pending|awaiting/i').first();
+    const pendingBooking = page.locator('.badge:has-text("AwaitingAcceptance")').first();
     if (await pendingBooking.isVisible({ timeout: 5000 }).catch(() => false)) {
       console.log('✅ Professional sees pending booking');
     } else {
