@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 
 const AuthContext = createContext();
 
@@ -7,15 +7,23 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem('carelyUser');
-    if (stored) {
-      try { setUser(JSON.parse(stored)); } catch {}
-    }
+    const syncFromStorage = () => {
+      const stored = localStorage.getItem('carelyUser');
+      if (!stored) return setUser(null);
+      try { setUser(JSON.parse(stored)); } catch { setUser(null); }
+    };
+    syncFromStorage();
+    window.addEventListener('carely-auth-changed', syncFromStorage);
+    window.addEventListener('storage', syncFromStorage);
+    return () => {
+      window.removeEventListener('carely-auth-changed', syncFromStorage);
+      window.removeEventListener('storage', syncFromStorage);
+    };
   }, []);
 
   const login = async (email, password, isAdmin = false) => {
     const url = isAdmin ? '/api/admin/login' : '/api/auth/login';
-    const res = await axios.post(url, { email, password });
+    const res = await api.post(url, { email, password });
     const loggedUser = res.data.user || res.data.admin;
     const token = res.data.token;
     localStorage.setItem('carelyUser', JSON.stringify(loggedUser));

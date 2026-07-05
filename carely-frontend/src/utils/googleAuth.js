@@ -23,6 +23,7 @@ export const handleGoogleLogin = (navigate, setError) => {
     if (event.data?.token && event.data?.user) {
       localStorage.setItem('carelyToken', event.data.token);
       localStorage.setItem('carelyUser', JSON.stringify(event.data.user));
+      window.dispatchEvent(new Event('carely-auth-changed'));
       window.removeEventListener('message', handleMessage);
       if (popup && !popup.closed) popup.close();
       navigate('/home');

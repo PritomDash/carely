@@ -21,6 +21,7 @@ export default function AdminLoginPage() {
       localStorage.setItem('carelyToken', token);
       localStorage.setItem('adminToken', token);
       localStorage.setItem('carelyUser', JSON.stringify(admin));
+      window.dispatchEvent(new Event('carely-auth-changed'));
 
       navigate('/admin');
     } catch (err) {
