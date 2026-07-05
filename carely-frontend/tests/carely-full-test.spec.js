@@ -39,7 +39,9 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
   test('02 - Register customer with 10 credits', async ({ page }) => {
     await page.goto('/register');
 
-    const customerCard = page.locator('text=/I Need Care/i, text=Customer').first();
+    // Exact text match - a broad substring match here also matches the hero panel's
+    // "✓ Free for customers" bullet, which appears earlier in the DOM and does nothing.
+    const customerCard = page.getByText('I Need Care', { exact: true });
     if (await customerCard.isVisible({ timeout: 5000 }).catch(() => false)) {
       await customerCard.click();
       await page.waitForTimeout(500);
@@ -63,23 +65,25 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
   test('03 - Register professional with 500 credits', async ({ page }) => {
     await page.goto('/register');
 
-    const proCard = page.locator('text=/I am a Professional/i, text=/I.m a Professional/i, text=Professional').first();
-    if (await proCard.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await proCard.click();
-      await page.waitForTimeout(500);
-    }
+    // Exact text match - a broad substring match here also matches the hero panel's
+    // "✓ Earn money as a professional" bullet, which appears earlier in the DOM and
+    // does nothing, silently leaving role stuck on the default 'customer'.
+    const proCard = page.getByText("I'm a Professional", { exact: true });
+    await proCard.click();
+    await page.waitForTimeout(500);
 
     await page.locator('input[name="name"], input[placeholder*="name" i]').first().fill(PRO.name);
     await page.locator('input[type="email"]').fill(PRO.email);
     await page.locator('input[type="password"]').fill(PRO.password);
     await page.locator('input[placeholder*="phone" i], input[name="phone"], input[placeholder*="01"]').first().fill(PRO.phone);
 
+    // Hard assertion: professional-only fields must now be present. If role didn't
+    // actually switch, this registration would silently create a customer account.
     const typeSelect = page.locator('select').filter({ hasText: /child|aged|nurse|physio/i }).first();
-    if (await typeSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await typeSelect.selectOption({ label: PRO.type }).catch(async () => {
-        await typeSelect.selectOption(PRO.type);
-      });
-    }
+    await expect(typeSelect).toBeVisible({ timeout: 3000 });
+    await typeSelect.selectOption({ label: PRO.type }).catch(async () => {
+      await typeSelect.selectOption(PRO.type);
+    });
 
     // Fill experience if present
     const expInput = page.locator('input[name*="experience" i], input[placeholder*="experience" i]').first();
