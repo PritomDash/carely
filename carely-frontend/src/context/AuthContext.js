@@ -3,16 +3,17 @@ import api from '../services/api';
 
 const AuthContext = createContext();
 
+const readStoredUser = () => {
+  const stored = localStorage.getItem('carelyUser');
+  if (!stored) return null;
+  try { return JSON.parse(stored); } catch { return null; }
+};
+
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(readStoredUser);
 
   useEffect(() => {
-    const syncFromStorage = () => {
-      const stored = localStorage.getItem('carelyUser');
-      if (!stored) return setUser(null);
-      try { setUser(JSON.parse(stored)); } catch { setUser(null); }
-    };
-    syncFromStorage();
+    const syncFromStorage = () => setUser(readStoredUser());
     window.addEventListener('carely-auth-changed', syncFromStorage);
     window.addEventListener('storage', syncFromStorage);
     return () => {

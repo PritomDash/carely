@@ -179,7 +179,7 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
     if (await viewBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
       await viewBtn.click();
       await page.waitForURL(/\/view-profile/, { timeout: 10000 });
-      await expect(page.locator('button:has-text("Book"), a:has-text("Book")').first()).toBeVisible({ timeout: 5000 });
+      await expect(page.getByRole('button', { name: 'Book Now' })).toBeVisible({ timeout: 5000 });
       console.log('✅ View profile page works');
     } else {
       console.log('⚠️ No professionals to view');
@@ -194,7 +194,7 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
     await page.waitForURL(/\/home/);
     await page.waitForTimeout(3000);
 
-    const bookBtn = page.locator('button:has-text("Book"), a:has-text("Book")').first();
+    const bookBtn = page.getByRole('button', { name: 'Book', exact: true }).first();
     if (await bookBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
       await bookBtn.click();
       await page.waitForURL(/\/book/, { timeout: 10000 });
@@ -402,7 +402,7 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
     await page.goto('/create-job-post');
     await page.waitForTimeout(2000);
 
-    await page.locator('input[placeholder*="title" i], input[name="title"]').first().fill('Playwright Test Job - Need Child Care');
+    await page.locator('form input[type="text"]').first().fill('Playwright Test Job - Need Child Care');
 
     const descInput = page.locator('textarea').first();
     if (await descInput.isVisible()) {
@@ -465,7 +465,7 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
     await page.goto('/create-job-post');
     await page.waitForTimeout(2000);
 
-    await page.locator('input[placeholder*="title" i]').first().fill('EMERGENCY - Need Nurse Immediately');
+    await page.locator('form input[type="text"]').first().fill('EMERGENCY - Need Nurse Immediately');
     const descInput = page.locator('textarea').first();
     if (await descInput.isVisible()) await descInput.fill('Urgent test emergency post');
 
