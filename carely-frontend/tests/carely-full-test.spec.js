@@ -111,7 +111,10 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
       if (await toggle.isVisible({ timeout: 1000 }).catch(() => false)) {
         await toggle.click().catch(() => {});
         const timeInputs = dayRow.locator('input[type="time"]');
-        if (await timeInputs.count().catch(() => 0) >= 2) {
+        // Wait for React to re-render the (conditionally shown) time inputs before
+        // querying count() - a bare click() resolves before the re-render commits.
+        const appeared = await timeInputs.nth(1).waitFor({ state: 'visible', timeout: 1000 }).then(() => true).catch(() => false);
+        if (appeared) {
           await timeInputs.nth(0).fill('08:00').catch(() => {});
           await timeInputs.nth(1).fill('20:00').catch(() => {});
         }
