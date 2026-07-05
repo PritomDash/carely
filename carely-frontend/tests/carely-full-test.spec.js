@@ -100,10 +100,22 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
       await rateInputs.nth(i).fill('500').catch(() => {});
     }
 
-    // Toggle at least one availability day
-    const dayToggle = page.locator('button:has-text("Mon"), input[type="checkbox"][name*="mon" i]').first();
-    if (await dayToggle.isVisible({ timeout: 1000 }).catch(() => false)) {
-      await dayToggle.click().catch(() => {});
+    // Enable every day's availability so the professional is bookable on any date the
+    // customer picks later. Each day row is `<div><span>{day}</span><label class="toggle-switch">
+    // <input type="checkbox"/>...</label>{enabled && <two time inputs>}</div>` - the checkbox
+    // itself is visually hidden by the toggle-switch styling, so click the wrapping label.
+    const ALL_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    for (const day of ALL_DAYS) {
+      const dayRow = page.locator(`div:has(> span:text-is("${day}"))`).first();
+      const toggle = dayRow.locator('label.toggle-switch');
+      if (await toggle.isVisible({ timeout: 1000 }).catch(() => false)) {
+        await toggle.click().catch(() => {});
+        const timeInputs = dayRow.locator('input[type="time"]');
+        if (await timeInputs.count().catch(() => 0) >= 2) {
+          await timeInputs.nth(0).fill('08:00').catch(() => {});
+          await timeInputs.nth(1).fill('20:00').catch(() => {});
+        }
+      }
     }
 
     const termsCheckbox = page.locator('input[type="checkbox"]').last();
@@ -208,15 +220,25 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
     await page.waitForURL(/\/book/, { timeout: 10000 });
     await page.waitForTimeout(2000);
 
-    // Fill date - 3 days from now
-    const dateInput = page.locator('input[type="date"], .react-datepicker__input-container input').first();
+    // Pick a date via react-datepicker: fill the text input then press Enter so the
+    // library actually parses and commits the typed value (a plain .fill() alone only
+    // sets the input's visible text, it doesn't trigger react-datepicker's date commit).
+    const dateInput = page.locator('.react-datepicker__input-container input').first();
     if (await dateInput.isVisible({ timeout: 3000 }).catch(() => false)) {
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + 5);
       await dateInput.fill(futureDate.toISOString().split('T')[0]).catch(() => {});
+      await dateInput.press('Enter').catch(() => {});
     }
 
-    await page.waitForTimeout(1500);
+    // Wait for the availability window for that date to load before looking for slots.
+    await page.waitForTimeout(2000);
+
+    // Select a time slot (professional's availability was fully opened at registration)
+    const timeBtn = page.locator('.time-slot:not([disabled])').first();
+    if (await timeBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await timeBtn.click().catch(() => {});
+    }
 
     // Fill address
     const addressField = page.locator('input[placeholder*="address" i], textarea[placeholder*="address" i]').first();
@@ -230,15 +252,16 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
       await descField.fill('Playwright automated test booking - please accept');
     }
 
-    // Select a time slot if available
-    const timeBtn = page.locator('button:has-text(/^\\d+:\\d+/), .time-slot').first();
-    if (await timeBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await timeBtn.click().catch(() => {});
-    }
-
     await page.locator('button:has-text("Submit"), button:has-text("Confirm"), button:has-text("Book Now")').last().click();
-    await page.waitForTimeout(4000);
-    console.log('✅ Booking submitted');
+    await page.waitForTimeout(3000);
+
+    const confirmed = await page.locator('text=/Booking Requested/i').first().isVisible({ timeout: 3000 }).catch(() => false);
+    if (confirmed) {
+      console.log('✅ Booking submitted and confirmed');
+    } else {
+      const errorText = await page.locator('.badge-red').first().textContent().catch(() => null);
+      console.log('⚠️ Booking submission did not reach confirmation.' + (errorText ? ' Error shown: ' + errorText : ''));
+    }
   });
 
   test('09 - Professional login and see booking', async ({ page }) => {
