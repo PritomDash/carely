@@ -287,11 +287,14 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
     }
 
     await page.locator('button:has-text("Submit"), button:has-text("Confirm"), button:has-text("Book Now")').last().click();
-    await page.waitForTimeout(3000);
 
-    const confirmed = await page.locator('text=/Booking Requested/i').first().isVisible({ timeout: 8000 }).catch(() => false);
+    // The booking page now shows a brief success state then auto-navigates to
+    // /my-bookings after 1.5s - check immediately (no fixed pre-wait) so the
+    // fleeting confirmation text is caught before the redirect fires.
+    const confirmed = await page.locator('text=/Booking Submitted/i').first().isVisible({ timeout: 8000 }).catch(() => false);
     if (confirmed) {
       console.log('✅ Booking submitted and confirmed');
+      await page.waitForURL(/\/my-bookings/, { timeout: 5000 }).catch(() => {});
     } else {
       const errorText = await page.locator('.badge-red').first().textContent().catch(() => null);
       console.log('⚠️ Booking submission did not reach confirmation.' + (errorText ? ' Error shown: ' + errorText : ''));

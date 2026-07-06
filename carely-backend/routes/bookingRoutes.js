@@ -9,6 +9,13 @@ const { getAppliedRate, computeProNet } = require('../utils/pricing');
 const { sendEmail } = require('../utils/emailService');
 const { createNotification } = require('../utils/notificationService');
 
+// Emails must never block the API response - SMTP delivery can be slow or
+// hang entirely (e.g. blocked egress on the hosting provider). Fire-and-forget
+// with an internal catch so a stuck send can't stall a booking action.
+const fireEmail = (opts) => {
+  sendEmail(opts).catch((err) => console.error('Email send failed:', err.message));
+};
+
 const detailRow = (label, value) =>
   '<div class="detail-row"><div class="detail-label">' + label + '</div><div class="detail-value">' + value + '</div></div>';
 
@@ -305,7 +312,7 @@ router.post('/create', authMiddleware, async (req, res) => {
       io: req.io,
     });
 
-    await sendEmail({
+    fireEmail({
       to: pro.email,
       subject: 'New Booking Request - Carely',
       title: 'You have a new booking request!',
@@ -440,7 +447,7 @@ router.post('/accept/:id', authMiddleware, async (req, res) => {
       io: req.io,
     });
 
-    await sendEmail({
+    fireEmail({
       to: booking.customer.email,
       subject: 'Booking Confirmed - Carely',
       title: 'Your booking is confirmed!',
@@ -455,7 +462,7 @@ router.post('/accept/:id', authMiddleware, async (req, res) => {
         '<p style="margin-top:20px;color:#64748B;font-size:13px;">Please arrange payment directly with the professional in cash or bKash. You can chat with them through the Carely app.</p>'
     });
 
-    await sendEmail({
+    fireEmail({
       to: booking.professional.email,
       subject: 'Booking Accepted - Carely',
       title: 'You accepted a booking!',
@@ -497,7 +504,7 @@ router.post('/decline/:id', authMiddleware, async (req, res) => {
       io: req.io,
     });
 
-    await sendEmail({
+    fireEmail({
       to: booking.customer.email,
       subject: 'Booking Declined - Carely',
       title: 'Your booking was declined',
@@ -536,7 +543,7 @@ router.post('/cancel/:id', authMiddleware, async (req, res) => {
         io: req.io,
       });
 
-      await sendEmail({
+      fireEmail({
         to: booking.professional.email,
         subject: 'Booking Cancelled - Carely',
         title: 'A booking was cancelled',
@@ -551,7 +558,7 @@ router.post('/cancel/:id', authMiddleware, async (req, res) => {
         io: req.io,
       });
 
-      await sendEmail({
+      fireEmail({
         to: booking.customer.email,
         subject: 'Booking Cancelled - Carely',
         title: 'Your booking was cancelled',
@@ -586,7 +593,7 @@ router.post('/mark-done/:id', authMiddleware, async (req, res) => {
       io: req.io,
     });
 
-    await sendEmail({
+    fireEmail({
       to: booking.customer.email,
       subject: 'Service Completed - Carely',
       title: 'Service completed - please rate your experience',
