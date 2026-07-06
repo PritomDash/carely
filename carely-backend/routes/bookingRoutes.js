@@ -111,6 +111,55 @@ router.get('/disabled-days/:professionalId', async (req, res) => {
   }
 });
 
+// GET /api/bookings/availability/:professionalId
+// Single call the frontend uses to render a fully-blocking calendar + time
+// grid: which weekdays the pro works, their weekly hours, and every booked
+// slot (from Confirmed, active sessions) so the UI can disable anything
+// invalid before the user ever submits.
+router.get('/availability/:professionalId', async (req, res) => {
+  try {
+    const pro = await User.findById(req.params.professionalId).select('availability').lean();
+    if (!pro) return res.status(404).json({ error: 'Professional not found' });
+
+    const DAYNAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const workingWeekdays = [];
+    DAYNAMES.forEach((day, index) => {
+      const slot = pro.availability?.[day];
+      if (slot?.start && slot?.end) workingWeekdays.push(index);
+    });
+
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    const confirmedBookings = await Booking.find({
+      professional: req.params.professionalId,
+      isActive: true,
+      status: 'Confirmed',
+      sessions: { $elemMatch: { date: { $gte: todayStart } } }
+    }).select('sessions').lean();
+
+    const bookedSlots = {};
+    for (const b of confirmedBookings) {
+      for (const s of b.sessions || []) {
+        if (!s?.date) continue;
+        const sd = new Date(s.date);
+        if (sd < todayStart) continue;
+        const dateKey = ymd(sd);
+        if (!bookedSlots[dateKey]) bookedSlots[dateKey] = [];
+        bookedSlots[dateKey].push({ startTime: s.startTime, endTime: s.endTime });
+      }
+    }
+
+    res.json({
+      workingWeekdays,
+      availability: pro.availability || {},
+      bookedSlots,
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to load availability' });
+  }
+});
+
 // GET /api/bookings/unavailable-times
 router.get('/unavailable-times', async (req, res) => {
   try {

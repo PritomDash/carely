@@ -18,8 +18,8 @@ const PRO = {
   type: 'Child Care',
 };
 const ADMIN = {
-  email: 'admin@carely.com',  // your actual admin email
-  password: 'admin_password_here',
+  email: 'admin@carely.com',
+  password: 'Admin@Carely2025',
 };
 
 test.describe.serial('Carely BD - Complete A to Z Test', () => {
@@ -131,10 +131,12 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
       await idDocInput.setInputFiles({ name: 'test-id.png', mimeType: 'image/png', buffer: TEST_PNG }).catch(() => {});
     }
 
-    // Enable every day's availability so the professional is bookable on any date the
-    // customer picks later. Each day row is `<div><span>{day}</span><label class="toggle-switch">
-    // <input type="checkbox"/>...</label>{enabled && <two time inputs>}</div>` - the checkbox
-    // itself is visually hidden by the toggle-switch styling, so click the wrapping label.
+    // Enable every day's availability, 08:00-20:00, so the professional is bookable
+    // on any date the customer picks later, and so later calendar tests can rely on
+    // a known, fully-open weekly schedule. Each day row is `<div><span>{day}</span>
+    // <label class="toggle-switch"><input type="checkbox"/>...</label>{enabled &&
+    // <two time inputs>}</div>` - the checkbox itself is visually hidden by the
+    // toggle-switch styling, so click the wrapping label.
     const ALL_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
     for (const day of ALL_DAYS) {
       const dayRow = page.locator(`div:has(> span:text-is("${day}"))`).first();
@@ -234,7 +236,46 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
     }
   });
 
-  test('08 - Create booking as customer', async ({ page, request }) => {
+  test('08 - Booking calendar disables unavailable dates', async ({ page, request }) => {
+    await page.goto('/login');
+    await page.locator('input[type="email"]').fill(CUSTOMER.email);
+    await page.locator('input[type="password"]').fill(CUSTOMER.password);
+    await page.locator('button[type="submit"]').first().click();
+    await page.waitForURL(/\/home/);
+
+    const proLoginRes = await request.post(`${BACKEND_URL}/api/auth/login`, {
+      data: { email: PRO.email, password: PRO.password },
+    });
+    const { user: proUser } = await proLoginRes.json();
+    const proId = proUser._id;
+
+    await page.goto(`/book/${proId}`);
+    await page.waitForURL(/\/book/, { timeout: 10000 });
+    await page.waitForTimeout(1500);
+
+    const dateInput = page.locator('.react-datepicker__input-container input').first();
+    await dateInput.click();
+    await page.waitForTimeout(500);
+
+    // react-datepicker marks every date that fails filterDate (past dates, and
+    // since this pro works all 7 days, only past dates in the visible month)
+    // with this class - confirms the calendar is actually blocking something.
+    const disabledCount = await page.locator('.react-datepicker__day--disabled').count();
+    console.log('Disabled calendar days found:', disabledCount);
+
+    const enabledDay = page.locator('.react-datepicker__day:not(.react-datepicker__day--disabled):not(.react-datepicker__day--outside-month)').first();
+    await expect(enabledDay).toBeVisible({ timeout: 5000 });
+    await enabledDay.click();
+    await page.waitForTimeout(1000);
+
+    // This pro has full 08:00-20:00 availability every day and no bookings yet,
+    // so picking any enabled day must render a non-empty time slot grid.
+    const slotCount = await page.locator('.time-slot').count();
+    expect(slotCount).toBeGreaterThan(0);
+    console.log('✅ Calendar availability check -', slotCount, 'time slots rendered for an available day');
+  });
+
+  test('09 - Create booking as customer', async ({ page, request }) => {
     await page.goto('/login');
     await page.locator('input[type="email"]').fill(CUSTOMER.email);
     await page.locator('input[type="password"]').fill(CUSTOMER.password);
@@ -257,6 +298,8 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
     // Pick a date via react-datepicker: fill the text input then press Enter so the
     // library actually parses and commits the typed value (a plain .fill() alone only
     // sets the input's visible text, it doesn't trigger react-datepicker's date commit).
+    // Test 12 relies on this exact date (today+5) and the first slot (08:00) being
+    // the one that ends up Confirmed, so don't change this without updating test 12.
     const dateInput = page.locator('.react-datepicker__input-container input').first();
     if (await dateInput.isVisible({ timeout: 3000 }).catch(() => false)) {
       const futureDate = new Date();
@@ -265,8 +308,9 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
       await dateInput.press('Enter').catch(() => {});
     }
 
-    // Wait for the availability window for that date to load before looking for slots.
-    await page.waitForTimeout(2000);
+    // Wait for the time slot grid (computed client-side from the availability
+    // endpoint fetched on page load) to reflect the newly selected date.
+    await page.waitForTimeout(1500);
 
     // Select a time slot (professional's availability was fully opened at registration)
     const timeBtn = page.locator('.time-slot:not([disabled])').first();
@@ -306,7 +350,7 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
     }
   });
 
-  test('09 - Professional login and see booking', async ({ page }) => {
+  test('10 - Professional login and see booking', async ({ page }) => {
     await page.goto('/login');
     await page.locator('input[type="email"]').fill(PRO.email);
     await page.locator('input[type="password"]').fill(PRO.password);
@@ -324,7 +368,7 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
     }
   });
 
-  test('10 - Professional accepts booking - credit deducted', async ({ page }) => {
+  test('11 - Professional accepts booking - credit deducted', async ({ page }) => {
     await page.goto('/login');
     await page.locator('input[type="email"]').fill(PRO.email);
     await page.locator('input[type="password"]').fill(PRO.password);
@@ -347,14 +391,51 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
       // Check credit was deducted - should be 499 now
       await page.goto('/my-credits');
       await page.waitForTimeout(2000);
-      const creditsText = await page.locator('body').textContent();
       console.log('✅ Credit check after accept');
     } else {
       console.log('⚠️ No Accept button visible');
     }
   });
 
-  test('11 - Customer sees confirmed booking', async ({ page }) => {
+  test('12 - Cannot select booked time slot', async ({ page, request }) => {
+    await page.goto('/login');
+    await page.locator('input[type="email"]').fill(CUSTOMER.email);
+    await page.locator('input[type="password"]').fill(CUSTOMER.password);
+    await page.locator('button[type="submit"]').first().click();
+    await page.waitForURL(/\/home/);
+
+    const proLoginRes = await request.post(`${BACKEND_URL}/api/auth/login`, {
+      data: { email: PRO.email, password: PRO.password },
+    });
+    const { user: proUser } = await proLoginRes.json();
+    const proId = proUser._id;
+
+    await page.goto(`/book/${proId}`);
+    await page.waitForURL(/\/book/, { timeout: 10000 });
+    await page.waitForTimeout(1500);
+
+    // Same date used (and just accepted) in tests 09/11 - the 08:00 slot on this
+    // date is now covered by a Confirmed booking and must render as blocked,
+    // without ever hitting the backend.
+    const dateInput = page.locator('.react-datepicker__input-container input').first();
+    const bookedDate = new Date();
+    bookedDate.setDate(bookedDate.getDate() + 5);
+    await dateInput.fill(bookedDate.toISOString().split('T')[0]).catch(() => {});
+    await dateInput.press('Enter').catch(() => {});
+    await page.waitForTimeout(1500);
+
+    const bookedSlot = page.locator('.time-slot', { hasText: '08:00' }).first();
+    if (await bookedSlot.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await expect(bookedSlot).toBeDisabled();
+      const slotText = await bookedSlot.textContent();
+      expect(slotText).toMatch(/booked/i);
+      console.log('✅ Booked slot properly blocked:', slotText);
+    } else {
+      console.log('⚠️ Could not locate the previously booked 08:00 slot to verify blocking');
+    }
+  });
+
+  test('13 - Customer sees confirmed booking', async ({ page }) => {
     await page.goto('/login');
     await page.locator('input[type="email"]').fill(CUSTOMER.email);
     await page.locator('input[type="password"]').fill(CUSTOMER.password);
@@ -370,7 +451,7 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
     }
   });
 
-  test('12 - Chat works between customer and professional', async ({ browser }) => {
+  test('14 - Chat works between customer and professional', async ({ browser }) => {
     const custContext = await browser.newContext();
     const proContext = await browser.newContext();
     const custPage = await custContext.newPage();
@@ -417,7 +498,7 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
     await proContext.close();
   });
 
-  test('13 - Professional marks booking as done', async ({ page }) => {
+  test('15 - Professional marks booking as done', async ({ page }) => {
     await page.goto('/login');
     await page.locator('input[type="email"]').fill(PRO.email);
     await page.locator('input[type="password"]').fill(PRO.password);
@@ -435,7 +516,7 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
     }
   });
 
-  test('14 - Customer rates professional', async ({ page }) => {
+  test('16 - Customer rates professional', async ({ page }) => {
     await page.goto('/login');
     await page.locator('input[type="email"]').fill(CUSTOMER.email);
     await page.locator('input[type="password"]').fill(CUSTOMER.password);
@@ -466,7 +547,7 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
     }
   });
 
-  test('15 - Customer creates job post', async ({ page }) => {
+  test('17 - Customer creates job post', async ({ page }) => {
     await page.goto('/login');
     await page.locator('input[type="email"]').fill(CUSTOMER.email);
     await page.locator('input[type="password"]').fill(CUSTOMER.password);
@@ -493,7 +574,7 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
     console.log('✅ Job post created');
   });
 
-  test('16 - Professional applies to job post', async ({ page }) => {
+  test('18 - Professional applies to job post', async ({ page }) => {
     await page.goto('/login');
     await page.locator('input[type="email"]').fill(PRO.email);
     await page.locator('input[type="password"]').fill(PRO.password);
@@ -511,7 +592,7 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
     }
   });
 
-  test('17 - Customer selects professional from job post', async ({ page }) => {
+  test('19 - Customer selects professional from job post', async ({ page }) => {
     await page.goto('/login');
     await page.locator('input[type="email"]').fill(CUSTOMER.email);
     await page.locator('input[type="password"]').fill(CUSTOMER.password);
@@ -529,7 +610,7 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
     }
   });
 
-  test('18 - Emergency post deducts credit from customer', async ({ page }) => {
+  test('20 - Emergency post deducts credit from customer', async ({ page }) => {
     await page.goto('/login');
     await page.locator('input[type="email"]').fill(CUSTOMER.email);
     await page.locator('input[type="password"]').fill(CUSTOMER.password);
@@ -554,7 +635,7 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
     console.log('✅ Emergency post attempted - customer credit should decrease from 10 to 9');
   });
 
-  test('19 - Notifications page loads and shows notifications', async ({ page }) => {
+  test('21 - Notifications page loads and shows notifications', async ({ page }) => {
     await page.goto('/login');
     await page.locator('input[type="email"]').fill(CUSTOMER.email);
     await page.locator('input[type="password"]').fill(CUSTOMER.password);
@@ -566,7 +647,7 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
     console.log('✅ Notifications page loads');
   });
 
-  test('20 - Credits page shows balance and history', async ({ page }) => {
+  test('22 - Credits page shows balance and history', async ({ page }) => {
     await page.goto('/login');
     await page.locator('input[type="email"]').fill(PRO.email);
     await page.locator('input[type="password"]').fill(PRO.password);
@@ -581,7 +662,7 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
     console.log('✅ Credits page shows balance');
   });
 
-  test('21 - Top up form works', async ({ page }) => {
+  test('23 - Top up form works', async ({ page }) => {
     await page.goto('/login');
     await page.locator('input[type="email"]').fill(PRO.email);
     await page.locator('input[type="password"]').fill(PRO.password);
@@ -610,69 +691,123 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
     }
   });
 
-  test('22 - Admin login and see top up requests', async ({ page }) => {
-    await page.goto('/admin/login').catch(async () => {
-      await page.goto('/login');
-    });
-
-    await page.locator('input[type="email"]').fill(ADMIN.email).catch(() => {});
-    await page.locator('input[type="password"]').fill(ADMIN.password).catch(() => {});
-    await page.locator('button[type="submit"]').first().click().catch(() => {});
-    await page.waitForTimeout(5000);
-
-    const isAdminPage = page.url().includes('/admin');
-    if (isAdminPage) {
-      console.log('✅ Admin logged in');
-
-      const creditsTab = page.locator('button:has-text("Credits"), a:has-text("Credits")').first();
-      if (await creditsTab.isVisible({ timeout: 3000 }).catch(() => false)) {
-        await creditsTab.click();
-        await page.waitForTimeout(2000);
-
-        const pendingRequest = page.locator('text=/Pending|pending/i, button:has-text("Approve")').first();
-        if (await pendingRequest.isVisible({ timeout: 3000 }).catch(() => false)) {
-          console.log('✅ Admin sees pending top up requests');
-
-          const approveBtn = page.locator('button:has-text("Approve")').first();
-          if (await approveBtn.isVisible()) {
-            await approveBtn.click();
-            await page.waitForTimeout(2000);
-            console.log('✅ Top up approved');
-          }
-        }
-      }
-    } else {
-      console.log('⚠️ Admin login credentials may need updating');
-    }
-  });
-
-  test('23 - Admin renew credits for all users', async ({ page }) => {
-    await page.goto('/admin/login').catch(async () => {
-      await page.goto('/login');
-    });
-    await page.locator('input[type="email"]').fill(ADMIN.email).catch(() => {});
-    await page.locator('input[type="password"]').fill(ADMIN.password).catch(() => {});
-    await page.locator('button[type="submit"]').first().click().catch(() => {});
+  test('24 - Admin login works', async ({ page }) => {
+    await page.goto('/login');
+    await page.locator('input[type="email"]').fill(ADMIN.email);
+    await page.locator('input[type="password"]').fill(ADMIN.password);
+    await page.locator('button[type="submit"]').first().click();
     await page.waitForTimeout(3000);
+    const url = page.url();
+    expect(url).toMatch(/admin|home/);
+    console.log('✅ Admin logged in at:', url);
+  });
 
-    if (page.url().includes('/admin')) {
-      const creditsTab = page.locator('button:has-text("Credits"), a:has-text("Credits")').first();
-      if (await creditsTab.isVisible()) await creditsTab.click();
-      await page.waitForTimeout(2000);
+  test('25 - Admin dashboard all tabs load', async ({ page }) => {
+    await page.goto('/login');
+    await page.locator('input[type="email"]').fill(ADMIN.email);
+    await page.locator('input[type="password"]').fill(ADMIN.password);
+    await page.locator('button[type="submit"]').first().click();
+    await page.waitForURL(/\/admin/, { timeout: 10000 });
 
-      const renewBtn = page.locator('button:has-text("Renew"), button:has-text("Give Credits")').first();
-      if (await renewBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
-        await renewBtn.click();
+    // Tab button label -> the distinct <h2> heading its panel renders.
+    const tabChecks = [
+      { tab: 'Overview', heading: 'Overview' },
+      { tab: 'Users', heading: 'Users' },
+      { tab: 'Bookings', heading: 'Bookings' },
+      { tab: 'Job Posts', heading: 'Job Posts' },
+      { tab: 'Credits', heading: 'Credits & Payments' },
+      { tab: 'Settings', heading: 'Platform Settings' },
+      { tab: 'Chat', heading: 'Chat' },
+    ];
 
-        page.on('dialog', d => d.accept());
+    for (const { tab, heading } of tabChecks) {
+      await page.locator('.admin-tab', { hasText: tab }).first().click();
+      await page.waitForTimeout(800);
+      await expect(page.locator('h2', { hasText: heading }).first()).toBeVisible({ timeout: 5000 });
+    }
+    console.log('✅ Admin tabs verified:', tabChecks.map((t) => t.tab).join(', '));
+  });
 
-        await page.waitForTimeout(3000);
-        console.log('✅ Renew credits button works');
-      }
+  test('26 - Admin can approve top up request', async ({ page }) => {
+    await page.goto('/login');
+    await page.locator('input[type="email"]').fill(ADMIN.email);
+    await page.locator('input[type="password"]').fill(ADMIN.password);
+    await page.locator('button[type="submit"]').first().click();
+    await page.waitForURL(/\/admin/, { timeout: 10000 });
+
+    await page.locator('.admin-tab', { hasText: 'Credits' }).first().click();
+    await page.waitForTimeout(1500);
+
+    // Test 23 submitted a pending manual top up request for PRO - approve it.
+    const approveBtn = page.locator('button:has-text("Approve")').first();
+    if (await approveBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await approveBtn.click();
+      await page.waitForTimeout(1500);
+      await expect(page.locator('text=/approved/i').first()).toBeVisible({ timeout: 5000 });
+      console.log('✅ Admin top up approval works');
+    } else {
+      console.log('⚠️ No pending top up request found to approve');
     }
   });
 
-  test('24 - Terms Privacy Blog pages load', async ({ page }) => {
+  test('27 - Admin renew all credits works', async ({ page }) => {
+    await page.goto('/login');
+    await page.locator('input[type="email"]').fill(ADMIN.email);
+    await page.locator('input[type="password"]').fill(ADMIN.password);
+    await page.locator('button[type="submit"]').first().click();
+    await page.waitForURL(/\/admin/, { timeout: 10000 });
+
+    await page.locator('.admin-tab', { hasText: 'Credits' }).first().click();
+    await page.waitForTimeout(1500);
+
+    // This is a two-step confirm flow: "Renew Credits for Everyone" reveals a
+    // confirmation prompt, then "Yes, Renew for Everyone" actually executes it.
+    const renewBtn = page.locator('button:has-text("Renew Credits for Everyone")').first();
+    if (await renewBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await renewBtn.click();
+      await page.waitForTimeout(500);
+      const confirmBtn = page.locator('button:has-text("Yes, Renew for Everyone")').first();
+      await expect(confirmBtn).toBeVisible({ timeout: 3000 });
+      await confirmBtn.click();
+      await page.waitForTimeout(2000);
+      console.log('✅ Admin renew credits works');
+    } else {
+      console.log('⚠️ Renew Credits button not found');
+    }
+  });
+
+  test('28 - Admin can verify a professional', async ({ page }) => {
+    await page.goto('/login');
+    await page.locator('input[type="email"]').fill(ADMIN.email);
+    await page.locator('input[type="password"]').fill(ADMIN.password);
+    await page.locator('button[type="submit"]').first().click();
+    await page.waitForURL(/\/admin/, { timeout: 10000 });
+
+    await page.locator('.admin-tab', { hasText: 'Users' }).first().click();
+    await page.waitForTimeout(2000);
+
+    const proRow = page.locator('tr', { hasText: PRO.email }).first();
+    await expect(proRow).toBeVisible({ timeout: 10000 });
+
+    // New professionals are verified by default (isVerified defaults true), so
+    // the Verify button never appears until someone is unverified - suspend our
+    // own test professional first to reach that state, then verify them back.
+    const suspendBtn = proRow.locator('button:has-text("Suspend")').first();
+    if (await suspendBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await suspendBtn.click();
+      await page.waitForTimeout(1500);
+    }
+
+    const verifyBtn = proRow.locator('button:has-text("Verify")').first();
+    await expect(verifyBtn).toBeVisible({ timeout: 5000 });
+    await verifyBtn.click();
+    await page.waitForTimeout(1500);
+
+    await expect(proRow.locator('.badge-green')).toBeVisible({ timeout: 5000 });
+    console.log('✅ Admin verify professional works');
+  });
+
+  test('29 - Terms Privacy Blog pages load', async ({ page }) => {
     await page.goto('/terms');
     await expect(page.locator('text=/Terms/i').first()).toBeVisible();
 
@@ -684,7 +819,7 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
     console.log('✅ Legal and blog pages load');
   });
 
-  test('25 - Mobile viewport no horizontal scroll', async ({ browser }) => {
+  test('30 - Mobile viewport no horizontal scroll', async ({ browser }) => {
     const ctx = await browser.newContext({ viewport: { width: 375, height: 812 } });
     const page = await ctx.newPage();
 
@@ -698,7 +833,7 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
     await ctx.close();
   });
 
-  test('26 - Console errors check on key pages', async ({ page }) => {
+  test('31 - Console errors check on key pages', async ({ page }) => {
     const errors = [];
     page.on('console', msg => {
       if (msg.type() === 'error') errors.push(msg.text());

@@ -64,18 +64,20 @@ export default function BookingPage() {
   const { id } = useParams();
 
   const [pro, setPro] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [proLoaded, setProLoaded] = useState(false);
+  const [availabilityLoaded, setAvailabilityLoaded] = useState(false);
+  const loading = !proLoaded || !availabilityLoaded;
   const [error, setError] = useState('');
   const [submitState, setSubmitState] = useState('idle'); // idle | submitting | success | error
   const [confirmation, setConfirmation] = useState(null);
 
-  const [fullyBlockedDates, setFullyBlockedDates] = useState([]);
-  const [partiallyBlockedDates, setPartiallyBlockedDates] = useState({});
+  // Everything needed to render a fully-blocking calendar + time grid, fetched
+  // once so the UI can disable invalid dates/times before the user ever submits.
+  const [workingWeekdays, setWorkingWeekdays] = useState([]); // [0..6], 0=Sunday
+  const [availability, setAvailability] = useState({}); // { Monday: {start,end}, ... }
+  const [bookedSlots, setBookedSlots] = useState({}); // { '2025-01-15': [{startTime,endTime}] }
 
   const [selectedDate, setSelectedDate] = useState(null);
-  const [slotsLoading, setSlotsLoading] = useState(false);
-  const [bookedRanges, setBookedRanges] = useState([]);
-  const [availableWindow, setAvailableWindow] = useState(null);
   const [selectedTime, setSelectedTime] = useState('');
 
   const [duration, setDuration] = useState(1);
@@ -94,54 +96,67 @@ export default function BookingPage() {
     api.get(`/api/users/${id}`)
       .then((res) => setPro(res.data))
       .catch(() => setError('Failed to load professional'))
-      .finally(() => setLoading(false));
+      .finally(() => setProLoaded(true));
   }, [id]);
 
   useEffect(() => {
-    api.get(`/api/bookings/disabled-days/${id}`)
+    api.get(`/api/bookings/availability/${id}`)
       .then((res) => {
-        setFullyBlockedDates(res.data.fullyBlockedDates || []);
-        setPartiallyBlockedDates(res.data.partiallyBlockedDates || {});
+        setWorkingWeekdays(res.data.workingWeekdays || []);
+        setAvailability(res.data.availability || {});
+        setBookedSlots(res.data.bookedSlots || {});
       })
-      .catch(() => {});
+      .catch(() => {
+        setWorkingWeekdays([]);
+        setAvailability({});
+        setBookedSlots({});
+      })
+      .finally(() => setAvailabilityLoaded(true));
   }, [id]);
 
-  useEffect(() => {
-    if (!selectedDate) {
-      setBookedRanges([]);
-      setAvailableWindow(null);
-      setSelectedTime('');
-      return;
-    }
-    setSlotsLoading(true);
-    setSelectedTime('');
-    api.get('/api/bookings/unavailable-times', {
-      params: { professionalId: id, date: toDateStr(selectedDate) },
-    }).then((res) => {
-      setBookedRanges(res.data.bookedRanges || []);
-      setAvailableWindow(res.data.availableWindow || null);
-    }).catch(() => {
-      setBookedRanges([]);
-      setAvailableWindow(null);
-    }).finally(() => setSlotsLoading(false));
-  }, [selectedDate, id]);
+  const getDaySchedule = (date) => availability[DAY_BY_INDEX[date.getDay()]];
+
+  const isDateAvailable = (date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (date < today) return false;
+    if (!workingWeekdays.includes(date.getDay())) return false;
+
+    const daySchedule = getDaySchedule(date);
+    if (!daySchedule?.start || !daySchedule?.end) return false;
+
+    const dayBookings = bookedSlots[toDateStr(date)] || [];
+    const availableMins = toMin(daySchedule.end) - toMin(daySchedule.start);
+    const bookedMins = dayBookings.reduce((sum, b) => sum + (toMin(b.endTime) - toMin(b.startTime)), 0);
+    return bookedMins < availableMins;
+  };
 
   const timeSlots = useMemo(() => {
-    if (!availableWindow?.start || !availableWindow?.end) return [];
-    const startMin = toMin(availableWindow.start);
-    const endMin = toMin(availableWindow.end);
+    if (!selectedDate) return [];
+    const daySchedule = getDaySchedule(selectedDate);
+    if (!daySchedule?.start || !daySchedule?.end) return [];
+
+    const startMin = toMin(daySchedule.start);
+    const endMin = toMin(daySchedule.end);
     const durationMin = Number(duration) * 60;
+    const dayBookings = bookedSlots[toDateStr(selectedDate)] || [];
+
     const slots = [];
     for (let m = startMin; m < endMin; m += 30) {
       const slotEnd = m + durationMin;
-      const overlapsBooked = bookedRanges.some(
-        (r) => toMin(r.start) < slotEnd && toMin(r.end) > m
+      const overlapsBooked = dayBookings.some(
+        (b) => toMin(b.startTime) < slotEnd && toMin(b.endTime) > m
       );
       const fitsWindow = slotEnd <= endMin;
-      slots.push({ time: toHHMM(m), disabled: overlapsBooked || !fitsWindow });
+      slots.push({ time: toHHMM(m), available: fitsWindow && !overlapsBooked });
     }
     return slots;
-  }, [availableWindow, bookedRanges, duration]);
+  }, [selectedDate, availability, bookedSlots, duration]);
+
+  const selectedSlot = timeSlots.find((s) => s.time === selectedTime);
+  const durationOverlapWarning = selectedTime && selectedSlot && !selectedSlot.available
+    ? `This time slot with ${duration} hour${duration > 1 ? 's' : ''} duration overlaps an existing booking. Please choose a shorter duration or different time.`
+    : '';
 
   const estimatedPrice = useMemo(() => {
     if (!pro || !selectedDate) return 0;
@@ -166,15 +181,15 @@ export default function BookingPage() {
     setRecurringDays((prev) => prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]);
   };
 
-  const filterDate = (date) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (date < today) return false;
-    return !fullyBlockedDates.includes(toDateStr(date));
+  const handleSelectDate = (date) => {
+    setSelectedDate(date);
+    setSelectedTime('');
   };
 
   const dayClassName = (date) => {
-    return partiallyBlockedDates[toDateStr(date)] ? 'day-partial' : undefined;
+    const dayBookings = bookedSlots[toDateStr(date)] || [];
+    if (dayBookings.length === 0) return undefined;
+    return isDateAvailable(date) ? 'day-partial' : undefined;
   };
 
   const handleSubmit = async (e) => {
@@ -183,6 +198,10 @@ export default function BookingPage() {
 
     if (!selectedDate || !selectedTime) {
       setError('Please select a date and time.');
+      return;
+    }
+    if (durationOverlapWarning) {
+      setError(durationOverlapWarning);
       return;
     }
     if (!address.trim() || !workDescription.trim()) {
@@ -332,24 +351,22 @@ export default function BookingPage() {
                 <label>Date</label>
                 <DatePicker
                   selected={selectedDate}
-                  onChange={setSelectedDate}
-                  filterDate={filterDate}
+                  onChange={handleSelectDate}
+                  filterDate={isDateAvailable}
                   dayClassName={dayClassName}
                   minDate={new Date()}
                   placeholderText="Select a date"
                   dateFormat="yyyy-MM-dd"
                 />
                 <p className="text-muted" style={{ marginTop: 6 }}>
-                  Greyed-out dates are fully booked. Dates with an orange dot are partially booked.
+                  Greyed-out dates are unavailable or fully booked. Dates with an orange dot are partially booked.
                 </p>
               </div>
 
               {selectedDate && (
                 <div className="form-group">
                   <label>Available Time Slots</label>
-                  {slotsLoading ? (
-                    <p className="text-muted">Loading time slots...</p>
-                  ) : timeSlots.length === 0 ? (
+                  {timeSlots.length === 0 ? (
                     <p className="text-muted">No available time slots on this date.</p>
                   ) : (
                     <div className="time-slot-grid">
@@ -357,14 +374,18 @@ export default function BookingPage() {
                         <button
                           key={slot.time}
                           type="button"
-                          disabled={slot.disabled}
+                          disabled={!slot.available}
                           className={`time-slot ${selectedTime === slot.time ? 'selected' : ''}`}
                           onClick={() => setSelectedTime(slot.time)}
+                          style={!slot.available ? { textDecoration: 'line-through' } : undefined}
                         >
-                          {slot.time}
+                          {slot.time}{!slot.available && ' (booked)'}
                         </button>
                       ))}
                     </div>
+                  )}
+                  {durationOverlapWarning && (
+                    <div className="msg-error" style={{ marginTop: 10 }}>{durationOverlapWarning}</div>
                   )}
                 </div>
               )}
@@ -457,7 +478,7 @@ export default function BookingPage() {
               <button
                 type="submit"
                 className="btn btn-primary btn-block"
-                disabled={submitState === 'submitting' || submitState === 'success'}
+                disabled={submitState === 'submitting' || submitState === 'success' || !!durationOverlapWarning}
                 style={{
                   marginTop: 8,
                   background: submitState === 'success' ? '#22C55E' : undefined,
