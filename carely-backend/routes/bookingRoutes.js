@@ -338,27 +338,35 @@ router.post('/accept/:id', authMiddleware, async (req, res) => {
     if (booking.status === 'Confirmed')
       return res.json({ message: 'Already confirmed', booking });
 
-    // Check credits
+    // Check and deduct credits
     let settings = await Settings.findOne();
     if (!settings) settings = await Settings.create({});
-    if (settings.creditsEnabled) {
-      const cost = settings.bookingAcceptCreditCost ?? 1;
-      const pro = await User.findById(req.user._id);
-      if (pro.credits < cost) {
-        return res.status(403).json({
-          message: 'You do not have enough credits to accept this booking. Please top up your credits.',
-          creditsEnabled: true,
-          currentCredits: pro.credits,
-        });
-      }
-      pro.credits -= cost;
-      pro.totalCreditsUsed = (pro.totalCreditsUsed || 0) + cost;
-      await pro.save();
-      await CreditTransaction.create({
-        professional: pro._id, type: 'deduct', credits: cost,
-        note: 'Credit used to accept booking', bookingId: booking._id
+
+    const creditCost = settings.bookingAcceptCreditCost ?? 1;
+    const professional = await User.findById(req.user._id);
+
+    if ((professional.credits || 0) < creditCost) {
+      return res.status(403).json({
+        message: 'You do not have enough credits to accept this booking. Please top up your credits.',
+        credits: professional.credits || 0,
+        required: creditCost,
+        insufficientCredits: true,
       });
     }
+
+    professional.credits = (professional.credits || 0) - creditCost;
+    professional.totalCreditsUsed = (professional.totalCreditsUsed || 0) + creditCost;
+    await professional.save();
+
+    await CreditTransaction.create({
+      professional: professional._id,
+      type: 'deduct',
+      credits: creditCost,
+      note: 'Accepted booking request',
+      bookingId: booking._id,
+    });
+
+    console.log('Credit deducted:', professional.email, 'new balance:', professional.credits);
 
     // Re-check for conflicts at accept time
     const hours = booking.duration || 1;
@@ -576,6 +584,17 @@ router.post('/mark-done/:id', authMiddleware, async (req, res) => {
       message: booking.professional.name + ' marked your job as complete. Please rate your experience.',
       link: '/rate/' + booking._id,
       io: req.io,
+    });
+
+    await sendEmail({
+      to: booking.customer.email,
+      subject: 'Service Completed - Carely',
+      title: 'Service completed - please rate your experience',
+      content:
+        detailRow('Professional Name', booking.professional.name) +
+        detailRow('Date', booking.date.toISOString().slice(0, 10)) +
+        detailRow('Time', booking.time) +
+        '<p style="margin-top:20px;color:#64748B;font-size:13px;">Please log in to Carely and rate your experience with ' + booking.professional.name + '.</p>'
     });
 
     res.json({ message: 'Job marked as done' });

@@ -224,7 +224,7 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
     await page.waitForTimeout(3000);
 
     const viewBtn = page.locator('button:has-text("View Profile"), a:has-text("View Profile")').first();
-    if (await viewBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
+    if (await viewBtn.isVisible({ timeout: 10000 }).catch(() => false)) {
       await viewBtn.click();
       await page.waitForURL(/\/view-profile/, { timeout: 10000 });
       await expect(page.getByRole('button', { name: 'Book Now' })).toBeVisible({ timeout: 5000 });
@@ -289,7 +289,7 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
     await page.locator('button:has-text("Submit"), button:has-text("Confirm"), button:has-text("Book Now")').last().click();
     await page.waitForTimeout(3000);
 
-    const confirmed = await page.locator('text=/Booking Requested/i').first().isVisible({ timeout: 3000 }).catch(() => false);
+    const confirmed = await page.locator('text=/Booking Requested/i').first().isVisible({ timeout: 8000 }).catch(() => false);
     if (confirmed) {
       console.log('✅ Booking submitted and confirmed');
     } else {
@@ -309,7 +309,7 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
     await page.waitForTimeout(3000);
 
     const pendingBooking = page.locator('.badge:has-text("AwaitingAcceptance")').first();
-    if (await pendingBooking.isVisible({ timeout: 5000 }).catch(() => false)) {
+    if (await pendingBooking.isVisible({ timeout: 10000 }).catch(() => false)) {
       console.log('✅ Professional sees pending booking');
     } else {
       console.log('⚠️ No pending bookings visible');
@@ -387,7 +387,7 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
     await custPage.waitForTimeout(2000);
 
     const convo = custPage.locator('[class*="chat"], [class*="conversation"], a:has-text("' + PRO.name + '")').first();
-    if (await convo.isVisible({ timeout: 3000 }).catch(() => false)) {
+    if (await convo.isVisible({ timeout: 8000 }).catch(() => false)) {
       await convo.click();
       await custPage.waitForTimeout(2000);
       const msgInput = custPage.locator('input[placeholder*="message" i], textarea[placeholder*="message" i]').first();

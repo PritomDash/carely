@@ -20,7 +20,7 @@ export default function LoginPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [error, setError] = useState('');
   const [success] = useState(routerLocation.state?.success || '');
-  const [loading, setLoading] = useState(false);
+  const [submitState, setSubmitState] = useState('idle'); // idle | submitting | success | error
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -32,7 +32,7 @@ export default function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    setLoading(true);
+    setSubmitState('submitting');
     try {
       const url = isAdmin ? '/api/admin/login' : '/api/auth/login';
       const res = await api.post(url, { email, password });
@@ -43,15 +43,16 @@ export default function LoginPage() {
       localStorage.setItem('carelyUser', JSON.stringify(loggedUser));
       window.dispatchEvent(new Event('carely-auth-changed'));
 
+      setSubmitState('success');
       if (loggedUser.role === 'admin') {
         navigate('/admin');
       } else {
         navigate('/home');
       }
     } catch (err) {
+      setSubmitState('error');
       setError(err.response?.data?.message || 'Login failed. Please try again.');
-    } finally {
-      setLoading(false);
+      setTimeout(() => setSubmitState('idle'), 3000);
     }
   };
 
@@ -173,17 +174,21 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={submitState === 'submitting' || submitState === 'success'}
             style={{
               width: '100%', padding: 16,
-              background: 'linear-gradient(135deg, #2563EB, #3B82F6)',
+              background: submitState === 'success' ? '#22C55E' : 'linear-gradient(135deg, #2563EB, #3B82F6)',
               color: 'white', border: 'none', borderRadius: 12,
-              fontSize: 16, fontWeight: 800, cursor: loading ? 'not-allowed' : 'pointer',
+              fontSize: 16, fontWeight: 800,
+              cursor: submitState === 'idle' ? 'pointer' : 'not-allowed',
               boxShadow: '0 4px 20px rgba(37,99,235,0.35)',
-              marginTop: 8, opacity: loading ? 0.7 : 1,
+              marginTop: 8, opacity: submitState === 'submitting' ? 0.7 : 1,
             }}
           >
-            {loading ? 'Signing in...' : 'Sign In'}
+            {submitState === 'submitting' && '⏳ Signing in...'}
+            {submitState === 'success' && '✓ Signed In!'}
+            {submitState === 'error' && 'Try Again'}
+            {submitState === 'idle' && 'Sign In'}
           </button>
         </form>
 

@@ -59,6 +59,7 @@ export default function CreditsPage() {
   const [senderNumber, setSenderNumber] = useState('');
   const [transactionID, setTransactionID] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [submitState, setSubmitState] = useState('idle'); // idle | submitting | success | error
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -126,6 +127,7 @@ export default function CreditsPage() {
     }
 
     setSubmitting(true);
+    setSubmitState('submitting');
     try {
       const res = await api.post('/api/credits/topup-manual', {
         credits: selectedPack.credits,
@@ -135,12 +137,16 @@ export default function CreditsPage() {
         paymentMethod: paymentTab,
       });
       setSuccess(res.data?.message || 'Top up request submitted!');
+      setSubmitState('success');
       setTransactionID('');
       setSenderNumber('');
       setSelectedPackIndex(null);
       fetchAll();
+      setTimeout(() => setSubmitState('idle'), 2000);
     } catch (err) {
+      setSubmitState('error');
       setError(err.response?.data?.error || 'Failed to submit top up request.');
+      setTimeout(() => setSubmitState('idle'), 3000);
     } finally {
       setSubmitting(false);
     }
@@ -290,8 +296,16 @@ export default function CreditsPage() {
                           <label>Transaction ID *</label>
                           <input type="text" value={transactionID} onChange={(e) => setTransactionID(e.target.value)} placeholder="e.g. 8N7A6B5C4D" required />
                         </div>
-                        <button type="submit" className="btn btn-primary btn-block" disabled={submitting}>
-                          {submitting ? 'Submitting...' : 'Submit Request'}
+                        <button
+                          type="submit"
+                          className="btn btn-primary btn-block"
+                          disabled={submitState === 'submitting' || submitState === 'success'}
+                          style={{ background: submitState === 'success' ? '#22C55E' : undefined }}
+                        >
+                          {submitState === 'idle' && 'Submit Request'}
+                          {submitState === 'submitting' && '⏳ Submitting...'}
+                          {submitState === 'success' && '✓ Request Submitted!'}
+                          {submitState === 'error' && 'Try Again'}
                         </button>
                       </form>
                     </div>

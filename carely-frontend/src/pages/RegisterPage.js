@@ -32,7 +32,7 @@ export default function RegisterPage() {
   const navigate = useNavigate();
   const [role, setRole] = useState('customer');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [submitState, setSubmitState] = useState('idle'); // idle | submitting | success | error
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const [name, setName] = useState('');
@@ -74,7 +74,7 @@ export default function RegisterPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    setLoading(true);
+    setSubmitState('submitting');
 
     try {
       const formData = new FormData();
@@ -118,11 +118,14 @@ export default function RegisterPage() {
       await api.post('/api/auth/register', formData);
       localStorage.removeItem('carelyReferralCode');
 
-      navigate('/login', { state: { success: 'Account created successfully! Please log in.' } });
+      setSubmitState('success');
+      setTimeout(() => {
+        navigate('/login', { state: { success: 'Account created successfully! Please log in.' } });
+      }, 1200);
     } catch (err) {
+      setSubmitState('error');
       setError(err.response?.data?.message || 'Registration failed. Please try again.');
-    } finally {
-      setLoading(false);
+      setTimeout(() => setSubmitState('idle'), 3000);
     }
   };
 
@@ -429,17 +432,21 @@ export default function RegisterPage() {
 
           <button
             type="submit"
-            disabled={!agreedToTerms || loading}
+            disabled={!agreedToTerms || submitState === 'submitting' || submitState === 'success'}
             style={{
               width: '100%', padding: 16,
-              background: 'linear-gradient(135deg, #2563EB, #3B82F6)',
+              background: submitState === 'success' ? '#22C55E' : 'linear-gradient(135deg, #2563EB, #3B82F6)',
               color: 'white', border: 'none', borderRadius: 12,
-              fontSize: 16, fontWeight: 800, cursor: agreedToTerms && !loading ? 'pointer' : 'not-allowed',
+              fontSize: 16, fontWeight: 800,
+              cursor: agreedToTerms && submitState === 'idle' ? 'pointer' : 'not-allowed',
               boxShadow: '0 4px 20px rgba(37,99,235,0.35)',
               marginTop: 8, opacity: agreedToTerms ? 1 : 0.5,
             }}
           >
-            {loading ? 'Creating Account...' : role === 'professional' ? 'Create Professional Account' : 'Register'}
+            {submitState === 'submitting' && '⏳ Creating Account...'}
+            {submitState === 'success' && '✓ Account Created!'}
+            {submitState === 'error' && 'Try Again'}
+            {submitState === 'idle' && (role === 'professional' ? 'Create Professional Account' : 'Register')}
           </button>
         </form>
 

@@ -18,7 +18,7 @@ const fileUrl = (p) => {
 
 export default function EditProfilePage() {
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [submitState, setSubmitState] = useState('idle'); // idle | submitting | success | error
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [role, setRole] = useState('customer');
@@ -89,7 +89,7 @@ export default function EditProfilePage() {
     e.preventDefault();
     setError('');
     setSuccess('');
-    setSaving(true);
+    setSubmitState('submitting');
     try {
       if (photoFile) {
         const photoData = new FormData();
@@ -122,10 +122,12 @@ export default function EditProfilePage() {
 
       setPhotoFile(null);
       setSuccess('Profile updated successfully.');
+      setSubmitState('success');
+      setTimeout(() => setSubmitState('idle'), 2000);
     } catch (err) {
+      setSubmitState('error');
       setError(err.response?.data?.message || 'Failed to update profile.');
-    } finally {
-      setSaving(false);
+      setTimeout(() => setSubmitState('idle'), 3000);
     }
   };
 
@@ -273,8 +275,16 @@ export default function EditProfilePage() {
             </>
           )}
 
-          <button type="submit" className="btn-primary" disabled={saving} style={{ width: '100%', marginTop: 8 }}>
-            {saving ? 'Saving...' : 'Save Changes'}
+          <button
+            type="submit"
+            className="btn-primary"
+            disabled={submitState === 'submitting'}
+            style={{ width: '100%', marginTop: 8, background: submitState === 'success' ? '#22C55E' : undefined }}
+          >
+            {submitState === 'idle' && 'Save Changes'}
+            {submitState === 'submitting' && '⏳ Saving...'}
+            {submitState === 'success' && '✓ Saved!'}
+            {submitState === 'error' && 'Try Again'}
           </button>
         </form>
 

@@ -47,6 +47,7 @@ router.post('/', authMiddleware, async (req, res) => {
         note: 'Emergency post: ' + title,
         jobPostId: post._id,
       });
+      console.log('Credit deducted:', customer.email, 'new balance:', customer.credits);
     }
 
     if (isEmergency && req.io) {
@@ -75,7 +76,8 @@ router.post('/', authMiddleware, async (req, res) => {
   }
 });
 
-// Professionals browse open posts
+// Professionals browse open posts - ALL open posts visible to ALL professionals.
+// Type/location filtering happens on the frontend only, as optional filters.
 router.get('/', authMiddleware, async (req, res) => {
   try {
     const user = req.user;
@@ -83,30 +85,16 @@ router.get('/', authMiddleware, async (req, res) => {
       return res.status(403).json({ message: 'Only professionals can browse job posts' });
     }
 
-    const { division, district, thana, serviceType } = req.query;
-    const query = { status: 'Open' };
-    if (serviceType) query.serviceType = serviceType;
-    if (user.role === 'professional') query.serviceType = user.professionalType;
-
-    let posts = await JobPost.find(query)
+    const posts = await JobPost.find({
+      status: 'Open',
+      expiresAt: { $gt: new Date() }
+    })
       .populate('customer', 'name location')
       .sort({ isEmergency: -1, createdAt: -1 });
 
-    if (user.location?.division) {
-      posts = posts.sort((a, b) => {
-        const scoreA = a.location?.thana === user.location?.thana ? 3
-          : a.location?.district === user.location?.district ? 2
-          : a.location?.division === user.location?.division ? 1 : 0;
-        const scoreB = b.location?.thana === user.location?.thana ? 3
-          : b.location?.district === user.location?.district ? 2
-          : b.location?.division === user.location?.division ? 1 : 0;
-        return scoreB - scoreA;
-      });
-    }
-
     res.json(posts);
   } catch (err) {
-    res.status(500).json({ message: 'Failed to fetch posts' });
+    res.status(500).json({ error: 'Failed to load job posts' });
   }
 });
 
@@ -177,13 +165,12 @@ router.post('/:id/select/:proId', authMiddleware, async (req, res) => {
       return res.status(403).json({ message: 'Not authorized' });
 
     const settings = await Settings.findOne();
-    const creditsEnabled = settings?.creditsEnabled ?? false;
     const cost = settings?.jobSelectCreditCost ?? 1;
 
     const pro = await User.findById(req.params.proId);
     if (!pro) return res.status(404).json({ message: 'Professional not found' });
 
-    if (creditsEnabled && pro.credits < cost) {
+    if ((pro.credits || 0) < cost) {
       await Notification.create({
         user: pro._id, type: 'jobpost',
         message: 'You were selected for "' + post.title + '" but have insufficient credits. Top up within 24h to confirm.',
@@ -192,17 +179,15 @@ router.post('/:id/select/:proId', authMiddleware, async (req, res) => {
       return res.status(400).json({ message: 'Professional has insufficient credits. They have been notified to top up.' });
     }
 
-    // Deduct credit if enabled
-    if (creditsEnabled) {
-      pro.credits -= cost;
-      pro.totalCreditsUsed = (pro.totalCreditsUsed || 0) + cost;
-      await pro.save();
-      await CreditTransaction.create({
-        professional: pro._id, type: 'deduct', credits: cost,
-        note: 'Selected for job post: ' + post.title,
-        jobPostId: post._id
-      });
-    }
+    pro.credits = (pro.credits || 0) - cost;
+    pro.totalCreditsUsed = (pro.totalCreditsUsed || 0) + cost;
+    await pro.save();
+    await CreditTransaction.create({
+      professional: pro._id, type: 'deduct', credits: cost,
+      note: 'Selected for job post: ' + post.title,
+      jobPostId: post._id
+    });
+    console.log('Credit deducted:', pro.email, 'new balance:', pro.credits);
 
     // Update post
     post.status = 'InProgress';

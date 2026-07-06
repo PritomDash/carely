@@ -16,7 +16,7 @@ export default function RatingPage() {
   const [hoverRating, setHoverRating] = useState(0);
   const [review, setReview] = useState('');
   const [error, setError] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  const [submitState, setSubmitState] = useState('idle'); // idle | submitting | success | error
 
   useEffect(() => {
     if (!user) {
@@ -38,14 +38,17 @@ export default function RatingPage() {
       return;
     }
 
-    setSubmitting(true);
+    setSubmitState('submitting');
     try {
       await api.post('/api/ratings', { bookingId: id, rating, review });
-      navigate('/my-bookings', { state: { success: 'Thanks for your rating!' } });
+      setSubmitState('success');
+      setTimeout(() => {
+        navigate('/my-bookings', { state: { success: 'Thanks for your rating!' } });
+      }, 1200);
     } catch (err) {
+      setSubmitState('error');
       setError(err.response?.data?.message || 'Failed to submit rating.');
-    } finally {
-      setSubmitting(false);
+      setTimeout(() => setSubmitState('idle'), 3000);
     }
   };
 
@@ -110,8 +113,16 @@ export default function RatingPage() {
             />
           </div>
 
-          <button type="submit" className="btn btn-primary" disabled={submitting} style={{ width: '100%' }}>
-            {submitting ? 'Submitting...' : 'Submit Rating'}
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={submitState === 'submitting' || submitState === 'success'}
+            style={{ width: '100%', background: submitState === 'success' ? '#22C55E' : undefined }}
+          >
+            {submitState === 'idle' && 'Submit Rating'}
+            {submitState === 'submitting' && '⏳ Submitting...'}
+            {submitState === 'success' && '✓ Rating Submitted!'}
+            {submitState === 'error' && 'Try Again'}
           </button>
         </form>
 

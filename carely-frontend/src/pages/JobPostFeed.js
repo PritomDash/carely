@@ -3,10 +3,11 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { formatBDT } from '../utils/currency';
-import LocationSelector from '../components/LocationSelector';
+import { getAllThanas } from '../utils/locations';
 import AppNavbar from '../components/AppNavbar';
 
 const PROFESSIONAL_TYPES = ['Child Care', 'Aged Care', 'Nurse', 'Physiotherapist'];
+const ALL_THANAS = getAllThanas();
 
 const formatLocation = (loc) => {
   if (!loc) return 'Location not set';
@@ -30,22 +31,19 @@ export default function JobPostFeed() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [applyingId, setApplyingId] = useState(null);
-  const [location, setLocation] = useState({});
   const [serviceType, setServiceType] = useState('');
+
+  const [locationQuery, setLocationQuery] = useState('');
+  const [selectedLocation, setSelectedLocation] = useState(null);
+  const [suggestions, setSuggestions] = useState([]);
 
   const fetchPosts = useCallback(() => {
     setLoading(true);
-    const params = {};
-    if (location.division) params.division = location.division;
-    if (location.district) params.district = location.district;
-    if (location.thana) params.thana = location.thana;
-    if (serviceType) params.serviceType = serviceType;
-
-    api.get('/api/jobs', { params })
+    api.get('/api/jobs')
       .then((res) => setPosts(res.data || []))
       .catch(() => setError('Failed to load job posts'))
       .finally(() => setLoading(false));
-  }, [location.division, location.district, location.thana, serviceType]);
+  }, []);
 
   useEffect(() => {
     if (!user) {
@@ -79,12 +77,14 @@ export default function JobPostFeed() {
   const filtered = useMemo(() => {
     return posts.filter((p) => {
       if (serviceType && p.serviceType !== serviceType) return false;
-      if (location.division && p.location?.division !== location.division) return false;
-      if (location.district && p.location?.district !== location.district) return false;
-      if (location.thana && p.location?.thana !== location.thana) return false;
+      if (selectedLocation) {
+        const matchesThana = p.location?.thana === selectedLocation.thana;
+        const matchesDistrict = p.location?.district === selectedLocation.district;
+        if (!matchesThana && !matchesDistrict) return false;
+      }
       return true;
     });
-  }, [posts, serviceType, location.division, location.district, location.thana]);
+  }, [posts, serviceType, selectedLocation]);
 
   if (!user || user.role !== 'professional') return null;
 
@@ -106,13 +106,105 @@ export default function JobPostFeed() {
       <h2 style={{ marginBottom: 16 }}>Job Posts</h2>
 
       <div className="card" style={{ marginBottom: 20 }}>
-        <LocationSelector value={location} onChange={setLocation} />
-        <div className="form-group" style={{ marginTop: 12 }}>
-          <label>Service Type</label>
-          <select value={serviceType} onChange={(e) => setServiceType(e.target.value)}>
-            <option value="">All Types</option>
-            {PROFESSIONAL_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-          </select>
+        <div style={{ position: 'relative' }}>
+          <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', fontSize: 16 }}>📍</span>
+          <input
+            type="text"
+            placeholder="Search area... e.g. Gulshan, Mirpur, Chittagong"
+            value={locationQuery}
+            onChange={(e) => {
+              const val = e.target.value;
+              setLocationQuery(val);
+              setSelectedLocation(null);
+              if (val.length > 1) {
+                const matches = ALL_THANAS.filter(t =>
+                  t.thana.toLowerCase().includes(val.toLowerCase()) ||
+                  t.district.toLowerCase().includes(val.toLowerCase()) ||
+                  t.division.toLowerCase().includes(val.toLowerCase())
+                ).slice(0, 8);
+                setSuggestions(matches);
+              } else {
+                setSuggestions([]);
+              }
+            }}
+            style={{
+              width: '100%',
+              padding: '13px 16px 13px 42px',
+              border: '1.5px solid #E2E8F0',
+              borderRadius: 10,
+              fontSize: 14,
+              outline: 'none',
+              background: 'white',
+            }}
+            onFocus={(e) => e.target.style.borderColor = '#2563EB'}
+            onBlur={(e) => {
+              e.target.style.borderColor = '#E2E8F0';
+              setTimeout(() => setSuggestions([]), 200);
+            }}
+          />
+          {locationQuery && (
+            <button
+              type="button"
+              onClick={() => { setLocationQuery(''); setSelectedLocation(null); setSuggestions([]); }}
+              style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#94A3B8' }}
+            >
+              ×
+            </button>
+          )}
+
+          {suggestions.length > 0 && (
+            <div style={{
+              position: 'absolute', top: '100%', left: 0, right: 0,
+              background: 'white', border: '1px solid #E2E8F0',
+              borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+              zIndex: 500, maxHeight: 260, overflowY: 'auto', marginTop: 4,
+            }}>
+              {suggestions.map((s, i) => (
+                <div
+                  key={i}
+                  onMouseDown={() => {
+                    setSelectedLocation(s);
+                    setLocationQuery(s.thana + ', ' + s.district);
+                    setSuggestions([]);
+                  }}
+                  style={{
+                    padding: '11px 16px',
+                    cursor: 'pointer',
+                    borderBottom: i < suggestions.length - 1 ? '1px solid #F8FAFF' : 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = '#F0F7FF'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                >
+                  <span style={{ fontSize: 14 }}>📍</span>
+                  <div>
+                    <span style={{ fontWeight: 700, fontSize: 14, color: '#1A1A2E' }}>{s.thana}</span>
+                    <span style={{ color: '#64748B', fontSize: 12 }}>{', '}{s.district}{', '}{s.division}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 14 }}>
+          {['All', ...PROFESSIONAL_TYPES].map((t) => {
+            const value = t === 'All' ? '' : t;
+            const isActive = serviceType === value;
+            return (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setServiceType(value)}
+                className={isActive ? 'btn-primary' : 'btn-gray'}
+                style={{ padding: '7px 16px', borderRadius: 999, fontSize: 13 }}
+              >
+                {t}
+              </button>
+            );
+          })}
         </div>
       </div>
 

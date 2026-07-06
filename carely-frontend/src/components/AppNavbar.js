@@ -5,6 +5,22 @@ import api from '../services/api';
 import socket from '../socket';
 import { setupPushNotifications } from '../utils/pushManager';
 
+const playNotificationSound = () => {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = ctx.createOscillator();
+    const gain = ctx.createGain();
+    oscillator.connect(gain);
+    gain.connect(ctx.destination);
+    oscillator.frequency.value = 880;
+    oscillator.type = 'sine';
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+    oscillator.start(ctx.currentTime);
+    oscillator.stop(ctx.currentTime + 0.3);
+  } catch (e) {}
+};
+
 export default function AppNavbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -34,6 +50,7 @@ export default function AppNavbar() {
 
     const handleNewNotification = () => {
       setUnread(prev => prev + 1);
+      playNotificationSound();
     };
 
     socket.on('newNotification', handleNewNotification);
@@ -66,6 +83,7 @@ export default function AppNavbar() {
     { icon:'📌', label:'My Posts', shortLabel:'Posts', path:'/my-posts' },
     { icon:'💬', label:'Chat', shortLabel:'Chat', path:'/chat-inbox' },
     { icon:'👤', label:'My Profile', shortLabel:'Profile', path:'/edit-profile' },
+    { icon:'💳', label:'My Credits', shortLabel:'Credits', path:'/my-credits' },
   ];
 
   const proTabs = [
@@ -212,6 +230,7 @@ const BottomNav = () => {
     { icon: '📋', label: 'My Bookings', path: '/my-bookings' },
     { icon: '📝', label: 'Post a Job', path: '/create-job-post' },
     { icon: '📌', label: 'My Posts', path: '/my-posts' },
+    { icon: '💳', label: 'My Credits & Top Up', path: '/my-credits' },
     { icon: '👤', label: 'Edit Profile', path: '/edit-profile' },
   ];
 

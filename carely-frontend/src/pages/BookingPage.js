@@ -66,7 +66,7 @@ export default function BookingPage() {
   const [pro, setPro] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  const [submitState, setSubmitState] = useState('idle'); // idle | submitting | success | error
   const [confirmation, setConfirmation] = useState(null);
 
   const [fullyBlockedDates, setFullyBlockedDates] = useState([]);
@@ -194,7 +194,7 @@ export default function BookingPage() {
       return;
     }
 
-    setSubmitting(true);
+    setSubmitState('submitting');
     try {
       const dateStr = toDateStr(selectedDate);
 
@@ -207,7 +207,7 @@ export default function BookingPage() {
 
       if (!checkRes.data.available) {
         setError('That time is no longer available. Please choose another slot.');
-        setSubmitting(false);
+        setSubmitState('idle');
         return;
       }
 
@@ -223,10 +223,14 @@ export default function BookingPage() {
       });
 
       setConfirmation(createRes.data.bookingId);
+      setSubmitState('success');
+      setTimeout(() => {
+        navigate('/my-bookings');
+      }, 1500);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to create booking.');
-    } finally {
-      setSubmitting(false);
+      setSubmitState('error');
+      setError(err.response?.data?.message || 'Booking failed. Please try again.');
+      setTimeout(() => setSubmitState('idle'), 3000);
     }
   };
 
@@ -261,13 +265,14 @@ export default function BookingPage() {
         <AppNavbar />
         <div className="app-page-content" style={{ maxWidth: 480, margin: '0 auto', padding: '28px 20px' }}>
           <div className="card" style={{ textAlign: 'center', padding: 40 }}>
-            <h2 style={{ color: '#16A34A', marginBottom: 12 }}>Booking Requested!</h2>
-            <p className="text-muted" style={{ marginBottom: 8 }}>
-              Your booking request has been sent to {pro.name}.
-            </p>
-            <p className="text-muted" style={{ marginBottom: 20 }}>
+            <h2 style={{ color: '#16A34A', marginBottom: 12 }}>✓ Booking Submitted!</h2>
+            <div className="msg-success" style={{ textAlign: 'left' }}>
+              Your booking request has been sent to the professional. You will be notified when they respond.
+            </div>
+            <p className="text-muted" style={{ marginBottom: 8, marginTop: 12 }}>
               Booking ID: <strong>{confirmation}</strong>
             </p>
+            <p className="text-muted" style={{ marginBottom: 20 }}>Redirecting to My Bookings...</p>
             <Link to="/my-bookings" className="btn btn-primary">View My Bookings</Link>
           </div>
         </div>
@@ -449,8 +454,19 @@ export default function BookingPage() {
                 <span style={{ fontSize: 22, fontWeight: 800, color: 'var(--primary)' }}>{formatBDT(estimatedPrice)}</span>
               </div>
 
-              <button type="submit" className="btn btn-primary btn-block" disabled={submitting} style={{ marginTop: 8 }}>
-                {submitting ? 'Submitting...' : 'Submit Booking Request'}
+              <button
+                type="submit"
+                className="btn btn-primary btn-block"
+                disabled={submitState === 'submitting' || submitState === 'success'}
+                style={{
+                  marginTop: 8,
+                  background: submitState === 'success' ? '#22C55E' : undefined,
+                }}
+              >
+                {submitState === 'idle' && 'Submit Booking Request'}
+                {submitState === 'submitting' && '⏳ Submitting...'}
+                {submitState === 'success' && '✓ Booking Submitted!'}
+                {submitState === 'error' && 'Try Again'}
               </button>
             </form>
           </div>

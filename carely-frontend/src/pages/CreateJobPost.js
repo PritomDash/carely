@@ -14,7 +14,7 @@ export default function CreateJobPost() {
 
   const [emergencyEnabled, setEmergencyEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
+  const [submitState, setSubmitState] = useState('idle'); // idle | submitting | success | error
   const [error, setError] = useState('');
 
   const [title, setTitle] = useState('');
@@ -56,7 +56,7 @@ export default function CreateJobPost() {
       return;
     }
 
-    setSubmitting(true);
+    setSubmitState('submitting');
     try {
       await api.post('/api/jobs', {
         title,
@@ -72,11 +72,12 @@ export default function CreateJobPost() {
         budgetBDT: budgetBDT ? Number(budgetBDT) : undefined,
         isEmergency: emergencyEnabled ? isEmergency : false,
       });
-      navigate('/my-posts');
+      setSubmitState('success');
+      setTimeout(() => navigate('/my-posts'), 1200);
     } catch (err) {
+      setSubmitState('error');
       setError(err.response?.data?.message || 'Failed to create job post.');
-    } finally {
-      setSubmitting(false);
+      setTimeout(() => setSubmitState('idle'), 3000);
     }
   };
 
@@ -183,8 +184,16 @@ export default function CreateJobPost() {
             </div>
           )}
 
-          <button type="submit" className="btn btn-primary" disabled={submitting} style={{ width: '100%', marginTop: 8 }}>
-            {submitting ? 'Posting...' : 'Post Job'}
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={submitState === 'submitting' || submitState === 'success'}
+            style={{ width: '100%', marginTop: 8, background: submitState === 'success' ? '#22C55E' : undefined }}
+          >
+            {submitState === 'idle' && 'Post Job'}
+            {submitState === 'submitting' && '⏳ Posting...'}
+            {submitState === 'success' && '✓ Job Posted!'}
+            {submitState === 'error' && 'Try Again'}
           </button>
         </form>
       </div>
