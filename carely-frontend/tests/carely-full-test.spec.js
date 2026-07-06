@@ -680,11 +680,14 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
       await packBtn.click();
       await page.waitForTimeout(1000);
 
-      const trxInput = page.locator('input[placeholder*="transaction" i], input[placeholder*="TRX" i]').first();
+      // Neither field's actual placeholder contains "transaction"/"TRX"/"number"
+      // ("e.g. 8N7A6B5C4D" and "01XXXXXXXXX" respectively) - match by their
+      // <label> text via the enclosing .form-group instead of guessing placeholders.
+      const trxInput = page.locator('.form-group', { hasText: 'Transaction ID' }).locator('input').first();
       if (await trxInput.isVisible({ timeout: 2000 }).catch(() => false)) {
         await trxInput.fill('TEST_TRX_' + Date.now());
 
-        const senderInput = page.locator('input[placeholder*="number" i]').first();
+        const senderInput = page.locator('.form-group', { hasText: 'Your Number' }).locator('input').first();
         if (await senderInput.isVisible()) await senderInput.fill('01722222222');
 
         await page.locator('button:has-text("Submit")').last().click();
