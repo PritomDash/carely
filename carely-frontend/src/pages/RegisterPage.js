@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import LocationSelector from '../components/LocationSelector';
 import { User, Briefcase } from 'lucide-react';
 import { handleGoogleLogin } from '../utils/googleAuth';
+import CarelyLogo from '../components/CarelyLogo';
 
 const PROFESSIONAL_TYPES = ['Child Care', 'Aged Care', 'Nurse', 'Physiotherapist'];
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -147,7 +148,7 @@ export default function RegisterPage() {
         />
         <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', maxWidth: 380 }}>
           <a href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginBottom: 48 }}>
-            <span style={{ fontSize: 36 }}>💙</span>
+            <CarelyLogo size={36} white={true} />
             <span style={{ fontSize: 28, fontWeight: 900, color: '#FFFFFF' }}>Carely</span>
           </a>
           <h2 style={{ fontSize: 36, fontWeight: 900, color: '#FFFFFF', marginBottom: 16, lineHeight: 1.2 }}>
@@ -177,7 +178,7 @@ export default function RegisterPage() {
       }}>
         <div className="auth-mobile-logo-wrap" style={{ display: 'none', textAlign: 'center', marginBottom: 28 }}>
           <a href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
-            <span style={{ fontSize: 28 }}>💙</span>
+            <CarelyLogo size={36} />
             <span style={{ fontSize: 22, fontWeight: 900, color: '#1A1A2E' }}>Carely</span>
           </a>
         </div>

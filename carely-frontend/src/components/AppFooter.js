@@ -1,4 +1,5 @@
 import React from 'react';
+import CarelyLogo from './CarelyLogo';
 
 export default function AppFooter() {
   return (
@@ -8,7 +9,7 @@ export default function AppFooter() {
 
           <div>
             <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:16 }}>
-              <span style={{ fontSize:24 }}>💙</span>
+              <CarelyLogo size={28} white={true} />
               <span style={{ fontSize:20, fontWeight:800 }}>Carely</span>
             </div>
             <p style={{ color:'#94A3B8', fontSize:14, lineHeight:1.8, marginBottom:16 }}>

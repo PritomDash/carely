@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import socket from '../socket';
 import { setupPushNotifications } from '../utils/pushManager';
+import CarelyLogo from './CarelyLogo';
 
 const playNotificationSound = () => {
   try {
@@ -120,7 +121,7 @@ export default function AppNavbar() {
       <div className="navbar-row1" style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 28px', height:64, borderBottom:'1px solid #F1F5F9' }}>
 
         <Link to={user ? '/home' : '/'} style={{ display:'flex', alignItems:'center', gap:10, textDecoration:'none' }}>
-          <span style={{ fontSize:26 }}>💙</span>
+          <CarelyLogo size={30} />
           <span style={{ fontSize:22, fontWeight:800, color:'#1A1A2E', letterSpacing:'-0.5px' }}>Carely</span>
         </Link>
 

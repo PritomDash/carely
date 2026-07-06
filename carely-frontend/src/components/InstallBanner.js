@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import CarelyLogo from './CarelyLogo';
 
 export default function InstallBanner() {
   const [prompt, setPrompt] = useState(null);
@@ -33,7 +34,7 @@ export default function InstallBanner() {
       display:'flex', alignItems:'center', gap:14,
       zIndex:999, maxWidth:380, width:'90%'
     }}>
-      <span style={{ fontSize:36 }}>💙</span>
+      <CarelyLogo size={36} />
       <div style={{ flex:1 }}>
         <div style={{ fontWeight:700, fontSize:15, color:'#1A1A2E' }}>Install Carely App</div>
         <div style={{ fontSize:13, color:'#64748B', marginTop:2 }}>Add to home screen for quick access</div>

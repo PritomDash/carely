@@ -1,5 +1,6 @@
 import React from 'react';
 import AppFooter from '../components/AppFooter';
+import CarelyLogo from '../components/CarelyLogo';
 
 const PublicNavbar = () => (
   <nav style={{
@@ -13,7 +14,7 @@ const PublicNavbar = () => (
     justifyContent: 'space-between',
   }}>
     <a href="/" style={{ display:'flex', alignItems:'center', gap:8, textDecoration:'none' }}>
-      <span style={{ fontSize:24 }}>💙</span>
+      <CarelyLogo size={28} />
       <span style={{ fontSize:20, fontWeight:800, color:'#1A1A2E' }}>Carely</span>
     </a>
     <div style={{ display:'flex', gap:12 }}>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import AppFooter from '../components/AppFooter';
+import CarelyLogo from '../components/CarelyLogo';
 
 const PHOTOS = {
   hero: 'https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?w=1200&q=80',
@@ -35,7 +36,7 @@ export default function LandingPage() {
         transition: 'all 0.3s ease',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 28 }}>💙</span>
+          <CarelyLogo size={30} white={!scrolled} />
           <span style={{ fontSize: 24, fontWeight: 900, color: scrolled ? '#1A1A2E' : '#FFFFFF', letterSpacing: '-0.5px' }}>Carely</span>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>

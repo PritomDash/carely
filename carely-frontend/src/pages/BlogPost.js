@@ -1,6 +1,7 @@
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import AppFooter from '../components/AppFooter';
+import CarelyLogo from '../components/CarelyLogo';
 import { articles } from '../data/blogArticles';
 
 const PublicNavbar = () => (
@@ -18,7 +19,7 @@ const PublicNavbar = () => (
     zIndex: 100,
   }}>
     <a href="/" style={{ display:'flex', alignItems:'center', gap:8, textDecoration:'none' }}>
-      <span style={{ fontSize:24 }}>💙</span>
+      <CarelyLogo size={28} />
       <span style={{ fontSize:20, fontWeight:800, color:'#1A1A2E' }}>Carely</span>
     </a>
     <div style={{ display:'flex', gap:12, alignItems:'center' }}>
