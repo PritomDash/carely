@@ -288,10 +288,15 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
 
     await page.locator('button:has-text("Submit"), button:has-text("Confirm"), button:has-text("Book Now")').last().click();
 
-    // The booking page now shows a brief success state then auto-navigates to
-    // /my-bookings after 1.5s - check immediately (no fixed pre-wait) so the
-    // fleeting confirmation text is caught before the redirect fires.
-    const confirmed = await page.locator('text=/Booking Submitted/i').first().isVisible({ timeout: 8000 }).catch(() => false);
+    // The booking page shows a brief success state then auto-navigates to
+    // /my-bookings ~1.5s later. Unlike isVisible({timeout}) - which is a single
+    // point-in-time check and does NOT poll - waitFor() actively polls until the
+    // element appears or the timeout elapses, so it reliably catches the
+    // confirmation even though it only renders after the create API round-trip.
+    const confirmed = await page.locator('text=/Booking Submitted/i').first()
+      .waitFor({ state: 'visible', timeout: 10000 })
+      .then(() => true)
+      .catch(() => false);
     if (confirmed) {
       console.log('✅ Booking submitted and confirmed');
       await page.waitForURL(/\/my-bookings/, { timeout: 5000 }).catch(() => {});
@@ -385,13 +390,17 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
     await proPage.locator('button[type="submit"]').first().click();
     await proPage.waitForURL(/\/home/);
 
-    // Customer opens chat
-    await custPage.goto('/chat-inbox');
+    // The chat inbox only lists threads with existing message history, and no
+    // message has been exchanged yet for this fresh confirmed booking - so go
+    // via My Bookings' "Chat" button instead, which is the actual entry point
+    // the app provides for starting a first conversation.
+    await custPage.goto('/my-bookings');
     await custPage.waitForTimeout(2000);
 
-    const convo = custPage.locator('[class*="chat"], [class*="conversation"], a:has-text("' + PRO.name + '")').first();
-    if (await convo.isVisible({ timeout: 8000 }).catch(() => false)) {
-      await convo.click();
+    const chatBtn = custPage.locator('button:has-text("Chat")').first();
+    if (await chatBtn.isVisible({ timeout: 8000 }).catch(() => false)) {
+      await chatBtn.click();
+      await custPage.waitForURL(/\/chat\//, { timeout: 5000 }).catch(() => {});
       await custPage.waitForTimeout(2000);
       const msgInput = custPage.locator('input[placeholder*="message" i], textarea[placeholder*="message" i]').first();
       if (await msgInput.isVisible()) {
@@ -401,7 +410,7 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
         console.log('✅ Chat message sent');
       }
     } else {
-      console.log('⚠️ No conversations available');
+      console.log('⚠️ No Chat button found on confirmed booking');
     }
 
     await custContext.close();
