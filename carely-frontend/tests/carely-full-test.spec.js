@@ -672,7 +672,10 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
     await page.goto('/my-credits');
     await page.waitForTimeout(2000);
 
-    const packBtn = page.locator('button:has-text("50 credits"), button:has-text("150 credits")').first();
+    // Credit packs are clickable cards (a plain <div onClick>), not <button>
+    // elements - a button-tag locator here never matches, so this step was
+    // silently skipping and never actually created a top up request.
+    const packBtn = page.locator('.grid-3 > div', { hasText: /credits/i }).first();
     if (await packBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
       await packBtn.click();
       await page.waitForTimeout(1000);
