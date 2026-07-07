@@ -2,11 +2,11 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/user');
 const CreditTransaction = require('../models/CreditTransaction');
-const Notification = require('../models/Notification');
 const Settings = require('../models/Settings');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { sendEmail } = require('../utils/emailService');
+const { createNotification } = require('../utils/notificationService');
 const { upload } = require('../middlewares/uploadMiddleware');
 
 const generateToken = (user) =>
@@ -123,11 +123,12 @@ router.post('/register', upload.fields([
           });
         }
         await referrer.save();
-        await Notification.create({
-          user: referrer._id,
+        await createNotification({
+          userId: referrer._id,
           type: 'admin',
           message: user.name + ' joined Carely using your referral link! Your ranking improved.' + (settings?.creditsEnabled ? ' +1 credit added.' : ''),
-          link: '/edit-profile'
+          link: '/edit-profile',
+          io: req.io,
         });
       }
     }

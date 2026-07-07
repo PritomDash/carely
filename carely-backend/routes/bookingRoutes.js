@@ -515,19 +515,14 @@ router.post('/decline/:id', authMiddleware, async (req, res) => {
     booking.isActive = false;
     await booking.save();
 
+    // Booking status updates are push + in-app only (no email) to conserve
+    // email quota for the two truly critical moments: the initial request
+    // and confirmation. See the notification routing table in SETUP_KEYS_NEEDED.md.
     await createNotification({
       userId: booking.customer._id, type: 'booking',
       message: booking.professional.name + ' has declined your booking. Please try another professional.',
       link: '/my-bookings',
       io: req.io,
-    });
-
-    fireEmail({
-      to: booking.customer.email,
-      subject: 'Booking Declined - Carely',
-      title: 'Your booking was declined',
-      content:
-        '<p style="color:#1A1A2E;font-size:14px;line-height:1.7;">' + booking.professional.name + ' has declined your booking request. Please try another professional on Carely.</p>'
     });
 
     res.json({ message: 'Booking declined' });
@@ -553,6 +548,8 @@ router.post('/cancel/:id', authMiddleware, async (req, res) => {
 
     const dateStr = booking.date.toISOString().slice(0, 10);
 
+    // Booking status update - push + in-app only, no email (see routing
+    // table in SETUP_KEYS_NEEDED.md).
     if (isCustomer) {
       await createNotification({
         userId: booking.professional._id, type: 'booking',
@@ -560,28 +557,12 @@ router.post('/cancel/:id', authMiddleware, async (req, res) => {
         link: '/my-bookings',
         io: req.io,
       });
-
-      fireEmail({
-        to: booking.professional.email,
-        subject: 'Booking Cancelled - Carely',
-        title: 'A booking was cancelled',
-        content:
-          '<p style="color:#1A1A2E;font-size:14px;line-height:1.7;">' + booking.customer.name + ' has cancelled the booking on ' + dateStr + '.</p>'
-      });
     } else {
       await createNotification({
         userId: booking.customer._id, type: 'booking',
         message: booking.professional.name + ' cancelled your booking on ' + dateStr + '. Please try another professional.',
         link: '/my-bookings',
         io: req.io,
-      });
-
-      fireEmail({
-        to: booking.customer.email,
-        subject: 'Booking Cancelled - Carely',
-        title: 'Your booking was cancelled',
-        content:
-          '<p style="color:#1A1A2E;font-size:14px;line-height:1.7;">' + booking.professional.name + ' has cancelled your booking on ' + dateStr + '. Please search for another professional on Carely.</p>'
       });
     }
 
@@ -604,22 +585,13 @@ router.post('/mark-done/:id', authMiddleware, async (req, res) => {
     booking.status = 'Completed';
     await releaseCalendar(booking);
 
+    // Rating reminder - push + in-app only, no email (see routing table in
+    // SETUP_KEYS_NEEDED.md).
     await createNotification({
       userId: booking.customer._id, type: 'booking',
       message: booking.professional.name + ' marked your job as complete. Please rate your experience.',
       link: '/rate/' + booking._id,
       io: req.io,
-    });
-
-    fireEmail({
-      to: booking.customer.email,
-      subject: 'Service Completed - Carely',
-      title: 'Service completed - please rate your experience',
-      content:
-        detailRow('Professional Name', booking.professional.name) +
-        detailRow('Date', booking.date.toISOString().slice(0, 10)) +
-        detailRow('Time', booking.time) +
-        '<p style="margin-top:20px;color:#64748B;font-size:13px;">Please log in to Carely and rate your experience with ' + booking.professional.name + '.</p>'
     });
 
     res.json({ message: 'Job marked as done' });

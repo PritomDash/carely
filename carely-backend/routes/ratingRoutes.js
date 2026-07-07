@@ -3,8 +3,8 @@ const router = express.Router();
 const authMiddleware = require('../middlewares/authMiddleware');
 const Rating = require('../models/Rating');
 const Booking = require('../models/Booking');
-const Notification = require('../models/Notification');
 const User = require('../models/user');
+const { createNotification } = require('../utils/notificationService');
 
 router.post('/', authMiddleware, async (req, res) => {
   try {
@@ -33,10 +33,11 @@ router.post('/', authMiddleware, async (req, res) => {
     booking.rated = true;
     await booking.save();
 
-    await Notification.create({
-      user: booking.professional, type: 'booking',
+    await createNotification({
+      userId: booking.professional, type: 'booking',
       message: req.user.name + ' gave you a ' + rating + '-star rating. Well done!',
-      link: '/my-bookings'
+      link: '/my-bookings',
+      io: req.io,
     });
 
     res.json({ message: 'Rating submitted', rating: r });

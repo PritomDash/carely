@@ -64,7 +64,7 @@ export default function AppNavbar() {
     if (token) {
       setTimeout(() => {
         setupPushNotifications(token).catch(() => {});
-      }, 2000);
+      }, 3000);
     }
   }, [user?._id]);
 

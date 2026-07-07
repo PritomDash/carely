@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const JobPost = require('../models/JobPost');
 const Booking = require('../models/Booking');
-const Notification = require('../models/Notification');
 const User = require('../models/user');
 const Settings = require('../models/Settings');
 const CreditTransaction = require('../models/CreditTransaction');
@@ -63,13 +62,11 @@ router.post('/', authMiddleware, async (req, res) => {
       }).select('_id');
 
       for (const pro of pros) {
-        await Notification.create({
-          user: pro._id, type: 'jobpost',
+        await createNotification({
+          userId: pro._id, type: 'jobpost',
           message: 'URGENT: ' + title + ' - ' + (location?.thana || '') + ', ' + (location?.district || ''),
-          link: '/job-posts/' + post._id
-        });
-        req.io.to(String(pro._id)).emit('newNotification', {
-          type: 'emergency', message: 'URGENT job post in your area'
+          link: '/job-posts/' + post._id,
+          io: req.io,
         });
       }
     }
@@ -146,10 +143,11 @@ router.post('/:id/apply', authMiddleware, async (req, res) => {
     post.applicants.push({ professional: req.user._id });
     await post.save();
 
-    await Notification.create({
-      user: post.customer, type: 'jobpost',
+    await createNotification({
+      userId: post.customer, type: 'jobpost',
       message: req.user.name + ' is interested in your job post: ' + post.title,
-      link: '/my-posts'
+      link: '/my-posts',
+      io: req.io,
     });
 
     res.json({ message: 'Applied successfully' });
@@ -180,10 +178,11 @@ router.post('/:id/select/:proId', authMiddleware, async (req, res) => {
     if (!pro.isVerified) return res.status(400).json({ message: 'Professional is not verified' });
 
     if ((pro.credits || 0) < cost) {
-      await Notification.create({
-        user: pro._id, type: 'jobpost',
+      await createNotification({
+        userId: pro._id, type: 'jobpost',
         message: 'You were selected for "' + post.title + '" but have insufficient credits. Top up within 24h to confirm.',
-        link: '/my-credits'
+        link: '/my-credits',
+        io: req.io,
       });
       return res.status(400).json({ message: 'Professional has insufficient credits. They have been notified to top up.' });
     }

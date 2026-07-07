@@ -11,16 +11,17 @@ const TopUpRequest = require('../models/TopUpRequest');
 const { approveTopUp } = require('./creditRoutes');
 const adminAuth = require('../middlewares/adminAuthMiddleware');
 const { sendEmail } = require('../utils/emailService');
+const { createNotification } = require('../utils/notificationService');
 
 // Diagnostic: send a real test email to the admin's own address and report
 // whether it actually succeeded (unlike normal booking emails, which are
 // fire-and-forget on purpose, this one intentionally waits for the result).
 router.get('/test-email', adminAuth, async (req, res) => {
   const result = await sendEmail({
-    to: req.admin.email,
+    to: req.query.to || req.admin.email,
     subject: 'Carely Test Email',
     title: 'Email delivery test',
-    content: '<p style="color:#1A1A2E;font-size:14px;">If you are reading this, EMAIL_USER/EMAIL_PASS are configured correctly and Carely can send email.</p>',
+    content: '<p style="color:#1A1A2E;font-size:14px;">If you are reading this, email is configured correctly and Carely can send mail.</p>',
   });
   res.status(result.success ? 200 : 500).json(result);
 });
@@ -67,10 +68,11 @@ router.put('/users/:id/verify', adminAuth, async (req, res) => {
     user.profileApproved = true;
     await user.save();
 
-    await Notification.create({
-      user: user._id, type: 'admin',
+    await createNotification({
+      userId: user._id, type: 'admin',
       message: 'Your profile has been verified! You can now receive booking requests.',
-      link: '/professional-profile'
+      link: '/professional-profile',
+      io: req.io,
     });
 
     res.json({ message: 'User verified', user });
@@ -317,7 +319,7 @@ router.put('/topup-requests/:id/approve', adminAuth, async (req, res) => {
     const request = await TopUpRequest.findById(req.params.id);
     if (!request) return res.status(404).json({ error: 'Not found' });
     if (request.status === 'Approved') return res.status(400).json({ error: 'Already approved' });
-    await approveTopUp(request, req.admin._id);
+    await approveTopUp(request, req.admin._id, req.io);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Failed' });
@@ -335,11 +337,12 @@ router.put('/topup-requests/:id/reject', adminAuth, async (req, res) => {
     request.rejectedReason = req.body.reason || 'Could not verify transaction';
     await request.save();
 
-    await Notification.create({
-      user: request.user._id,
+    await createNotification({
+      userId: request.user._id,
       type: 'payment',
       message: 'Your top up request was rejected. Reason: ' + request.rejectedReason,
-      link: '/my-credits'
+      link: '/my-credits',
+      io: req.io,
     });
 
     res.json({ success: true });
@@ -367,10 +370,11 @@ router.post('/credits/renew-all', adminAuth, async (req, res) => {
         professional: user._id, type: 'bonus', credits: proCredits,
         note: 'Admin credit renewal', addedBy: req.admin._id,
       });
-      await Notification.create({
-        user: user._id, type: 'payment',
+      await createNotification({
+        userId: user._id, type: 'payment',
         message: proCredits + ' free credits added to your account by Carely!',
-        link: '/my-credits'
+        link: '/my-credits',
+        io: req.io,
       });
     }
 
@@ -382,10 +386,11 @@ router.post('/credits/renew-all', adminAuth, async (req, res) => {
         professional: user._id, type: 'bonus', credits: custCredits,
         note: 'Admin credit renewal', addedBy: req.admin._id,
       });
-      await Notification.create({
-        user: user._id, type: 'payment',
+      await createNotification({
+        userId: user._id, type: 'payment',
         message: custCredits + ' free credits added to your account by Carely!',
-        link: '/my-credits'
+        link: '/my-credits',
+        io: req.io,
       });
     }
 
@@ -429,10 +434,11 @@ router.put('/credits/:userId', adminAuth, async (req, res) => {
       addedBy: req.admin._id,
     });
 
-    await Notification.create({
-      user: user._id, type: 'payment',
+    await createNotification({
+      userId: user._id, type: 'payment',
       message: credits + ' credits added to your account.',
-      link: '/my-credits'
+      link: '/my-credits',
+      io: req.io,
     });
 
     res.json({ success: true, credits: user.credits });

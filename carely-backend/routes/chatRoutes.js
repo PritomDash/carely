@@ -2,11 +2,11 @@ const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const Chat = require('../models/chatMessage');
-const Notification = require('../models/Notification');
 const Booking = require('../models/Booking');
 const User = require('../models/user');
 const anyAuth = require('../middlewares/anyAuthMiddleware');
 const adminAuth = require('../middlewares/adminAuthMiddleware');
+const { createNotification } = require('../utils/notificationService');
 
 // Send message - only allowed once a confirmed booking exists between the two users
 router.post('/send', anyAuth, async (req, res) => {
@@ -32,20 +32,20 @@ router.post('/send', anyAuth, async (req, res) => {
 
     const saved = await Chat.create({ sender, recipient, bookingId: bookingId || undefined, message });
 
-    await Notification.create({
-      user: recipient, type: 'chat',
-      message: 'New message from ' + (req.user.name || 'someone'),
-      link: '/chat-inbox'
-    });
-
     if (req.io) {
       const room = [String(sender), String(recipient)].sort().join('_');
       req.io.to(room).emit('receiveMessage', saved);
-      req.io.to(String(recipient)).emit('newNotification', {
-        type: 'chat',
-        message: 'New message from ' + (req.user.name || 'someone'),
-      });
     }
+
+    // Chat messages are push + in-app only, no email (see routing table in
+    // SETUP_KEYS_NEEDED.md) - createNotification handles the DB record,
+    // socket 'newNotification' emit, and web push in one place.
+    await createNotification({
+      userId: recipient, type: 'chat',
+      message: 'New message from ' + (req.user.name || 'someone'),
+      link: '/chat-inbox',
+      io: req.io,
+    });
 
     res.status(201).json(saved);
   } catch (err) {

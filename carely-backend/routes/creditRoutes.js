@@ -3,10 +3,9 @@ const router = express.Router();
 const User = require('../models/user');
 const CreditTransaction = require('../models/CreditTransaction');
 const TopUpRequest = require('../models/TopUpRequest');
-const Notification = require('../models/Notification');
 const Settings = require('../models/Settings');
 const authMiddleware = require('../middlewares/authMiddleware');
-const { fireEmail, detailRow } = require('../utils/emailService');
+const { createNotification } = require('../utils/notificationService');
 
 // Get my balance
 router.get('/my-balance', authMiddleware, async (req, res) => {
@@ -77,15 +76,12 @@ router.post('/topup-manual', authMiddleware, async (req, res) => {
     // Notify all admins
     const admins = await User.find({ role: 'admin' }).select('_id');
     for (const admin of admins) {
-      await Notification.create({
-        user: admin._id,
+      await createNotification({
+        userId: admin._id,
         type: 'payment',
         message: req.user.name + ' requested ' + credits + ' credits top up (৳' + amountBDT + ') via ' + paymentMethod + '. TRX: ' + transactionID,
-        link: '/admin'
-      });
-      if (req.io) req.io.to(String(admin._id)).emit('newNotification', {
-        type: 'payment',
-        message: 'New top up request from ' + req.user.name
+        link: '/admin',
+        io: req.io,
       });
     }
 
@@ -222,7 +218,7 @@ router.post('/shurjopay-callback', async (req, res) => {
       return res.redirect(process.env.FRONTEND_URL + '/my-credits?status=already');
     }
 
-    await approveTopUp(request, null);
+    await approveTopUp(request, null, req.io);
     res.redirect(process.env.FRONTEND_URL + '/my-credits?status=success');
   } catch (err) {
     res.redirect(process.env.FRONTEND_URL + '/my-credits?status=error');
@@ -240,15 +236,16 @@ router.post('/sslcommerz-success', async (req, res) => {
     if (!request || request.status === 'Approved') {
       return res.redirect(process.env.FRONTEND_URL + '/my-credits?status=already');
     }
-    await approveTopUp(request, null);
+    await approveTopUp(request, null, req.io);
     res.redirect(process.env.FRONTEND_URL + '/my-credits?status=success');
   } catch (err) {
     res.redirect(process.env.FRONTEND_URL + '/my-credits?status=error');
   }
 });
 
-// Helper function to approve any top up
-const approveTopUp = async (request, adminId) => {
+// Helper function to approve any top up. Credit updates are push + in-app
+// only, no email (see routing table in SETUP_KEYS_NEEDED.md).
+const approveTopUp = async (request, adminId, io) => {
   const user = await User.findById(request.user);
   user.credits += request.credits;
   user.totalCreditsReceived = (user.totalCreditsReceived || 0) + request.credits;
@@ -270,22 +267,12 @@ const approveTopUp = async (request, adminId) => {
   if (adminId) request.approvedBy = adminId;
   await request.save();
 
-  await Notification.create({
-    user: user._id,
+  await createNotification({
+    userId: user._id,
     type: 'payment',
     message: request.credits + ' credits added to your account successfully!',
-    link: '/my-credits'
-  });
-
-  fireEmail({
-    to: user.email,
-    subject: 'Top Up Approved - Carely',
-    title: 'Your credits have been added!',
-    content:
-      detailRow('Credits Added', request.credits) +
-      detailRow('Amount', '৳' + request.amountBDT) +
-      detailRow('New Balance', user.credits) +
-      '<p style="margin-top:20px;color:#64748B;font-size:13px;">Thank you for topping up your Carely credits.</p>'
+    link: '/my-credits',
+    io,
   });
 };
 

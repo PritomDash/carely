@@ -1,9 +1,7 @@
 const cron = require('node-cron');
 const Booking = require('./models/Booking');
 const JobPost = require('./models/JobPost');
-const Notification = require('./models/Notification');
 const User = require('./models/user');
-const { fireEmail } = require('./utils/emailService');
 const { createNotification } = require('./utils/notificationService');
 
 function setupCronJobs(io) {
@@ -46,13 +44,8 @@ function setupCronJobs(io) {
           io,
         });
 
-        fireEmail({
-          to: b.customer?.email,
-          subject: 'Booking Auto-Declined - Carely',
-          title: 'No response within 24 hours',
-          content:
-            '<p style="color:#1A1A2E;font-size:14px;line-height:1.7;">' + (b.professional?.name || 'The professional') + ' did not respond to your booking request within 24 hours, so it has been automatically declined. Please try booking another professional on Carely.</p>'
-        });
+        // Booking status update - push + in-app only, no email (see routing
+        // table in SETUP_KEYS_NEEDED.md).
       }
       if (bookings.length > 0) console.log('Auto-declined ' + bookings.length + ' bookings');
     } catch (err) { console.error('Auto-decline cron error:', err.message); }
@@ -69,10 +62,11 @@ function setupCronJobs(io) {
       for (const p of posts) {
         p.status = 'Expired';
         await p.save();
-        await Notification.create({
-          user: p.customer._id, type: 'jobpost',
+        await createNotification({
+          userId: p.customer._id, type: 'jobpost',
           message: 'Your job post "' + p.title + '" has expired.',
-          link: '/my-posts'
+          link: '/my-posts',
+          io,
         });
       }
     } catch (err) { console.error('Expire posts cron error:', err.message); }
@@ -87,10 +81,11 @@ function setupCronJobs(io) {
 
       const pros = await User.find({ role: 'professional', isVerified: true, credits: { $lte: 2, $gt: 0 } });
       for (const pro of pros) {
-        await Notification.create({
-          user: pro._id, type: 'payment',
+        await createNotification({
+          userId: pro._id, type: 'payment',
           message: 'You have only ' + pro.credits + ' credit(s) left. Top up to keep accepting bookings.',
-          link: '/my-credits'
+          link: '/my-credits',
+          io,
         });
       }
     } catch (err) { console.error('Credit warning cron error:', err.message); }
@@ -129,23 +124,26 @@ function setupCronJobs(io) {
     }
   });
 
-  // Every Sunday at 3am: Delete inactive professional accounts (3+ months since last update)
+  // Every Sunday at 3am: for professionals inactive 3+ months, clear their
+  // verification documents for storage management - but the account,
+  // bookings, notifications, and profile photo are NEVER deleted. Profile
+  // photos are essential for the marketplace to work and must be kept
+  // permanently; only verification documents are ever storage-managed.
   cron.schedule('0 3 * * 0', async () => {
     try {
       const threeMonthsAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
       const inactiveUsers = await User.find({
         role: 'professional',
         updatedAt: { $lt: threeMonthsAgo },
-        isVerified: true
+        isVerified: true,
+        $or: DOC_FIELDS.map((field) => ({ [field]: { $ne: null } }))
       });
 
       for (const user of inactiveUsers) {
-        await Booking.deleteMany({ $or: [{ customer: user._id }, { professional: user._id }] });
-        await Notification.deleteMany({ user: user._id });
-        await User.findByIdAndDelete(user._id);
+        await deleteDocFiles(user);
       }
       if (inactiveUsers.length > 0) {
-        console.log('Deleted ' + inactiveUsers.length + ' inactive professionals');
+        console.log('Cleared verification documents for ' + inactiveUsers.length + ' inactive professionals - accounts and profile photos kept');
       }
     } catch (err) {
       console.error('Inactive user cleanup error:', err.message);

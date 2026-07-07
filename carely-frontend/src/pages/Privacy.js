@@ -38,7 +38,7 @@ const SECTIONS = [
   {
     title: '3. Document Storage',
     icon: '📂',
-    content: 'Documents uploaded by professionals (ID, certificates etc.) are stored securely on our servers. Documents are only visible to the professional themselves and Carely administrators for safety purposes. Documents older than 15 days may be automatically deleted to manage storage. Profile photos are retained longer than other documents. Carely does not share documents with customers or third parties.'
+    content: 'Documents uploaded by professionals (ID, certificates etc.) are stored securely on our servers. Documents are only visible to the professional themselves and Carely administrators for safety purposes. Profile photos are kept permanently and are never automatically deleted - they are essential to how the marketplace works. Verification documents (ID, certificates, police clearance) may be automatically deleted after 15 days for storage management. Your account and profile photo always remain regardless of document cleanup. Carely does not share documents with customers or third parties.'
   },
   {
     title: '4. Chat Messages',
