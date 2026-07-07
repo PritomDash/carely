@@ -19,7 +19,7 @@ const PRO = {
 };
 const ADMIN = {
   email: 'admin@carely.com',
-  password: 'Admin@Carely2025',
+  password: 'Car3ly@Admin!2025#BD',
 };
 
 test.describe.serial('Carely BD - Complete A to Z Test', () => {
@@ -28,7 +28,11 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
     await page.goto('/');
     await expect(page.locator('text=Carely').first()).toBeVisible();
     await expect(page.locator('text=/Find Trusted Care/i')).toBeVisible({ timeout: 15000 });
-    await expect(page.locator('text=Get Started').first()).toBeVisible();
+    // The navbar's "Get Started" link splits into full/short-text spans that
+    // toggle via a mobile media query (.landing-btn-text-full is display:none
+    // under 600px) - target the always-visible, unabbreviated hero CTA
+    // instead of a generic text match that could resolve to the hidden span.
+    await expect(page.locator('.landing-hero-btn', { hasText: 'Get Started' }).first()).toBeVisible();
     await expect(page.locator('text=Sign In').first()).toBeVisible();
     await expect(page.locator('text=/Book in 3 Easy Steps/i').first()).toBeVisible();
     await expect(page.locator('text=/Child Care/i').first()).toBeVisible();
