@@ -2,8 +2,11 @@ const { defineConfig } = require('@playwright/test');
 
 module.exports = defineConfig({
   testDir: './tests',
-  timeout: 90000,
-  retries: 0,
+  timeout: 120000,
+  // One retry absorbs transient Render free-tier slowness (cold starts,
+  // occasional slow responses under repeated test traffic) without masking
+  // real bugs - a genuinely broken flow still fails on retry too.
+  retries: 1,
   workers: 1,
   use: {
     baseURL: 'https://carely-tan.vercel.app',
@@ -11,8 +14,8 @@ module.exports = defineConfig({
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
     trace: 'on-first-retry',
-    actionTimeout: 15000,
-    navigationTimeout: 30000,
+    actionTimeout: 20000,
+    navigationTimeout: 45000,
   },
   // The full suite runs once per viewport so every flow (registration,
   // booking, calendar, chat, admin tools, etc.) gets exercised on both
