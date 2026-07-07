@@ -1,14 +1,19 @@
 const nodemailer = require('nodemailer');
 
+// Explicit host/port 587 + STARTTLS instead of `service: 'gmail'` (which
+// defaults to port 465/SSL) - some hosts block outbound 465 but allow 587.
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false,
+  requireTLS: true,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
   },
-  connectionTimeout: 10000,
-  greetingTimeout: 10000,
-  socketTimeout: 10000,
+  connectionTimeout: 5000,
+  greetingTimeout: 5000,
+  socketTimeout: 5000,
 });
 
 const emailTemplate = (title, content) => `
