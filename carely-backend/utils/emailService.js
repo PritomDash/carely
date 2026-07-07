@@ -50,8 +50,14 @@ const emailTemplate = (title, content) => `
 </html>
 `;
 
+// Returns {success, error?} so diagnostic callers (e.g. the admin test-email
+// route) can report real status. Existing fire-and-forget callers ignore the
+// return value, so this is safe to add without changing their behavior.
 const sendEmail = async ({ to, subject, title, content }) => {
-  if (!to || !process.env.EMAIL_USER || !process.env.EMAIL_PASS) return;
+  if (!to) return { success: false, error: 'No recipient address provided' };
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    return { success: false, error: 'EMAIL_USER/EMAIL_PASS not configured on the server' };
+  }
   try {
     await transporter.sendMail({
       from: `Carely Bangladesh <${process.env.EMAIL_USER}>`,
@@ -60,9 +66,21 @@ const sendEmail = async ({ to, subject, title, content }) => {
       html: emailTemplate(title, content)
     });
     console.log('Email sent to:', to);
+    return { success: true };
   } catch (err) {
     console.error('Email failed:', err.message);
+    return { success: false, error: err.message };
   }
 };
 
-module.exports = { sendEmail };
+// Emails must never block the caller's response - SMTP delivery can be slow
+// or hang entirely (e.g. blocked egress on the hosting provider). Fire-and-
+// forget with an internal catch so a stuck send can't stall the main action.
+const fireEmail = (opts) => {
+  sendEmail(opts).catch((err) => console.error('Email send failed:', err.message));
+};
+
+const detailRow = (label, value) =>
+  '<div class="detail-row"><div class="detail-label">' + label + '</div><div class="detail-value">' + value + '</div></div>';
+
+module.exports = { sendEmail, fireEmail, detailRow };

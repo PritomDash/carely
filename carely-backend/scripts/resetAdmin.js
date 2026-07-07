@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const User = require('../models/user');
 
 const ADMIN_EMAIL = 'admin@carely.com';
-const ADMIN_PASSWORD = 'Admin@Carely2025';
+const ADMIN_PASSWORD = 'Car3ly@Admin!2025#BD';
 
 async function resetAdmin() {
   await mongoose.connect(process.env.MONGODB_URI);

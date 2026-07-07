@@ -1027,6 +1027,7 @@ function SettingsTab() {
         subscriptionEnabled: settings.subscriptionEnabled,
         commissionRate: settings.commissionRate,
         emergencyPostFee: settings.emergencyPostFee,
+        maintenanceMessage: settings.maintenanceMessage,
       });
       setSettings(res.data);
       setSuccess('Settings saved.');
@@ -1102,6 +1103,113 @@ function SettingsTab() {
         </p>
         <button className="btn btn-primary" disabled={saving} onClick={handleSave}>
           {saving ? 'Saving...' : 'Save Settings'}
+        </button>
+      </div>
+
+      <GodModeSection settings={settings} handleToggle={handleToggle} setField={setField} handleSave={handleSave} saving={saving} />
+    </div>
+  );
+}
+
+function GodModeSection({ settings, handleToggle, setField, handleSave, saving }) {
+  const [broadcastMessage, setBroadcastMessage] = useState('');
+  const [broadcastState, setBroadcastState] = useState('idle'); // idle | sending | success | error
+  const [broadcastResult, setBroadcastResult] = useState('');
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState('');
+
+  const handleBroadcast = async () => {
+    if (!broadcastMessage.trim()) return;
+    setBroadcastState('sending'); setBroadcastResult('');
+    try {
+      const res = await api.post('/api/admin/broadcast', { message: broadcastMessage.trim() });
+      setBroadcastState('success');
+      setBroadcastResult('Sent to ' + res.data.recipientCount + ' users.');
+      setBroadcastMessage('');
+      setTimeout(() => setBroadcastState('idle'), 3000);
+    } catch (err) {
+      setBroadcastState('error');
+      setBroadcastResult(err.response?.data?.error || 'Failed to send broadcast.');
+      setTimeout(() => setBroadcastState('idle'), 3000);
+    }
+  };
+
+  const handleExportCsv = async () => {
+    setExporting(true); setExportError('');
+    try {
+      const res = await api.get('/api/admin/export-users-csv', { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'text/csv' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'carely-users-' + Date.now() + '.csv';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setExportError('Failed to export users.');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  return (
+    <div className="card" style={{ marginTop: 16, border: '1.5px solid #FCA5A5' }}>
+      <h3 style={{ marginBottom: 4, color: '#991B1B' }}>⚡ God Mode</h3>
+      <p className="text-muted" style={{ marginBottom: 16 }}>Master controls - use with care, these affect every user immediately.</p>
+
+      <Toggle
+        label="Pause New Registrations"
+        description="Block anyone from signing up (existing users are unaffected)"
+        value={!!settings.registrationsPaused}
+        onChange={(v) => handleToggle('registrationsPaused', v)}
+      />
+      <Toggle
+        label="Maintenance Mode"
+        description="Show a maintenance page to all customers/professionals; admin login still works"
+        value={!!settings.maintenanceMode}
+        onChange={(v) => handleToggle('maintenanceMode', v)}
+      />
+
+      <div className="form-group" style={{ marginTop: 12 }}>
+        <label>Maintenance Message</label>
+        <textarea
+          rows={2}
+          value={settings.maintenanceMessage || ''}
+          onChange={(e) => setField('maintenanceMessage', e.target.value)}
+        />
+        <button className="btn btn-secondary" style={{ marginTop: 8 }} disabled={saving} onClick={handleSave}>
+          {saving ? 'Saving...' : 'Save Message'}
+        </button>
+      </div>
+
+      <div style={{ borderTop: '1px solid #F1F5F9', marginTop: 16, paddingTop: 16 }}>
+        <label className="form-label">Broadcast Notification to All Users</label>
+        <textarea
+          rows={2}
+          value={broadcastMessage}
+          onChange={(e) => setBroadcastMessage(e.target.value)}
+          placeholder="e.g. Carely will be down for maintenance tonight from 11pm-12am."
+        />
+        {broadcastResult && (
+          <div className={broadcastState === 'error' ? 'msg-error' : 'msg-success'} style={{ marginTop: 8 }}>{broadcastResult}</div>
+        )}
+        <button
+          className="btn btn-primary"
+          style={{ marginTop: 8 }}
+          disabled={broadcastState === 'sending' || !broadcastMessage.trim()}
+          onClick={handleBroadcast}
+        >
+          {broadcastState === 'sending' ? 'Sending...' : 'Send Broadcast'}
+        </button>
+      </div>
+
+      <div style={{ borderTop: '1px solid #F1F5F9', marginTop: 16, paddingTop: 16 }}>
+        <label className="form-label">Export All Users</label>
+        <p className="text-muted" style={{ marginBottom: 8 }}>Download a CSV of every user (name, email, phone, role, credits, verification status).</p>
+        {exportError && <div className="msg-error" style={{ marginBottom: 8 }}>{exportError}</div>}
+        <button className="btn btn-secondary" disabled={exporting} onClick={handleExportCsv}>
+          {exporting ? 'Exporting...' : '⬇ Export Users (CSV)'}
         </button>
       </div>
     </div>

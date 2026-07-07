@@ -3,11 +3,26 @@ const Booking = require('./models/Booking');
 const JobPost = require('./models/JobPost');
 const Notification = require('./models/Notification');
 const User = require('./models/user');
-const { sendEmail } = require('./utils/emailService');
+const { fireEmail } = require('./utils/emailService');
 const { createNotification } = require('./utils/notificationService');
 
 function setupCronJobs(io) {
   console.log('✅ Cron jobs started');
+
+  // Every 14 minutes: self-ping so Render's free tier never spins down from
+  // inactivity (it sleeps after ~15 min with no inbound traffic). Prefers
+  // Render's own RENDER_EXTERNAL_URL (auto-set on every Render web service)
+  // over BACKEND_URL so this can't drift out of sync with the real host.
+  cron.schedule('*/14 * * * *', async () => {
+    try {
+      const axios = require('axios');
+      const base = process.env.RENDER_EXTERNAL_URL || process.env.BACKEND_URL || 'http://localhost:5000';
+      const res = await axios.get(base + '/', { timeout: 10000 });
+      console.log('Self-ping OK:', res.status, new Date().toISOString());
+    } catch (err) {
+      console.error('Self-ping failed:', err.message);
+    }
+  });
 
   // Every hour: Auto-decline bookings not accepted in 24h
   cron.schedule('0 * * * *', async () => {
@@ -31,7 +46,7 @@ function setupCronJobs(io) {
           io,
         });
 
-        await sendEmail({
+        fireEmail({
           to: b.customer?.email,
           subject: 'Booking Auto-Declined - Carely',
           title: 'No response within 24 hours',

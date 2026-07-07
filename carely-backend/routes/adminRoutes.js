@@ -10,6 +10,43 @@ const CreditTransaction = require('../models/CreditTransaction');
 const TopUpRequest = require('../models/TopUpRequest');
 const { approveTopUp } = require('./creditRoutes');
 const adminAuth = require('../middlewares/adminAuthMiddleware');
+const { sendEmail } = require('../utils/emailService');
+
+// Diagnostic: send a real test email to the admin's own address and report
+// whether it actually succeeded (unlike normal booking emails, which are
+// fire-and-forget on purpose, this one intentionally waits for the result).
+router.get('/test-email', adminAuth, async (req, res) => {
+  const result = await sendEmail({
+    to: req.admin.email,
+    subject: 'Carely Test Email',
+    title: 'Email delivery test',
+    content: '<p style="color:#1A1A2E;font-size:14px;">If you are reading this, EMAIL_USER/EMAIL_PASS are configured correctly and Carely can send email.</p>',
+  });
+  res.status(result.success ? 200 : 500).json(result);
+});
+
+// Admin self-service password change (no DB access required to rotate it)
+router.put('/change-password', adminAuth, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'currentPassword and newPassword are required' });
+    }
+    if (newPassword.length < 8) {
+      return res.status(400).json({ error: 'newPassword must be at least 8 characters' });
+    }
+
+    const admin = await User.findById(req.admin._id);
+    const isMatch = await admin.comparePassword(currentPassword);
+    if (!isMatch) return res.status(401).json({ error: 'Current password is incorrect' });
+
+    admin.password = newPassword;
+    await admin.save();
+    res.json({ message: 'Password updated' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update password' });
+  }
+});
 
 // Get all users
 router.get('/users', adminAuth, async (req, res) => {
@@ -116,10 +153,16 @@ router.get('/job-posts', adminAuth, async (req, res) => {
 });
 
 // Get settings
+// Public - the frontend reads this unauthenticated to render credit packs,
+// feature flags, and the maintenance banner. Never return gateway secrets here.
+const PUBLIC_SETTINGS_EXCLUDE = '-shurjopayUsername -shurjopayPassword -shurjopayClientId -shurjopayClientSecret -sslcommerzStoreId -sslcommerzPassword';
 router.get('/settings', async (_req, res) => {
   try {
-    let settings = await Settings.findOne();
-    if (!settings) settings = await Settings.create({});
+    let settings = await Settings.findOne().select(PUBLIC_SETTINGS_EXCLUDE);
+    if (!settings) {
+      await Settings.create({});
+      settings = await Settings.findOne().select(PUBLIC_SETTINGS_EXCLUDE);
+    }
     res.json(settings);
   } catch (err) {
     res.status(500).json({ error: 'Failed to load settings' });
@@ -140,6 +183,7 @@ router.put('/settings', adminAuth, async (req, res) => {
       paymentGatewayProvider,
       shurjopayUsername, shurjopayPassword, shurjopayClientId, shurjopayClientSecret, shurjopayBaseUrl,
       sslcommerzStoreId, sslcommerzPassword, sslcommerzSandbox,
+      registrationsPaused, maintenanceMode, maintenanceMessage,
     } = req.body;
 
     let settings = await Settings.findOne();
@@ -175,10 +219,68 @@ router.put('/settings', adminAuth, async (req, res) => {
     if (sslcommerzPassword      !== undefined) settings.sslcommerzPassword      = sslcommerzPassword;
     if (sslcommerzSandbox       !== undefined) settings.sslcommerzSandbox       = sslcommerzSandbox;
 
+    if (registrationsPaused !== undefined) settings.registrationsPaused = registrationsPaused;
+    if (maintenanceMode     !== undefined) settings.maintenanceMode     = maintenanceMode;
+    if (maintenanceMessage  !== undefined) settings.maintenanceMessage  = maintenanceMessage;
+
     await settings.save();
     res.json(settings);
   } catch (err) {
     res.status(500).json({ error: 'Failed to update settings' });
+  }
+});
+
+// God Mode: broadcast an in-app notification (+ socket push) to every user
+router.post('/broadcast', adminAuth, async (req, res) => {
+  try {
+    const { message, link } = req.body;
+    if (!message || !message.trim()) {
+      return res.status(400).json({ error: 'Message is required' });
+    }
+
+    const users = await User.find({ role: { $in: ['customer', 'professional'] } }).select('_id');
+    const notifications = await Notification.insertMany(
+      users.map((u) => ({
+        user: u._id,
+        type: 'admin',
+        message: message.trim(),
+        link: link || '/notifications',
+      }))
+    );
+
+    if (req.io) {
+      users.forEach((u) => {
+        req.io.to(String(u._id)).emit('newNotification', { type: 'admin', message: message.trim() });
+      });
+    }
+
+    res.json({ message: 'Broadcast sent', recipientCount: notifications.length });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to send broadcast' });
+  }
+});
+
+// God Mode: export all users as CSV
+router.get('/export-users-csv', adminAuth, async (req, res) => {
+  try {
+    const users = await User.find().select('-password').lean();
+    const columns = ['_id', 'name', 'email', 'phone', 'role', 'professionalType', 'isVerified', 'credits', 'createdAt'];
+    const escapeCsv = (v) => {
+      if (v == null) return '';
+      const s = String(v);
+      return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    };
+
+    const rows = [columns.join(',')];
+    for (const u of users) {
+      rows.push(columns.map((c) => escapeCsv(c === 'createdAt' ? new Date(u[c]).toISOString() : u[c])).join(','));
+    }
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="carely-users-' + Date.now() + '.csv"');
+    res.send(rows.join('\n'));
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to export users' });
   }
 });
 

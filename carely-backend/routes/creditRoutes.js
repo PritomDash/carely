@@ -6,6 +6,7 @@ const TopUpRequest = require('../models/TopUpRequest');
 const Notification = require('../models/Notification');
 const Settings = require('../models/Settings');
 const authMiddleware = require('../middlewares/authMiddleware');
+const { fireEmail, detailRow } = require('../utils/emailService');
 
 // Get my balance
 router.get('/my-balance', authMiddleware, async (req, res) => {
@@ -274,6 +275,17 @@ const approveTopUp = async (request, adminId) => {
     type: 'payment',
     message: request.credits + ' credits added to your account successfully!',
     link: '/my-credits'
+  });
+
+  fireEmail({
+    to: user.email,
+    subject: 'Top Up Approved - Carely',
+    title: 'Your credits have been added!',
+    content:
+      detailRow('Credits Added', request.credits) +
+      detailRow('Amount', '৳' + request.amountBDT) +
+      detailRow('New Balance', user.credits) +
+      '<p style="margin-top:20px;color:#64748B;font-size:13px;">Thank you for topping up your Carely credits.</p>'
   });
 };
 

@@ -13,6 +13,11 @@ const settingsSchema = new mongoose.Schema({
   cashPaymentEnabled:     { type: Boolean, default: false },
   featuredListingEnabled: { type: Boolean, default: false },
   subscriptionEnabled:    { type: Boolean, default: false },
+
+  // God Mode admin controls
+  registrationsPaused: { type: Boolean, default: false },
+  maintenanceMode:     { type: Boolean, default: false },
+  maintenanceMessage:  { type: String, default: 'Carely is currently undergoing scheduled maintenance. Please check back soon.' },
   commissionRate:   { type: Number, default: 15 },
   emergencyPostFee: { type: Number, default: 75 },
 

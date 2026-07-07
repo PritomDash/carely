@@ -39,10 +39,22 @@ router.post('/register', upload.fields([
     if (!name || !email || !password || !phone || !role)
       return res.status(400).json({ message: 'All fields are required' });
 
+    // Public registration may only ever create customer/professional accounts -
+    // 'admin' must never be self-assignable through this endpoint.
+    const normalizedRole = String(role).toLowerCase();
+    if (!['customer', 'professional'].includes(normalizedRole)) {
+      return res.status(400).json({ message: 'Invalid role' });
+    }
+
+    let settings = await Settings.findOne();
+    if (settings?.registrationsPaused) {
+      return res.status(503).json({ message: 'New registrations are temporarily paused. Please check back soon.' });
+    }
+
     const existing = await User.findOne({ email });
     if (existing) return res.status(400).json({ message: 'Email already exists' });
 
-    const userData = { name, email, password, phone, role: role.toLowerCase() };
+    const userData = { name, email, password, phone, role: normalizedRole };
 
     if (userData.role === 'professional') {
       if (professionalType) userData.professionalType = professionalType;
@@ -75,7 +87,6 @@ router.post('/register', upload.fields([
     const user = new User(userData);
     await user.save();
 
-    let settings = await Settings.findOne();
     if (!settings) settings = await Settings.create({});
 
     const startingCredits = userData.role === 'professional'
@@ -153,6 +164,17 @@ router.post('/login', async (req, res) => {
 
     const user = await User.findOne({ email });
     if (!user) return res.status(401).json({ message: 'Invalid email or password' });
+
+    // Maintenance mode blocks regular users but never locks out admin - they
+    // need to be able to log in to turn it back off.
+    if (user.role !== 'admin') {
+      const settings = await Settings.findOne();
+      if (settings?.maintenanceMode) {
+        return res.status(503).json({
+          message: settings.maintenanceMessage || 'Carely is currently undergoing scheduled maintenance. Please check back soon.',
+        });
+      }
+    }
 
     const isMatch = await user.comparePassword(password);
     if (!isMatch) return res.status(401).json({ message: 'Invalid email or password' });
