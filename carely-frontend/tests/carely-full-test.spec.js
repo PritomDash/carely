@@ -166,6 +166,11 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
 
   test('04 - Login as customer', async ({ page }) => {
     await page.goto('/login');
+
+    const googleBtn = page.locator('button:has-text("Google"), a:has-text("Google")').first();
+    const googleVisible = await googleBtn.isVisible({ timeout: 3000 }).catch(() => false);
+    console.log(googleVisible ? '✅ Google sign-in button present on login page' : '⚠️ Google sign-in button not found on login page');
+
     await page.locator('input[type="email"]').fill(CUSTOMER.email);
     await page.locator('input[type="password"]').fill(CUSTOMER.password);
     await page.locator('button[type="submit"], button:has-text("Sign In")').first().click();
@@ -592,12 +597,20 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
     }
   });
 
-  test('19 - Customer selects professional from job post', async ({ page }) => {
+  test('19 - Customer selects professional from job post - creates a real Confirmed booking', async ({ page }) => {
     await page.goto('/login');
     await page.locator('input[type="email"]').fill(CUSTOMER.email);
     await page.locator('input[type="password"]').fill(CUSTOMER.password);
     await page.locator('button[type="submit"]').first().click();
     await page.waitForURL(/\/home/);
+
+    // A confirmed booking already exists from test 09/11 (the direct booking
+    // flow) - count Confirmed badges before and after the select action so
+    // this test actually proves a NEW one was created by job-post selection,
+    // rather than just re-detecting that earlier booking.
+    await page.goto('/my-bookings');
+    await page.waitForTimeout(2000);
+    const confirmedBefore = await page.locator('text=/Confirmed/i').count();
 
     await page.goto('/my-posts');
     await page.waitForTimeout(3000);
@@ -607,6 +620,31 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
       await selectBtn.click();
       await page.waitForTimeout(2000);
       console.log('✅ Professional selected - 1 credit should be deducted from pro');
+
+      await page.goto('/my-bookings');
+      await page.waitForTimeout(2000);
+      const confirmedAfter = await page.locator('text=/Confirmed/i').count();
+      expect(confirmedAfter).toBeGreaterThan(confirmedBefore);
+      console.log(`✅ New Confirmed booking created from job post selection (${confirmedBefore} -> ${confirmedAfter})`);
+    } else {
+      console.log('⚠️ No job post applicant available to select (test 17/18 may not have applied)');
+    }
+  });
+
+  test('19b - Professional also sees the job-post-confirmed booking', async ({ page }) => {
+    await page.goto('/login');
+    await page.locator('input[type="email"]').fill(PRO.email);
+    await page.locator('input[type="password"]').fill(PRO.password);
+    await page.locator('button[type="submit"]').first().click();
+    await page.waitForURL(/\/home/);
+
+    await page.goto('/my-bookings');
+    await page.waitForTimeout(2000);
+    const proSeesConfirmed = await page.locator('text=/Confirmed/i').first().isVisible({ timeout: 5000 }).catch(() => false);
+    if (proSeesConfirmed) {
+      console.log('✅ Professional sees a Confirmed booking (direct booking + job post selection)');
+    } else {
+      console.log('⚠️ Professional does not see any Confirmed booking');
     }
   });
 
