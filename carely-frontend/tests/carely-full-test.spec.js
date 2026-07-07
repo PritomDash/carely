@@ -834,7 +834,10 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
     await page.locator('.admin-tab', { hasText: 'Users' }).first().click();
     await page.waitForTimeout(2000);
 
-    const proRow = page.locator('tr', { hasText: PRO.email }).first();
+    // AdminDashboard renders a <table> on desktop but switches to
+    // .admin-mobile-cards (plain divs) under 768px - both exist in the DOM
+    // at all times (one is display:none), so match whichever is :visible.
+    const proRow = page.locator('tr:visible, .admin-mobile-cards > div:visible', { hasText: PRO.email }).first();
     await expect(proRow).toBeVisible({ timeout: 10000 });
 
     // New professionals are verified by default (isVerified defaults true), so
