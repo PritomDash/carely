@@ -1,20 +1,10 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
-// Explicit host/port 587 + STARTTLS instead of `service: 'gmail'` (which
-// defaults to port 465/SSL) - some hosts block outbound 465 but allow 587.
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false,
-  requireTLS: true,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  },
-  connectionTimeout: 5000,
-  greetingTimeout: 5000,
-  socketTimeout: 5000,
-});
+// Render (and many hosts) block outbound raw SMTP (465/587) entirely, so
+// Gmail SMTP times out on every send regardless of credentials - confirmed
+// via GET /api/admin/test-email. Resend sends over HTTPS (443), which is
+// never blocked. See EMAIL_SETUP_NEEDED.md for how to get an API key.
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 const emailTemplate = (title, content) => `
 <!DOCTYPE html>
@@ -57,30 +47,37 @@ const emailTemplate = (title, content) => `
 
 // Returns {success, error?} so diagnostic callers (e.g. the admin test-email
 // route) can report real status. Existing fire-and-forget callers ignore the
-// return value, so this is safe to add without changing their behavior.
+// return value, so this is safe without changing their behavior.
 const sendEmail = async ({ to, subject, title, content }) => {
   if (!to) return { success: false, error: 'No recipient address provided' };
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    return { success: false, error: 'EMAIL_USER/EMAIL_PASS not configured on the server' };
+  if (!resend) {
+    const msg = 'RESEND_API_KEY not configured - email not sent. See EMAIL_SETUP_NEEDED.md.';
+    console.error(msg);
+    return { success: false, error: msg };
   }
+
   try {
-    await transporter.sendMail({
-      from: `Carely Bangladesh <${process.env.EMAIL_USER}>`,
-      to,
+    const { data, error } = await resend.emails.send({
+      from: process.env.RESEND_FROM || 'Carely Bangladesh <onboarding@resend.dev>',
+      to: [to],
       subject,
-      html: emailTemplate(title, content)
+      html: emailTemplate(title, content),
     });
-    console.log('Email sent to:', to);
+    if (error) {
+      console.error('Resend email failed:', error.message || error);
+      return { success: false, error: error.message || String(error) };
+    }
+    console.log('Email sent via Resend to:', to, data?.id ? '(' + data.id + ')' : '');
     return { success: true };
   } catch (err) {
-    console.error('Email failed:', err.message);
+    console.error('Resend email failed:', err.message);
     return { success: false, error: err.message };
   }
 };
 
-// Emails must never block the caller's response - SMTP delivery can be slow
-// or hang entirely (e.g. blocked egress on the hosting provider). Fire-and-
-// forget with an internal catch so a stuck send can't stall the main action.
+// Emails must never block the caller's response - delivery can be slow or
+// fail entirely. Fire-and-forget with an internal catch so a stuck/failed
+// send can't stall the main action.
 const fireEmail = (opts) => {
   sendEmail(opts).catch((err) => console.error('Email send failed:', err.message));
 };

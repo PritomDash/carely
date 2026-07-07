@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import AppFooter from '../components/AppFooter';
 import CarelyLogo from '../components/CarelyLogo';
+import Reveal from '../components/Reveal';
+import CountUpStat from '../components/CountUpStat';
+import useReveal from '../hooks/useReveal';
 
 const PHOTOS = {
   hero: 'https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?w=1200&q=80',
@@ -21,6 +24,11 @@ export default function LandingPage() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const [childCareRef, childCareVisible] = useReveal();
+  const [agedCareRef, agedCareVisible] = useReveal();
+  const [nurseRef, nurseVisible] = useReveal();
+  const [physioRef, physioVisible] = useReveal();
 
   return (
     <div style={{ minHeight: '100vh', background: '#FFFFFF', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
@@ -55,6 +63,7 @@ export default function LandingPage() {
         <img
           src={PHOTOS.hero}
           alt="Care professional with elderly"
+          className="landing-hero-bg-img"
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
         />
 
@@ -64,7 +73,7 @@ export default function LandingPage() {
         {/* Content */}
         <div style={{ position: 'relative', zIndex: 1, maxWidth: 780, padding: '0 40px', margin: '0 auto', textAlign: 'center', width: '100%' }}>
 
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 24, padding: '8px 20px', marginBottom: 28 }}>
+          <div className="landing-hero-badge-wrap" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 24, padding: '8px 20px', marginBottom: 28 }}>
             <span>🇧🇩</span>
             <span style={{ color: 'rgba(255,255,255,0.95)', fontSize: 14, fontWeight: 600 }}>Bangladesh's #1 Care Marketplace</span>
           </div>
@@ -123,7 +132,7 @@ export default function LandingPage() {
             { n: '100%', l: 'Free to Join' },
           ].map(s => (
             <div key={s.l} style={{ textAlign: 'center' }}>
-              <div className="landing-stat-number" style={{ fontSize: 32, fontWeight: 900, color: '#93C5FD' }}>{s.n}</div>
+              <CountUpStat value={s.n} className="landing-stat-number" style={{ fontSize: 32, fontWeight: 900, color: '#93C5FD' }} />
               <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.75)', marginTop: 4 }}>{s.l}</div>
             </div>
           ))}
@@ -142,7 +151,11 @@ export default function LandingPage() {
           <div className="landing-services-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 24 }}>
 
             {/* Child Care - Large card */}
-            <div className="landing-service-card-large" style={{ borderRadius: 24, overflow: 'hidden', position: 'relative', height: 380, cursor: 'pointer', gridRow: 'span 1' }}>
+            <div
+              ref={childCareRef}
+              className={`landing-service-card-large reveal-up ${childCareVisible ? 'reveal-visible' : ''}`}
+              style={{ borderRadius: 24, overflow: 'hidden', position: 'relative', height: 380, cursor: 'pointer', gridRow: 'span 1' }}
+            >
               <img src={PHOTOS.childCare} alt="Child Care" style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.4s' }} />
               <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.1) 60%)' }} />
               <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '28px 28px 28px' }}>
@@ -157,7 +170,11 @@ export default function LandingPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
               {/* Aged Care */}
-              <div className="landing-service-card-medium" style={{ borderRadius: 24, overflow: 'hidden', position: 'relative', height: 175 }}>
+              <div
+                ref={agedCareRef}
+                className={`landing-service-card-medium reveal-up ${agedCareVisible ? 'reveal-visible' : ''}`}
+                style={{ borderRadius: 24, overflow: 'hidden', position: 'relative', height: 175, transitionDelay: agedCareVisible ? '100ms' : '0ms' }}
+              >
                 <img src={PHOTOS.agedCare} alt="Aged Care" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(0,0,0,0.8) 40%, rgba(0,0,0,0.2) 100%)' }} />
                 <div style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: 24, right: 24 }}>
@@ -171,7 +188,11 @@ export default function LandingPage() {
               <div className="landing-services-subgrid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, flex: 1 }}>
 
                 {/* Nurse */}
-                <div className="landing-service-card-small" style={{ borderRadius: 24, overflow: 'hidden', position: 'relative' }}>
+                <div
+                  ref={nurseRef}
+                  className={`landing-service-card-small reveal-up ${nurseVisible ? 'reveal-visible' : ''}`}
+                  style={{ borderRadius: 24, overflow: 'hidden', position: 'relative', transitionDelay: nurseVisible ? '180ms' : '0ms' }}
+                >
                   <img src={PHOTOS.nurse} alt="Nurse" style={{ width: '100%', height: '100%', objectFit: 'cover', minHeight: 155 }} />
                   <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.1) 50%)' }} />
                   <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '16px' }}>
@@ -182,7 +203,11 @@ export default function LandingPage() {
                 </div>
 
                 {/* Physio */}
-                <div className="landing-service-card-small" style={{ borderRadius: 24, overflow: 'hidden', position: 'relative' }}>
+                <div
+                  ref={physioRef}
+                  className={`landing-service-card-small reveal-up ${physioVisible ? 'reveal-visible' : ''}`}
+                  style={{ borderRadius: 24, overflow: 'hidden', position: 'relative', transitionDelay: physioVisible ? '260ms' : '0ms' }}
+                >
                   <img src={PHOTOS.physio} alt="Physiotherapy" style={{ width: '100%', height: '100%', objectFit: 'cover', minHeight: 155 }} />
                   <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.1) 50%)' }} />
                   <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '16px' }}>
@@ -211,12 +236,12 @@ export default function LandingPage() {
               { num: '02', icon: '📅', title: 'Book', desc: 'Send a booking request with your preferred date, time, and requirements.', color: '#F3E8FF', accent: '#7C3AED' },
               { num: '03', icon: '✅', title: 'Confirm', desc: 'Professional accepts and you both get each others contact details to coordinate.', color: '#DCFCE7', accent: '#16A34A' },
             ].map((s, i) => (
-              <div key={s.num} style={{ background: 'white', border: '1.5px solid #E8EDF3', borderRadius: 20, padding: '32px 28px', position: 'relative', boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}>
+              <Reveal key={s.num} direction="left" delay={i * 120} style={{ background: 'white', border: '1.5px solid #E8EDF3', borderRadius: 20, padding: '32px 28px', position: 'relative', boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}>
                 <div style={{ fontSize: 48, fontWeight: 900, color: '#F1F5F9', position: 'absolute', top: 16, right: 20, lineHeight: 1 }}>{s.num}</div>
                 <div style={{ width: 60, height: 60, background: s.color, borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, marginBottom: 20 }}>{s.icon}</div>
                 <h3 style={{ fontSize: 22, fontWeight: 800, color: '#1A1A2E', marginBottom: 10 }}>{s.title}</h3>
                 <p style={{ fontSize: 15, color: '#64748B', lineHeight: 1.7, margin: 0 }}>{s.desc}</p>
-              </div>
+              </Reveal>
             ))}
           </div>
         </div>
@@ -274,12 +299,12 @@ export default function LandingPage() {
               { icon: '📅', title: 'Smart Booking', desc: 'See real-time availability. No double bookings. Book your exact time slot.' },
               { icon: '⭐', title: 'Rated by Users', desc: 'Read honest reviews from other customers before making your choice.' },
               { icon: '🆓', title: 'Free for Customers', desc: 'Finding and booking care professionals is completely free for customers.' },
-            ].map(f => (
-              <div key={f.title} style={{ padding: '28px 24px', border: '1.5px solid #E8EDF3', borderRadius: 16, textAlign: 'left', transition: 'box-shadow 0.2s', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+            ].map((f, i) => (
+              <Reveal key={f.title} delay={i * 90} style={{ padding: '28px 24px', border: '1.5px solid #E8EDF3', borderRadius: 16, textAlign: 'left', transition: 'box-shadow 0.2s, opacity 0.6s ease-out, transform 0.6s ease-out', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
                 <div style={{ fontSize: 32, marginBottom: 14 }}>{f.icon}</div>
                 <h3 style={{ fontSize: 17, fontWeight: 800, color: '#1A1A2E', marginBottom: 8 }}>{f.title}</h3>
                 <p style={{ fontSize: 14, color: '#64748B', lineHeight: 1.7, margin: 0 }}>{f.desc}</p>
-              </div>
+              </Reveal>
             ))}
           </div>
         </div>
@@ -295,7 +320,7 @@ export default function LandingPage() {
             Join thousands of families across Bangladesh finding trusted care through Carely.
           </p>
           <div className="landing-cta-buttons" style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link to="/register" style={{ padding: '18px 44px', background: '#FFFFFF', color: '#1E3A8A', borderRadius: 14, fontWeight: 900, fontSize: 18, textDecoration: 'none', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
+            <Link to="/register" className="landing-cta-pulse" style={{ padding: '18px 44px', background: '#FFFFFF', color: '#1E3A8A', borderRadius: 14, fontWeight: 900, fontSize: 18, textDecoration: 'none', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
               Get Started Free
             </Link>
             <Link to="/register?type=professional" style={{ padding: '18px 44px', background: 'rgba(255,255,255,0.12)', color: '#FFFFFF', borderRadius: 14, fontWeight: 700, fontSize: 18, textDecoration: 'none', border: '2px solid rgba(255,255,255,0.3)' }}>

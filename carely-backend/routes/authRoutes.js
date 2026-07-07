@@ -6,22 +6,11 @@ const Notification = require('../models/Notification');
 const Settings = require('../models/Settings');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const nodemailer = require('nodemailer');
+const { sendEmail } = require('../utils/emailService');
 const { upload } = require('../middlewares/uploadMiddleware');
 
 const generateToken = (user) =>
   jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
-
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false,
-  requireTLS: true,
-  auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
-  connectionTimeout: 5000,
-  greetingTimeout: 5000,
-  socketTimeout: 5000,
-});
 
 router.post('/register', upload.fields([
   { name: 'profilePhoto' },
@@ -201,12 +190,22 @@ router.post('/forgot-password', async (req, res) => {
     await user.save();
 
     const resetUrl = process.env.APP_BASE_URL + '/reset-password/' + token;
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
+    const result = await sendEmail({
       to: user.email,
       subject: 'Password Reset - Carely',
-      html: '<p>Click <a href="' + resetUrl + '">here</a> to reset your password. Link expires in 1 hour.</p>'
+      title: 'Reset your password',
+      content:
+        '<p style="color:#1A1A2E;font-size:14px;line-height:1.7;">Click the button below to reset your password. This link expires in 1 hour.</p>' +
+        '<p style="margin-top:20px;"><a href="' + resetUrl + '" style="display:inline-block;padding:12px 28px;background:#2563EB;color:#fff;border-radius:8px;text-decoration:none;font-weight:700;">Reset Password</a></p>' +
+        '<p style="margin-top:20px;color:#64748B;font-size:12px;">If the button does not work, copy this link: ' + resetUrl + '</p>',
     });
+
+    // Unlike booking notification emails, a failed reset email leaves the
+    // user with no way to reset their password - report it as a real error
+    // instead of silently returning success.
+    if (!result.success) {
+      return res.status(500).json({ message: 'Failed to send reset email. Please try again later.' });
+    }
 
     res.json({ message: 'Password reset email sent' });
   } catch (err) {

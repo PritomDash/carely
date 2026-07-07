@@ -946,3 +946,103 @@ img { max-width: 100%; height: auto; }
 @media (max-width: 768px) {
   .location-selector-grid { grid-template-columns: 1fr !important; }
 }
+
+/* ─────────────────────────────────────────────────────────────────
+   LANDING PAGE ANIMATIONS
+   Scroll-reveal, hero stagger, ken-burns, button lift, CTA pulse.
+   Everything here is a no-op (instant, no motion) under
+   prefers-reduced-motion, per the block near the bottom of this section.
+   ───────────────────────────────────────────────────────────────── */
+
+@keyframes landingFadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes landingKenBurns {
+  0%   { transform: scale(1) translate(0, 0); }
+  100% { transform: scale(1.12) translate(-1%, -1%); }
+}
+
+@keyframes landingCtaPulse {
+  0%, 100% { box-shadow: 0 8px 32px rgba(0,0,0,0.2), 0 0 0 0 rgba(255,255,255,0.25); }
+  50%      { box-shadow: 0 8px 32px rgba(0,0,0,0.2), 0 0 0 10px rgba(255,255,255,0); }
+}
+
+/* Hero: staggered fade-in-up on load */
+.landing-hero-badge-wrap,
+.landing-hero-title,
+.landing-hero-subtitle,
+.landing-hero-buttons,
+.landing-hero-badges {
+  opacity: 0;
+  animation: landingFadeInUp 0.7s ease-out forwards;
+}
+.landing-hero-badge-wrap { animation-delay: 0.05s; }
+.landing-hero-title      { animation-delay: 0.2s; }
+.landing-hero-subtitle   { animation-delay: 0.35s; }
+.landing-hero-buttons    { animation-delay: 0.5s; }
+.landing-hero-badges     { animation-delay: 0.65s; }
+
+/* Hero background: slow continuous zoom */
+.landing-hero-bg-img {
+  animation: landingKenBurns 20s ease-out infinite alternate;
+}
+
+/* Generic scroll-reveal (driven by the useReveal hook toggling .reveal-visible) */
+.reveal-up, .reveal-left {
+  opacity: 0;
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+.reveal-up   { transform: translateY(28px); }
+.reveal-left { transform: translateX(-32px); }
+.reveal-up.reveal-visible, .reveal-left.reveal-visible {
+  opacity: 1;
+  transform: translate(0, 0);
+}
+
+/* Buttons + cards: smooth hover lift */
+.landing-nav-btn,
+.landing-hero-btn,
+.landing-service-card-large,
+.landing-service-card-medium,
+.landing-service-card-small,
+.landing-cta-buttons a {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+.landing-nav-btn:hover { transform: translateY(-2px); filter: brightness(1.03); }
+.landing-hero-btn:hover,
+.landing-cta-buttons a:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 36px rgba(0,0,0,0.28);
+}
+.landing-service-card-large:hover,
+.landing-service-card-medium:hover,
+.landing-service-card-small:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.18);
+}
+
+/* CTA section: subtle attention pulse on the primary button */
+.landing-cta-pulse {
+  animation: landingCtaPulse 2.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-hero-badge-wrap,
+  .landing-hero-title,
+  .landing-hero-subtitle,
+  .landing-hero-buttons,
+  .landing-hero-badges,
+  .reveal-up,
+  .reveal-left {
+    animation: none !important;
+    transition: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .landing-hero-bg-img,
+  .landing-cta-pulse {
+    animation: none !important;
+  }
+}
