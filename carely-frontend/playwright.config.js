@@ -9,7 +9,10 @@ module.exports = defineConfig({
   retries: 1,
   workers: 1,
   use: {
-    baseURL: 'https://carely-tan.vercel.app',
+    // Production has moved to the custom domain; the backend's CORS policy
+    // (FRONTEND_URL on Render) only allows this origin, so the old default
+    // Vercel URL now fails every API call with a CORS error.
+    baseURL: 'https://mycarely.app',
     headless: false,
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
