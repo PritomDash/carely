@@ -6,17 +6,17 @@ Everything below is needed to fully activate email and push notifications on Ren
 
 | Variable | Value | Where to get it |
 |---|---|---|
-| `RESEND_API_KEY` | your key | https://resend.com — free 3,000/month, 100/day |
 | `BREVO_API_KEY` | your key | https://www.brevo.com — free 9,000/month, 300/day |
+| `RESEND_API_KEY` | your key | https://resend.com — free 3,000/month, 100/day |
 | `SENDGRID_API_KEY` | your key | https://sendgrid.com — free 3,000/month (first 60 days), 100/day after |
-| `EMAIL_FROM` | `Carely <onboarding@resend.dev>` | (or your own verified domain once set up) |
-| `EMAIL_REPLY_TO` | `dashpritom713@gmail.com` | |
-| `BREVO_FROM_EMAIL` | a verified Brevo sender address | only needed if using Brevo |
+| `EMAIL_FROM` | `Carely <carely.help@gmail.com>` | |
+| `EMAIL_REPLY_TO` | `carely.help@gmail.com` | |
+| `BREVO_FROM_EMAIL` | `carely.help@gmail.com` (verified Brevo sender) | only needed if using Brevo |
 | `SENDGRID_FROM_EMAIL` | a verified SendGrid sender address | only needed if using SendGrid |
 
 Full step-by-step signup instructions for each provider: **EMAIL_KEYS_NEEDED.md**
 
-Order of attempt: Resend → Brevo → SendGrid, automatic fallback if one fails or is unconfigured.
+Order of attempt: Brevo → Resend → SendGrid, automatic fallback if one fails or is unconfigured. Brevo goes first since it uses the verified carely.help@gmail.com sender.
 
 **Confirmed via a live `GET /api/admin/test-email` call: none of the three are currently configured in production** (`{"success":false,"errors":["Resend: Resend not configured","Brevo: Brevo not configured","SendGrid: SendGrid not configured"]}`). Email is fully coded and ready but not sending anything until you add at least one key - Resend is the simplest to start with.
 

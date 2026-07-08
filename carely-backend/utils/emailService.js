@@ -7,11 +7,12 @@ const sgMail = require('@sendgrid/mail');
 // via GET /api/admin/test-email. All three providers below send over HTTPS,
 // which is never blocked. See EMAIL_KEYS_NEEDED.md for how to get each key.
 //
-// Falls through Resend -> Brevo -> SendGrid so a single provider being down,
+// Falls through Brevo -> Resend -> SendGrid so a single provider being down,
 // misconfigured, or over its free-tier daily/monthly cap doesn't stop email
-// entirely - combined free capacity across all three is ~15,000/month.
-const FROM_EMAIL = process.env.EMAIL_FROM || 'Carely <onboarding@resend.dev>';
-const REPLY_TO = process.env.EMAIL_REPLY_TO || 'dashpritom713@gmail.com';
+// entirely - combined free capacity across all three is ~15,000/month. Brevo
+// goes first since it uses the verified carely.help@gmail.com sender.
+const FROM_EMAIL = process.env.EMAIL_FROM || 'Carely <carely.help@gmail.com>';
+const REPLY_TO = process.env.EMAIL_REPLY_TO || 'carely.help@gmail.com';
 
 const emailTemplate = (title, content) => `
 <!DOCTYPE html>
@@ -59,7 +60,7 @@ const sendViaBrevo = async ({ to, subject, html }) => {
   const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
   apiInstance.setApiKey(SibApiV3Sdk.TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY);
   const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
-  sendSmtpEmail.sender = { email: process.env.BREVO_FROM_EMAIL || 'noreply@carely.com', name: 'Carely' };
+  sendSmtpEmail.sender = { email: process.env.BREVO_FROM_EMAIL || 'carely.help@gmail.com', name: 'Carely' };
   sendSmtpEmail.to = [{ email: to }];
   sendSmtpEmail.subject = subject;
   sendSmtpEmail.htmlContent = html;
@@ -82,7 +83,7 @@ const sendViaSendGrid = async ({ to, subject, html }) => {
   return { provider: 'sendgrid', id: result[0]?.headers?.['x-message-id'] };
 };
 
-const providers = [sendViaResend, sendViaBrevo, sendViaSendGrid];
+const providers = [sendViaBrevo, sendViaResend, sendViaSendGrid];
 
 // Returns {success, provider?, id?, error?/errors?} so diagnostic callers
 // (the admin test-email route) can report real status. Existing
