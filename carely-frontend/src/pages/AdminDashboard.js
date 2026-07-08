@@ -893,6 +893,12 @@ function CreditSettingsSection() {
     return { ...s, creditPacks: packs };
   });
 
+  const setFeaturedPack = (i, field, value) => setSettings((s) => {
+    const packs = [...(s.featuredPacks || [])];
+    packs[i] = { ...packs[i], [field]: value };
+    return { ...s, featuredPacks: packs };
+  });
+
   const handleSave = async () => {
     setSaving(true); setError(''); setSuccess('');
     try {
@@ -904,6 +910,7 @@ function CreditSettingsSection() {
         jobSelectCreditCost: settings.jobSelectCreditCost,
         emergencyPostCreditCost: settings.emergencyPostCreditCost,
         creditPacks: settings.creditPacks,
+        featuredPacks: settings.featuredPacks,
       });
       setSettings(res.data);
       setSuccess('Credit settings saved.');
@@ -978,6 +985,31 @@ function CreditSettingsSection() {
         ))}
       </div>
 
+      <h4 style={{ margin: '16px 0 10px' }}>Featured/Boost Packs</h4>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {(settings.featuredPacks || []).map((pack, i) => (
+          <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', background: '#FFFBEB', padding: 10, borderRadius: 8 }}>
+            <span className="text-muted" style={{ textTransform: 'capitalize' }}>{pack.tier}:</span>
+            <input
+              type="number" min="1" value={pack.days ?? 0}
+              onChange={(e) => setFeaturedPack(i, 'days', Number(e.target.value))}
+              style={{ width: 70, padding: '6px 8px' }}
+            /> days |{' '}
+            ৳<input
+              type="number" min="0" value={pack.priceBDT ?? 0}
+              onChange={(e) => setFeaturedPack(i, 'priceBDT', Number(e.target.value))}
+              style={{ width: 90, padding: '6px 8px' }}
+            /> |{' '}
+            <input
+              type="text" value={pack.label ?? ''}
+              onChange={(e) => setFeaturedPack(i, 'label', e.target.value)}
+              style={{ width: 160, padding: '6px 8px' }}
+              placeholder="Label"
+            />
+          </div>
+        ))}
+      </div>
+
       <button className="btn btn-primary" style={{ marginTop: 16 }} disabled={saving} onClick={handleSave}>
         {saving ? 'Saving...' : 'Save Settings'}
       </button>
@@ -994,6 +1026,269 @@ function CreditsTab() {
       <RenewAllSection />
       <IndividualCreditsSection />
       <CreditSettingsSection />
+      <FeaturedRequestsSection />
+      <ManualFeatureSection />
+      <ActiveFeaturedSection />
+    </div>
+  );
+}
+
+function FeaturedRequestsSection() {
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState(null);
+  const [rejectingId, setRejectingId] = useState(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  const fetchAll = useCallback(() => {
+    setLoading(true);
+    api.get('/api/admin/featured-requests')
+      .then((res) => setRequests(res.data || []))
+      .catch(() => setError('Failed to load boost requests'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  const handleApprove = async (id) => {
+    setBusyId(id); setError(''); setSuccess('');
+    try {
+      await api.put(`/api/admin/featured-requests/${id}/approve`);
+      setSuccess('Boost approved.');
+      fetchAll();
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to approve.');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const handleReject = async (id) => {
+    setBusyId(id); setError(''); setSuccess('');
+    try {
+      await api.put(`/api/admin/featured-requests/${id}/reject`, { reason: rejectReason || 'Could not verify transaction' });
+      setSuccess('Boost rejected.');
+      setRejectingId(null);
+      setRejectReason('');
+      fetchAll();
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to reject.');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  if (loading) return <p className="text-muted">Loading boost requests...</p>;
+
+  const sortedOldestFirst = [...requests].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+  return (
+    <div className="card" style={{ marginTop: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+        <h3 style={{ margin: 0 }}>⭐ Featured/Boost Requests</h3>
+        <span className="badge badge-yellow">{sortedOldestFirst.length} pending</span>
+      </div>
+      {error && <div className="badge badge-red" style={{ display: 'block', marginBottom: 12, padding: '8px 12px' }}>{error}</div>}
+      {success && <div className="badge badge-green" style={{ display: 'block', marginBottom: 12, padding: '8px 12px' }}>{success}</div>}
+
+      {sortedOldestFirst.length === 0 ? (
+        <p className="text-muted">No pending boost requests.</p>
+      ) : (
+        <div className="table-scroll">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>User</th><th>Tier</th><th>Days</th><th>Amount</th><th>Method</th><th>TRX ID</th><th>Submitted</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedOldestFirst.map((r) => (
+                <tr key={r._id}>
+                  <td>{r.user?.name || '—'}</td>
+                  <td style={{ textTransform: 'capitalize' }}>{r.tier}</td>
+                  <td>{r.days}</td>
+                  <td>{formatBDT(r.amountBDT)}</td>
+                  <td style={{ textTransform: 'capitalize' }}>{r.method}</td>
+                  <td>{r.transactionID}</td>
+                  <td>{new Date(r.createdAt).toLocaleString('en-BD')}</td>
+                  <td>
+                    {rejectingId === r._id ? (
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                        <input
+                          type="text"
+                          value={rejectReason}
+                          onChange={(e) => setRejectReason(e.target.value)}
+                          placeholder="Reason"
+                          style={{ width: 120, padding: '4px 8px', fontSize: 12 }}
+                        />
+                        <button className="btn btn-danger" style={{ padding: '4px 8px', fontSize: 12 }} disabled={busyId === r._id} onClick={() => handleReject(r._id)}>Confirm</button>
+                        <button className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: 12 }} onClick={() => setRejectingId(null)}>Cancel</button>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button className="btn btn-success" style={{ padding: '4px 8px', fontSize: 12 }} disabled={busyId === r._id} onClick={() => handleApprove(r._id)}>✓ Approve</button>
+                        <button className="btn btn-danger" style={{ padding: '4px 8px', fontSize: 12 }} disabled={busyId === r._id} onClick={() => { setRejectingId(r._id); setRejectReason(''); }}>✗ Reject</button>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ManualFeatureSection() {
+  const [query, setQuery] = useState('');
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState(null);
+  const [days, setDays] = useState(30);
+  const [tier, setTier] = useState('premium');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  useEffect(() => {
+    api.get('/api/admin/users')
+      .then((res) => setUsers((res.data || []).filter((u) => u.role === 'professional')))
+      .catch(() => setError('Failed to load professionals'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const matches = query.trim().length === 0 ? [] : users.filter((u) =>
+    u.name?.toLowerCase().includes(query.toLowerCase()) || u.email?.toLowerCase().includes(query.toLowerCase())
+  ).slice(0, 8);
+
+  const handleSetFeatured = async (featured) => {
+    setError(''); setSuccess('');
+    setSaving(true);
+    try {
+      const res = await api.put(`/api/admin/users/${selected._id}/set-featured`, { featured, days: Number(days), tier });
+      setSuccess(featured ? `${res.data.user.name} is now Featured.` : `${res.data.user.name} is no longer Featured.`);
+      setSelected(res.data.user);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to update.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="card" style={{ marginTop: 16 }}>
+      <h3 style={{ marginBottom: 12 }}>Manually Feature a Professional</h3>
+      {error && <div className="badge badge-red" style={{ display: 'block', marginBottom: 12, padding: '8px 12px' }}>{error}</div>}
+      {success && <div className="badge badge-green" style={{ display: 'block', marginBottom: 12, padding: '8px 12px' }}>{success}</div>}
+
+      <div className="form-group">
+        <label>Search professional by name or email</label>
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => { setQuery(e.target.value); setSelected(null); }}
+          placeholder={loading ? 'Loading professionals...' : 'Type a name or email'}
+        />
+      </div>
+
+      {matches.length > 0 && !selected && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 12 }}>
+          {matches.map((u) => (
+            <button
+              key={u._id}
+              className="btn btn-secondary"
+              style={{ justifyContent: 'flex-start' }}
+              onClick={() => { setSelected(u); setQuery(u.name); }}
+            >
+              {u.name} <span className="text-muted" style={{ marginLeft: 6 }}>— {u.email}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {selected && (
+        <div style={{ background: '#F7FAFF', borderRadius: 10, padding: 14, marginBottom: 12 }}>
+          <div style={{ fontWeight: 700 }}>{selected.name}</div>
+          <div className="text-muted">{selected.email}</div>
+          <div style={{ marginTop: 6 }}>
+            {selected.isFeatured ? (
+              <span className="badge" style={{ background: '#FEF3C7', color: '#92400E' }}>
+                ⭐ Featured until {selected.featuredUntil ? new Date(selected.featuredUntil).toLocaleDateString('en-BD') : '—'}
+              </span>
+            ) : (
+              <span className="badge badge-gray">Not Featured</span>
+            )}
+          </div>
+
+          <div className="grid-2" style={{ marginTop: 12 }}>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label>Tier</label>
+              <select value={tier} onChange={(e) => setTier(e.target.value)}>
+                <option value="basic">Basic</option>
+                <option value="premium">Premium</option>
+              </select>
+            </div>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label>Days</label>
+              <input type="number" min="1" value={days} onChange={(e) => setDays(e.target.value)} />
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+            <button className="btn btn-primary" disabled={saving} onClick={() => handleSetFeatured(true)}>
+              {saving ? 'Saving...' : '⭐ Feature Now'}
+            </button>
+            <button className="btn btn-outline" disabled={saving} onClick={() => handleSetFeatured(false)}>
+              Remove Featured
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ActiveFeaturedSection() {
+  const [pros, setPros] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.get('/api/admin/featured-requests/active')
+      .then((res) => setPros(res.data || []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <p className="text-muted">Loading featured professionals...</p>;
+
+  return (
+    <div className="card" style={{ marginTop: 16 }}>
+      <h3 style={{ marginBottom: 12 }}>Currently Featured Professionals</h3>
+      {pros.length === 0 ? (
+        <p className="text-muted">No professionals are currently featured.</p>
+      ) : (
+        <div className="table-scroll">
+          <table className="data-table">
+            <thead>
+              <tr><th>Name</th><th>Email</th><th>Type</th><th>Tier</th><th>Featured Until</th></tr>
+            </thead>
+            <tbody>
+              {pros.map((p) => (
+                <tr key={p._id}>
+                  <td>{p.name}</td>
+                  <td>{p.email}</td>
+                  <td>{p.professionalType}</td>
+                  <td style={{ textTransform: 'capitalize' }}>{p.featuredTier}</td>
+                  <td>{new Date(p.featuredUntil).toLocaleDateString('en-BD')}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

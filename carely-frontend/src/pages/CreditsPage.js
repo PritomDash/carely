@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import { formatBDT } from '../utils/currency';
 import AppNavbar from '../components/AppNavbar';
 
@@ -47,11 +47,14 @@ const STATUS_BANNER = {
 export default function CreditsPage() {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
+  const routerLocation = useLocation();
+  const boostRef = useRef(null);
 
   const [settings, setSettings] = useState(null);
   const [balance, setBalance] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [topups, setTopups] = useState([]);
+  const [featuredStatus, setFeaturedStatus] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const [selectedPackIndex, setSelectedPackIndex] = useState(null);
@@ -63,6 +66,17 @@ export default function CreditsPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  const [selectedBoostIndex, setSelectedBoostIndex] = useState(null);
+  const [boostPaymentTab, setBoostPaymentTab] = useState('bkash');
+  const [boostSenderNumber, setBoostSenderNumber] = useState('');
+  const [boostTransactionID, setBoostTransactionID] = useState('');
+  const [boostSubmitting, setBoostSubmitting] = useState(false);
+  const [boostSubmitState, setBoostSubmitState] = useState('idle');
+  const [boostError, setBoostError] = useState('');
+  const [boostSuccess, setBoostSuccess] = useState('');
+
+  const isProfessional = user?.role === 'professional';
+
   const fetchAll = useCallback(() => {
     setLoading(true);
     Promise.all([
@@ -70,21 +84,30 @@ export default function CreditsPage() {
       api.get('/api/credits/my-balance'),
       api.get('/api/credits/my-transactions'),
       api.get('/api/credits/my-topups'),
-    ]).then(([settingsRes, balanceRes, txRes, topupRes]) => {
+      user?.role === 'professional' ? api.get('/api/featured/my-status') : Promise.resolve({ data: null }),
+    ]).then(([settingsRes, balanceRes, txRes, topupRes, featuredRes]) => {
       setSettings(settingsRes.data);
       setBalance(balanceRes.data);
       setTransactions(txRes.data || []);
       setTopups(topupRes.data || []);
+      setFeaturedStatus(featuredRes.data);
     }).catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [user?.role]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  useEffect(() => {
+    if (routerLocation.hash === '#boost' && boostRef.current) {
+      boostRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [routerLocation.hash, loading]);
 
   const statusParam = searchParams.get('status');
   const banner = statusParam ? STATUS_BANNER[statusParam] : null;
 
   const selectedPack = selectedPackIndex != null ? settings?.creditPacks?.[selectedPackIndex] : null;
+  const selectedBoostPack = selectedBoostIndex != null ? settings?.featuredPacks?.[selectedBoostIndex] : null;
 
   const refCode = (() => {
     const id = user?._id || '';
@@ -152,6 +175,59 @@ export default function CreditsPage() {
     }
   };
 
+  const handleBoostGatewayPay = async () => {
+    if (!selectedBoostPack) return;
+    setBoostError(''); setBoostSuccess('');
+    setBoostSubmitting(true);
+    try {
+      const res = await api.post('/api/featured/request-gateway', { tier: selectedBoostPack.tier });
+      if (res.data?.paymentUrl) {
+        window.location.href = res.data.paymentUrl;
+      } else {
+        setBoostError('Could not start payment. Please try again.');
+      }
+    } catch (err) {
+      setBoostError(err.response?.data?.error || 'Payment initiation failed.');
+    } finally {
+      setBoostSubmitting(false);
+    }
+  };
+
+  const handleBoostManualSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedBoostPack) return;
+    setBoostError(''); setBoostSuccess('');
+
+    if (!boostTransactionID.trim()) {
+      setBoostError('Please enter the transaction ID.');
+      return;
+    }
+
+    setBoostSubmitting(true);
+    setBoostSubmitState('submitting');
+    try {
+      const res = await api.post('/api/featured/request-manual', {
+        tier: selectedBoostPack.tier,
+        transactionID: boostTransactionID.trim(),
+        senderNumber: boostSenderNumber,
+        method: boostPaymentTab,
+      });
+      setBoostSuccess(res.data?.message || 'Boost request submitted!');
+      setBoostSubmitState('success');
+      setBoostTransactionID('');
+      setBoostSenderNumber('');
+      setSelectedBoostIndex(null);
+      fetchAll();
+      setTimeout(() => setBoostSubmitState('idle'), 2000);
+    } catch (err) {
+      setBoostSubmitState('error');
+      setBoostError(err.response?.data?.error || 'Failed to submit boost request.');
+      setTimeout(() => setBoostSubmitState('idle'), 3000);
+    } finally {
+      setBoostSubmitting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="app-shell" style={{ minHeight: '100vh', background: '#F7FAFF' }}>
@@ -165,7 +241,6 @@ export default function CreditsPage() {
 
   const credits = balance?.credits ?? 0;
   const balanceColor = credits > 50 ? '#16a34a' : credits >= 10 ? '#B45309' : '#dc2626';
-  const isProfessional = user?.role === 'professional';
 
   return (
     <div className="app-shell" style={{ minHeight: '100vh', background: '#F7FAFF' }}>
@@ -315,6 +390,141 @@ export default function CreditsPage() {
             </>
           )}
         </div>
+
+        {/* BOOST PROFILE (professionals only) */}
+        {isProfessional && (
+          <div className="card" style={{ marginTop: 16 }} ref={boostRef}>
+            <h3 style={{ marginBottom: 4 }}>⭐ Boost Profile</h3>
+            <p className="text-muted" style={{ marginBottom: 12 }}>
+              Get featured at the top of search results. This is a paid visibility boost, not a verification badge.
+            </p>
+
+            {boostError && <div className="msg-error">{boostError}</div>}
+            {boostSuccess && <div className="msg-success">{boostSuccess}</div>}
+
+            {featuredStatus?.isFeatured && (
+              <div style={{ marginBottom: 16, background: '#FEF3C7', color: '#92400E', borderRadius: 8, padding: '10px 14px', fontSize: 14, fontWeight: 600 }}>
+                ⭐ Your profile is Featured until {new Date(featuredStatus.featuredUntil).toLocaleDateString('en-BD')}
+              </div>
+            )}
+
+            {!settings?.featuredListingEnabled ? (
+              <p className="text-muted">Profile boosting is not available right now.</p>
+            ) : (
+              <>
+                <div className="grid-3">
+                  {(settings?.featuredPacks || []).map((pack, i) => (
+                    <div
+                      key={i}
+                      onClick={() => setSelectedBoostIndex(i)}
+                      className="card"
+                      style={{
+                        cursor: 'pointer', textAlign: 'center',
+                        border: selectedBoostIndex === i ? '2px solid #F59E0B' : '1px solid #E8EDF0',
+                        background: selectedBoostIndex === i ? '#FFFBEB' : '#fff',
+                      }}
+                    >
+                      <div style={{ fontSize: 22, fontWeight: 800, color: '#1A1A2E' }}>{pack.days} Days</div>
+                      <div className="text-muted">{pack.label}</div>
+                      <div style={{ marginTop: 8, fontWeight: 700, color: '#B45309' }}>{formatBDT(pack.priceBDT)}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {selectedBoostPack && (
+                  <div style={{ marginTop: 20, borderTop: '1px solid #F1F5F9', paddingTop: 20 }}>
+                    <p style={{ marginBottom: 16 }}>
+                      Selected: <strong>{selectedBoostPack.label}</strong> for <strong>{formatBDT(selectedBoostPack.priceBDT)}</strong>
+                    </p>
+
+                    {settings?.paymentGatewayEnabled && (
+                      <button
+                        className="btn btn-primary btn-block"
+                        style={{ marginBottom: 20 }}
+                        disabled={boostSubmitting}
+                        onClick={handleBoostGatewayPay}
+                      >
+                        {boostSubmitting ? 'Redirecting...' : 'Pay Online Now'}
+                      </button>
+                    )}
+
+                    {settings?.manualTopUpEnabled && (
+                      <div>
+                        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                          <button
+                            type="button"
+                            className={boostPaymentTab === 'bkash' ? 'btn-primary' : 'btn-gray'}
+                            onClick={() => setBoostPaymentTab('bkash')}
+                          >
+                            bKash
+                          </button>
+                          <button
+                            type="button"
+                            className={boostPaymentTab === 'nagad' ? 'btn-primary' : 'btn-gray'}
+                            onClick={() => setBoostPaymentTab('nagad')}
+                          >
+                            Nagad
+                          </button>
+                        </div>
+
+                        <div style={{ background: '#F7FAFF', border: '1px solid #E8EDF3', borderRadius: 10, padding: 14, marginBottom: 16 }}>
+                          <div className="text-muted">Send {formatBDT(selectedBoostPack.priceBDT)} to</div>
+                          <div style={{ fontWeight: 700, fontSize: 16 }}>
+                            {boostPaymentTab === 'bkash' ? (settings.platformBkash || 'Not set') : (settings.platformNagad || 'Not set')}
+                          </div>
+                          <div className="text-muted" style={{ marginTop: 8 }}>Reference</div>
+                          <div style={{ fontWeight: 700 }}>{refCode}</div>
+                        </div>
+
+                        <form onSubmit={handleBoostManualSubmit}>
+                          <div className="form-group">
+                            <label>Your Number (sender)</label>
+                            <input type="text" value={boostSenderNumber} onChange={(e) => setBoostSenderNumber(e.target.value)} placeholder="01XXXXXXXXX" />
+                          </div>
+                          <div className="form-group">
+                            <label>Transaction ID *</label>
+                            <input type="text" value={boostTransactionID} onChange={(e) => setBoostTransactionID(e.target.value)} placeholder="e.g. 8N7A6B5C4D" required />
+                          </div>
+                          <button
+                            type="submit"
+                            className="btn btn-primary btn-block"
+                            disabled={boostSubmitState === 'submitting' || boostSubmitState === 'success'}
+                            style={{ background: boostSubmitState === 'success' ? '#22C55E' : undefined }}
+                          >
+                            {boostSubmitState === 'idle' && 'Submit Request'}
+                            {boostSubmitState === 'submitting' && '⏳ Submitting...'}
+                            {boostSubmitState === 'success' && '✓ Request Submitted!'}
+                            {boostSubmitState === 'error' && 'Try Again'}
+                          </button>
+                        </form>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+
+            {featuredStatus?.requests?.length > 0 && (
+              <div style={{ marginTop: 20, borderTop: '1px solid #F1F5F9', paddingTop: 16 }}>
+                <h4 style={{ marginBottom: 10, fontSize: 14 }}>Boost Requests</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {featuredStatus.requests.map((r) => {
+                    const s = STATUS_STYLE[r.status] || STATUS_STYLE.Pending;
+                    return (
+                      <div key={r._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #F3F4F6', paddingBottom: 8, flexWrap: 'wrap', gap: 6 }}>
+                        <div>
+                          <span style={{ color: s.color, fontWeight: 700 }}>{s.icon} {r.status}</span>
+                          <span style={{ marginLeft: 8 }}>{r.days} days ({formatBDT(r.amountBDT)})</span>
+                        </div>
+                        <span className="text-muted">{timeAgo(r.createdAt)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* PENDING / RECENT TOP UP REQUESTS */}
         <div className="card" style={{ marginTop: 16 }}>

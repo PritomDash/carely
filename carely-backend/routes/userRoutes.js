@@ -118,9 +118,14 @@ router.get('/professionals', async (req, res) => {
       return 0;
     };
 
+    const now = Date.now();
+    const isActiveFeatured = (p) => !!(p.isFeatured && p.featuredUntil && new Date(p.featuredUntil).getTime() > now);
+
     professionals.sort((a, b) => {
-      if (a.isFeatured && !b.isFeatured) return -1;
-      if (!a.isFeatured && b.isFeatured) return 1;
+      const aFeatured = isActiveFeatured(a);
+      const bFeatured = isActiveFeatured(b);
+      if (aFeatured && !bFeatured) return -1;
+      if (!aFeatured && bFeatured) return 1;
 
       if (hasLocationFilter) {
         const proximityDiff = locationScore(b) - locationScore(a);

@@ -8,7 +8,9 @@ const JobPost = require('../models/JobPost');
 const Settings = require('../models/Settings');
 const CreditTransaction = require('../models/CreditTransaction');
 const TopUpRequest = require('../models/TopUpRequest');
+const FeaturedRequest = require('../models/FeaturedRequest');
 const { approveTopUp } = require('./creditRoutes');
+const { approveFeaturedRequest } = require('./featuredRoutes');
 const adminAuth = require('../middlewares/adminAuthMiddleware');
 const { sendEmail } = require('../utils/emailService');
 const { createNotification } = require('../utils/notificationService');
@@ -94,17 +96,92 @@ router.put('/users/:id/suspend', adminAuth, async (req, res) => {
   }
 });
 
-// Feature / unfeature a professional profile
-router.put('/users/:id/feature', adminAuth, async (req, res) => {
-  const { featured, days } = req.body;
+// Feature / unfeature a professional profile (manual admin override).
+// Registered under two paths ("feature" is the original route, "set-featured"
+// matches the featured-system naming) so either can be called.
+const setFeaturedHandler = async (req, res) => {
+  const { featured, days, tier } = req.body;
   const user = await User.findById(req.params.id);
   if (!user) return res.status(404).json({ error: 'Not found' });
   user.isFeatured = featured;
+  user.featuredTier = featured ? (tier || 'premium') : 'none';
   user.featuredUntil = featured
     ? new Date(Date.now() + (days || 30) * 24 * 60 * 60 * 1000)
     : null;
   await user.save();
+
+  if (featured) {
+    await createNotification({
+      userId: user._id,
+      type: 'payment',
+      message: 'Your profile is now Featured until ' + user.featuredUntil.toLocaleDateString('en-BD') + '!',
+      link: '/my-credits',
+      io: req.io,
+    });
+  }
+
   res.json({ message: 'Updated', user });
+};
+router.put('/users/:id/feature', adminAuth, setFeaturedHandler);
+router.put('/users/:id/set-featured', adminAuth, setFeaturedHandler);
+
+// Pending featured/boost requests
+router.get('/featured-requests', adminAuth, async (req, res) => {
+  try {
+    const requests = await FeaturedRequest.find({ status: 'Pending' })
+      .populate('user', 'name email role phone')
+      .sort({ createdAt: 1 });
+    res.json(requests);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
+// Currently featured professionals
+router.get('/featured-requests/active', adminAuth, async (req, res) => {
+  try {
+    const users = await User.find({ isFeatured: true, featuredUntil: { $gt: new Date() } })
+      .select('name email professionalType featuredTier featuredUntil')
+      .sort({ featuredUntil: 1 });
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
+router.put('/featured-requests/:id/approve', adminAuth, async (req, res) => {
+  try {
+    const request = await FeaturedRequest.findById(req.params.id);
+    if (!request) return res.status(404).json({ error: 'Not found' });
+    if (request.status === 'Approved') return res.status(400).json({ error: 'Already approved' });
+    await approveFeaturedRequest(request, req.admin._id, req.io);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
+router.put('/featured-requests/:id/reject', adminAuth, async (req, res) => {
+  try {
+    const request = await FeaturedRequest.findById(req.params.id).populate('user', '_id name');
+    if (!request) return res.status(404).json({ error: 'Not found' });
+
+    request.status = 'Rejected';
+    request.rejectedReason = req.body.reason || 'Could not verify transaction';
+    await request.save();
+
+    await createNotification({
+      userId: request.user._id,
+      type: 'payment',
+      message: 'Your boost request was rejected. Reason: ' + request.rejectedReason,
+      link: '/my-credits',
+      io: req.io,
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed' });
+  }
 });
 
 // Delete user
@@ -177,7 +254,7 @@ router.put('/settings', adminAuth, async (req, res) => {
     const {
       creditsEnabled, emergencyPostEnabled, cashPaymentEnabled,
       paymentGatewayEnabled, featuredListingEnabled, subscriptionEnabled,
-      commissionRate, emergencyPostFee, creditPacks,
+      commissionRate, emergencyPostFee, creditPacks, featuredPacks,
       platformBkash, platformNagad,
       freeCreditsEnabled, freeCreditsAmount, customerFreeCredits,
       bookingAcceptCreditCost, jobSelectCreditCost, emergencyPostCreditCost,
@@ -200,6 +277,7 @@ router.put('/settings', adminAuth, async (req, res) => {
     if (commissionRate         !== undefined) settings.commissionRate         = Number(commissionRate);
     if (emergencyPostFee       !== undefined) settings.emergencyPostFee       = Number(emergencyPostFee);
     if (creditPacks            !== undefined) settings.creditPacks            = creditPacks;
+    if (featuredPacks          !== undefined) settings.featuredPacks          = featuredPacks;
     if (platformBkash          !== undefined) settings.platformBkash          = platformBkash;
     if (platformNagad          !== undefined) settings.platformNagad          = platformNagad;
 

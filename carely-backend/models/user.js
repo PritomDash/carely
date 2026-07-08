@@ -64,6 +64,7 @@ const userSchema = new mongoose.Schema({
   referredBy:    { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   isFeatured:    { type: Boolean, default: false },
   featuredUntil: { type: Date, default: null },
+  featuredTier:  { type: String, enum: ['none', 'basic', 'premium'], default: 'none' },
   pushSubscription: { type: Object, default: null },
 }, { timestamps: true });
 

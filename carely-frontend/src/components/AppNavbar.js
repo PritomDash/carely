@@ -94,6 +94,7 @@ export default function AppNavbar() {
     { icon:'💬', label:'Chat', shortLabel:'Chat', path:'/chat-inbox' },
     { icon:'👤', label:'My Profile', shortLabel:'Profile', path:'/edit-profile' },
     { icon:'💳', label:'Credits & Top Up', shortLabel:'Credits', path:'/my-credits' },
+    { icon:'⭐', label:'Boost Profile', shortLabel:'Boost', path:'/my-credits#boost' },
     { icon:'📄', label:'Documents', shortLabel:'Docs', path:'/upload-documents' },
   ];
 
@@ -239,6 +240,7 @@ const BottomNav = () => {
     { icon: '📋', label: 'My Bookings', path: '/my-bookings' },
     { icon: '📢', label: 'Job Feed', path: '/job-posts' },
     { icon: '💳', label: 'Credits & Top Up', path: '/my-credits' },
+    { icon: '⭐', label: 'Boost Profile', path: '/my-credits#boost' },
     { icon: '📄', label: 'Documents', path: '/upload-documents' },
     { icon: '👤', label: 'Edit Profile', path: '/edit-profile' },
     { icon: '🔗', label: 'Share & Earn', path: '/my-credits' },

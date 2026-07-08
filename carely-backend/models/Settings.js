@@ -7,11 +7,25 @@ const creditPackSchema = new mongoose.Schema({
   popular: Boolean,
 }, { _id: false });
 
+const featuredPackSchema = new mongoose.Schema({
+  tier: String,
+  days: Number,
+  priceBDT: Number,
+  label: String,
+}, { _id: false });
+
 const settingsSchema = new mongoose.Schema({
   creditsEnabled:         { type: Boolean, default: false },
   emergencyPostEnabled:   { type: Boolean, default: false },
   cashPaymentEnabled:     { type: Boolean, default: false },
-  featuredListingEnabled: { type: Boolean, default: false },
+  featuredListingEnabled: { type: Boolean, default: true },
+  featuredPacks: {
+    type: [featuredPackSchema],
+    default: [
+      { tier: 'basic',   days: 7,  priceBDT: 200, label: '7 Days Boost' },
+      { tier: 'premium', days: 30, priceBDT: 600, label: '30 Days Featured' },
+    ]
+  },
   subscriptionEnabled:    { type: Boolean, default: false },
 
   // God Mode admin controls
