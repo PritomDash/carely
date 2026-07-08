@@ -83,11 +83,11 @@ export default function LoginPage() {
             Welcome Back to Bangladesh's Care Marketplace
           </h2>
           <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.75)', lineHeight: 1.8, marginBottom: 40 }}>
-            Connect with verified child care, aged care, nursing, and physiotherapy professionals near you.
+            Connect with child care, aged care, nursing, and physiotherapy professionals near you.
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {[
-              '✓ Verified care professionals',
+              '✓ Trusted care professionals',
               '✓ Available across all 64 districts',
               '✓ Book in minutes',
               '✓ Free for customers',

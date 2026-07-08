@@ -56,7 +56,6 @@ router.post('/', authMiddleware, async (req, res) => {
     if (isEmergency && req.io) {
       const pros = await User.find({
         role: 'professional',
-        isVerified: true,
         professionalType: serviceType,
         'location.division': location?.division
       }).select('_id');
@@ -175,7 +174,6 @@ router.post('/:id/select/:proId', authMiddleware, async (req, res) => {
 
     const pro = await User.findById(req.params.proId);
     if (!pro) return res.status(404).json({ message: 'Professional not found' });
-    if (!pro.isVerified) return res.status(400).json({ message: 'Professional is not verified' });
 
     if ((pro.credits || 0) < cost) {
       await createNotification({

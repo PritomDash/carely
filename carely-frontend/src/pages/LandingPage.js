@@ -84,7 +84,7 @@ export default function LandingPage() {
           </h1>
 
           <p className="landing-hero-subtitle" style={{ fontSize: 19, color: 'rgba(255,255,255,0.88)', marginBottom: 40, lineHeight: 1.7, maxWidth: 560, margin: '0 auto 40px' }}>
-            Connect with verified child care, aged care, nursing, and physiotherapy professionals across all 64 districts of Bangladesh.
+            Connect with child care, aged care, nursing, and physiotherapy professionals across all 64 districts of Bangladesh.
           </p>
 
           <div className="landing-hero-buttons" style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 32 }}>
@@ -107,7 +107,7 @@ export default function LandingPage() {
           </div>
 
           <div className="landing-hero-badges" style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-            {['✓ Verified Professionals', '🔒 Secure Booking', '💬 In-App Chat', '📍 All 64 Districts'].map(b => (
+            {['✓ Trusted Marketplace', '🔒 Secure Booking', '💬 In-App Chat', '📍 All 64 Districts'].map(b => (
               <div key={b} className="landing-hero-badge" style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 20, padding: '7px 16px', color: 'rgba(255,255,255,0.9)', fontSize: 13, fontWeight: 500 }}>
                 {b}
               </div>
@@ -161,7 +161,7 @@ export default function LandingPage() {
               <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '28px 28px 28px' }}>
                 <div style={{ background: '#3B82F6', color: 'white', display: 'inline-block', padding: '4px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700, marginBottom: 10 }}>CHILD CARE</div>
                 <h3 style={{ color: 'white', fontSize: 26, fontWeight: 800, marginBottom: 8 }}>Trusted Baby & Child Care</h3>
-                <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 14, lineHeight: 1.6, margin: 0 }}>Professional nannies and babysitters, verified and experienced with children of all ages.</p>
+                <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 14, lineHeight: 1.6, margin: 0 }}>Professional nannies and babysitters, experienced with children of all ages.</p>
                 <Link to="/register" style={{ display: 'inline-block', marginTop: 16, padding: '10px 22px', background: 'white', color: '#1E3A8A', borderRadius: 10, fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>Find Child Care →</Link>
               </div>
             </div>
@@ -232,7 +232,7 @@ export default function LandingPage() {
           </div>
           <div className="landing-steps-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
             {[
-              { num: '01', icon: '🔍', title: 'Search', desc: 'Find verified professionals near your location by service type and availability.', color: '#EBF3FF', accent: '#2563EB' },
+              { num: '01', icon: '🔍', title: 'Search', desc: 'Find care professionals near your location by service type and availability.', color: '#EBF3FF', accent: '#2563EB' },
               { num: '02', icon: '📅', title: 'Book', desc: 'Send a booking request with your preferred date, time, and requirements.', color: '#F3E8FF', accent: '#7C3AED' },
               { num: '03', icon: '✅', title: 'Confirm', desc: 'Professional accepts and you both get each others contact details to coordinate.', color: '#DCFCE7', accent: '#16A34A' },
             ].map((s, i) => (
@@ -294,7 +294,7 @@ export default function LandingPage() {
           <div className="landing-features-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
             {[
               { icon: '🔍', title: 'Easy to Find', desc: 'Search by your division, district, and thana. Find professionals right in your neighborhood.' },
-              { icon: '✅', title: 'Profile Verified', desc: 'Professionals upload their identity documents. You can review before hiring anyone.' },
+              { icon: '✅', title: 'Detailed Profiles', desc: 'Professionals upload their identity documents to their profile. You can review before hiring anyone.' },
               { icon: '💬', title: 'Chat in App', desc: 'Once booking is confirmed chat directly through the app. Safe and private.' },
               { icon: '📅', title: 'Smart Booking', desc: 'See real-time availability. No double bookings. Book your exact time slot.' },
               { icon: '⭐', title: 'Rated by Users', desc: 'Read honest reviews from other customers before making your choice.' },

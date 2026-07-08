@@ -232,7 +232,6 @@ router.post('/create', authMiddleware, async (req, res) => {
     const pro = await User.findById(professionalId)
       .select('weekdayRate saturdayRate sundayRate hourlyRate availability isVerified name email phone professionalType').lean();
     if (!pro) return res.status(404).json({ message: 'Professional not found' });
-    if (!pro.isVerified) return res.status(400).json({ message: 'Professional is not verified' });
 
     // Validate availability
     const DAYNAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];

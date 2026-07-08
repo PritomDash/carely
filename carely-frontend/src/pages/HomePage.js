@@ -357,7 +357,7 @@ function ProfessionalsGrid({ professionals, loading, cols }) {
                   <span className="badge" style={{ background: typeColor.bg, color: typeColor.text, fontSize: 10 }}>
                     {p.professionalType}
                   </span>
-                  {p.isVerified && <span className="badge badge-blue" style={{ fontSize: 10, marginLeft: 4 }}>Verified</span>}
+                  {p.isFeatured && <span className="badge" style={{ background: '#FEF3C7', color: '#B45309', fontSize: 10, marginLeft: 4 }}>⭐ Featured</span>}
                 </div>
                 <div className="pro-meta" style={{ fontSize: 12, marginTop: 4 }}>
                   <Clock size={11} style={{ verticalAlign: 'middle', marginRight: 4 }} />
@@ -402,7 +402,6 @@ function ProfessionalsGrid({ professionals, loading, cols }) {
                   {formatLocation(p.location)}
                 </div>
               </div>
-              {p.isVerified && <span className="badge badge-blue" style={{ marginLeft: 'auto' }}>Verified</span>}
             </div>
 
             <div>

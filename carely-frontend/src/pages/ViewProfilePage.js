@@ -118,7 +118,7 @@ export default function ViewProfilePage() {
             <h2>{pro.name}</h2>
             <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
               <span className="badge badge-blue">{pro.professionalType}</span>
-              {pro.isVerified && <span className="badge badge-green">Verified</span>}
+              {pro.isFeatured && <span className="badge" style={{ background: '#FEF3C7', color: '#92400E' }}>⭐ Featured</span>}
             </div>
             <div style={{ marginTop: 8 }}><Stars rating={pro.rating} /></div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, color: 'var(--text-muted)', fontSize: 13 }}>

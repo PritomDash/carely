@@ -101,7 +101,7 @@ export default function ReferralPage() {
         </div>
 
         <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap', marginTop: 28 }}>
-          {['✓ Free to join', '✓ Verified professionals', '✓ Book with confidence'].map((label) => (
+          {['✓ Free to join', '✓ Care professionals', '✓ Book with confidence'].map((label) => (
             <span key={label} className="trust-pill">{label}</span>
           ))}
         </div>

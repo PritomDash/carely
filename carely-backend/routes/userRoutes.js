@@ -140,7 +140,7 @@ router.get('/professionals', async (req, res) => {
 
 router.get('/leaderboard', async (req, res) => {
   try {
-    const top = await User.find({ role: 'professional', isVerified: true })
+    const top = await User.find({ role: 'professional' })
       .select('name profilePhoto rating referralCount referralScore professionalType isFeatured location')
       .sort({ referralScore: -1, rating: -1 })
       .limit(10);

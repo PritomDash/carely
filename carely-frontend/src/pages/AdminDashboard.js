@@ -73,6 +73,8 @@ function UsersTab() {
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
 
   const fetchUsers = useCallback(() => {
     setLoading(true);
@@ -107,17 +109,53 @@ function UsersTab() {
 
   if (loading) return <p className="text-muted">Loading users...</p>;
 
+  const q = search.trim().toLowerCase();
+  const filteredUsers = users.filter((u) => {
+    const matchesRole = roleFilter === 'all' || u.role === roleFilter;
+    if (!matchesRole) return false;
+    if (!q) return true;
+    return (
+      (u.name || '').toLowerCase().includes(q) ||
+      (u.email || '').toLowerCase().includes(q) ||
+      (u.phone || '').toLowerCase().includes(q)
+    );
+  });
+
   return (
     <div>
-      <h2 style={{ marginBottom: 16 }}>Users</h2>
+      <h2 style={{ marginBottom: 16 }}>Users ({users.length} total)</h2>
       {error && <div className="badge badge-red" style={{ display: 'block', marginBottom: 16, padding: '8px 12px' }}>{error}</div>}
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 12, alignItems: 'center' }}>
+        <input
+          type="text"
+          className="input"
+          placeholder="Search by name, email, or phone..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          style={{ flex: '1 1 240px', minWidth: 200 }}
+        />
+        <select
+          className="input"
+          value={roleFilter}
+          onChange={(e) => setRoleFilter(e.target.value)}
+          style={{ width: 160 }}
+        >
+          <option value="all">All Roles</option>
+          <option value="customer">Customer</option>
+          <option value="professional">Professional</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <p className="text-muted" style={{ marginBottom: 12 }}>
+        Showing {filteredUsers.length} of {users.length} users
+      </p>
       <div className="card table-scroll">
         <table className="data-table">
           <thead>
             <tr><th>Name</th><th>Email</th><th>Role</th><th>Location</th><th>Verified</th><th>Actions</th></tr>
           </thead>
           <tbody>
-            {users.map((u) => (
+            {filteredUsers.map((u) => (
               <tr key={u._id}>
                 <td>{u.name}</td>
                 <td>{u.email}</td>
@@ -165,7 +203,7 @@ function UsersTab() {
       </div>
 
       <div className="admin-mobile-cards">
-        {users.map((u) => (
+        {filteredUsers.map((u) => (
           <div key={u._id} style={{ background: 'white', border: '1px solid #E8EDF3', borderRadius: 10, padding: 14, marginBottom: 10 }}>
             <div style={{ fontWeight: 700 }}>{u.name}</div>
             <div style={{ color: '#64748B', fontSize: 13 }}>{u.email}</div>

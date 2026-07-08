@@ -31,12 +31,6 @@ const Stars = ({ rating = 0 }) => (
   </span>
 );
 
-const verificationBadge = (u) => {
-  if (u.isVerified) return <span className="badge badge-green">Verified</span>;
-  if (u.idDocument) return <span className="badge badge-yellow">Pending Review</span>;
-  return <span className="badge badge-red">Not Submitted</span>;
-};
-
 export default function ProfessionalProfile() {
   const [profile, setProfile] = useState(null);
   const [creditsEnabled, setCreditsEnabled] = useState(false);
@@ -96,7 +90,7 @@ export default function ProfessionalProfile() {
             <Stars rating={profile.rating} />
             <div style={{ marginTop: 6, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <span className="badge badge-blue">{profile.professionalType}</span>
-              {verificationBadge(profile)}
+              {profile.isFeatured && <span className="badge" style={{ background: '#FEF3C7', color: '#92400E' }}>⭐ Featured</span>}
             </div>
             <p className="text-muted" style={{ marginTop: 6 }}>{formatLocation(profile.location)}</p>
           </div>

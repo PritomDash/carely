@@ -161,7 +161,7 @@ export default function RegisterPage() {
             {[
               '✓ Free for customers',
               '✓ Earn money as a professional',
-              '✓ Verified and trusted platform',
+              '✓ Trusted marketplace platform',
               '✓ Available across all of Bangladesh',
             ].map(f => (
               <div key={f} style={{ color: 'rgba(255,255,255,0.85)', fontSize: 15, textAlign: 'left' }}>{f}</div>

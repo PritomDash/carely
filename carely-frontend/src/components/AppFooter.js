@@ -13,7 +13,7 @@ export default function AppFooter() {
               <span style={{ fontSize:20, fontWeight:800 }}>Carely</span>
             </div>
             <p style={{ color:'#94A3B8', fontSize:14, lineHeight:1.8, marginBottom:16 }}>
-              Bangladesh's trusted marketplace connecting families with verified care professionals.
+              Bangladesh's trusted marketplace connecting families with care professionals.
               Child care, aged care, nursing, and physiotherapy services across Bangladesh.
             </p>
             <div style={{ display:'flex', gap:10 }}>
