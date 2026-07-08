@@ -85,7 +85,7 @@ router.get('/google/callback', (req, res, next) => {
   })(req, res, next);
 }, (req, res) => {
   const origin = resolveOrigin(req.cookies?.oauth_origin);
-  const token = jwt.sign({ id: req.user._id, role: req.user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
+  const token = jwt.sign({ id: req.user._id, role: req.user.role }, process.env.JWT_SECRET, { expiresIn: '90d' });
   const payload = JSON.stringify({ token, user: req.user }).replace(/</g, '\\u003c');
   res.send(
     '<script>window.opener.postMessage(' + payload + ', "' + origin + '"); window.close();</script>'

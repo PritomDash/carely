@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import api, { API_BASE } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams, Link } from 'react-router-dom';
 import { formatBDT } from '../utils/currency';
 import AppNavbar from '../components/AppNavbar';
 
@@ -41,6 +41,9 @@ export default function MyBookingsPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const highlightId = searchParams.get('highlight');
+  const cardRefs = useRef({});
 
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -49,6 +52,7 @@ export default function MyBookingsPage() {
   const [actionLoadingId, setActionLoadingId] = useState(null);
   const [activeTab, setActiveTab] = useState('All');
   const [expandedId, setExpandedId] = useState(null);
+  const [highlightFaded, setHighlightFaded] = useState(false);
 
   const fetchBookings = useCallback(() => {
     setLoading(true);
@@ -65,6 +69,16 @@ export default function MyBookingsPage() {
     }
     fetchBookings();
   }, [user, navigate, fetchBookings]);
+
+  // Deep-linked from an email button (?highlight=<bookingId>) - scroll to and
+  // briefly highlight the specific booking card once it's rendered.
+  useEffect(() => {
+    if (loading || !highlightId) return;
+    const el = cardRefs.current[highlightId];
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const timer = setTimeout(() => setHighlightFaded(true), 4000);
+    return () => clearTimeout(timer);
+  }, [loading, highlightId]);
 
   const runAction = async (id, request) => {
     setError('');
@@ -139,9 +153,15 @@ export default function MyBookingsPage() {
             const otherParty = isCustomer ? b.professional : b.customer;
             const busy = actionLoadingId === b._id;
             const isExpanded = expandedId === b._id;
+            const isHighlighted = b._id === highlightId && !highlightFaded;
 
             return (
-              <div key={b._id} className="card">
+              <div
+                key={b._id}
+                className="card"
+                ref={(el) => { if (el) cardRefs.current[b._id] = el; }}
+                style={isHighlighted ? { border: '2px solid #2B7FFF', boxShadow: '0 0 0 4px rgba(43,127,255,0.15)', transition: 'box-shadow 0.3s, border-color 0.3s' } : undefined}
+              >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
                   <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                     <Avatar src={fileUrl(otherParty?.profilePhoto)} name={otherParty?.name} size={48} />

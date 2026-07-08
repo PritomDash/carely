@@ -6,6 +6,9 @@ const TopUpRequest = require('../models/TopUpRequest');
 const Settings = require('../models/Settings');
 const authMiddleware = require('../middlewares/authMiddleware');
 const { createNotification } = require('../utils/notificationService');
+const { fireEmail, emailButton } = require('../utils/emailService');
+
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 
 // Get my balance
 router.get('/my-balance', authMiddleware, async (req, res) => {
@@ -273,6 +276,19 @@ const approveTopUp = async (request, adminId, io) => {
     message: request.credits + ' credits added to your account successfully!',
     link: '/my-credits',
     io,
+  });
+
+  fireEmail({
+    to: user.email,
+    subject: 'Top Up Approved - Carely',
+    title: 'Credits added to your account!',
+    content:
+      '<p style="color:#374151;font-size:14px;line-height:1.6;">' +
+      request.credits + ' credits have been added to your account. Your new balance is ' + user.credits + ' credits.' +
+      '</p>' +
+      '<div style="margin-top:16px;text-align:center;">' +
+      emailButton('View My Credits', FRONTEND_URL + '/my-credits') +
+      '</div>'
   });
 };
 

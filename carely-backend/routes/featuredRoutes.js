@@ -5,6 +5,9 @@ const FeaturedRequest = require('../models/FeaturedRequest');
 const Settings = require('../models/Settings');
 const authMiddleware = require('../middlewares/authMiddleware');
 const { createNotification } = require('../utils/notificationService');
+const { fireEmail, emailButton } = require('../utils/emailService');
+
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 
 const packForTier = (settings, tier) =>
   (settings?.featuredPacks || []).find((p) => p.tier === tier);
@@ -208,9 +211,7 @@ router.post('/sslcommerz-success', async (req, res) => {
   }
 });
 
-// Helper to approve any boost request - push + in-app only, no email (see
-// notification routing table: this is a credit/payment-style update, not a
-// booking event).
+// Helper to approve any boost request
 const approveFeaturedRequest = async (request, adminId, io) => {
   const user = await User.findById(request.user);
   const now = new Date();
@@ -235,6 +236,19 @@ const approveFeaturedRequest = async (request, adminId, io) => {
     message: 'Your profile is now Featured until ' + user.featuredUntil.toLocaleDateString('en-BD') + '!',
     link: '/my-credits',
     io,
+  });
+
+  fireEmail({
+    to: user.email,
+    subject: 'Profile Featured - Carely',
+    title: 'Your profile is now Featured!',
+    content:
+      '<p style="color:#374151;font-size:14px;line-height:1.6;">' +
+      'Your profile will now appear higher in search results until ' + user.featuredUntil.toLocaleDateString('en-BD') + '.' +
+      '</p>' +
+      '<div style="margin-top:16px;text-align:center;">' +
+      emailButton('View My Profile', FRONTEND_URL + '/edit-profile') +
+      '</div>'
   });
 };
 

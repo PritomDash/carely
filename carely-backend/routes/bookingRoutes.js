@@ -6,7 +6,9 @@ const Settings = require('../models/Settings');
 const CreditTransaction = require('../models/CreditTransaction');
 const authMiddleware = require('../middlewares/authMiddleware');
 const { getAppliedRate, computeProNet } = require('../utils/pricing');
-const { fireEmail, detailRow } = require('../utils/emailService');
+const { fireEmail, detailRow, emailButton } = require('../utils/emailService');
+
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 const { createNotification } = require('../utils/notificationService');
 const { ymd, dateAtNoonUTC, dayBoundsUTC, getEndTime } = require('../utils/bookingHelpers');
 
@@ -340,7 +342,10 @@ router.post('/create', authMiddleware, async (req, res) => {
         detailRow('Duration', hours + ' hours') +
         detailRow('Address', address) +
         detailRow('Work Description', workDescription) +
-        '<p style="margin-top:20px;color:#64748B;font-size:13px;">Please log in and accept or decline within 24 hours. If there is no response the booking will be auto-declined.</p>'
+        '<p style="margin-top:20px;color:#64748B;font-size:13px;">Tap below to accept or decline this booking in the app. If there is no response within 24 hours the booking will be auto-declined.</p>' +
+        '<div style="margin-top:16px;text-align:center;">' +
+        emailButton('View & Respond', FRONTEND_URL + '/my-bookings?highlight=' + booking._id) +
+        '</div>'
     });
 
     res.json({ message: 'Booking request sent', bookingId: booking._id });
@@ -476,7 +481,11 @@ router.post('/accept/:id', authMiddleware, async (req, res) => {
         detailRow('Duration', hours + ' hours') +
         detailRow('Address', booking.address) +
         detailRow('Work', booking.workDescription) +
-        '<p style="margin-top:20px;color:#64748B;font-size:13px;">Please arrange payment directly with the professional in cash or bKash. You can chat with them through the Carely app.</p>'
+        '<p style="margin-top:20px;color:#64748B;font-size:13px;">Please arrange payment directly with the professional in cash or bKash. You can chat with them through the Carely app.</p>' +
+        '<div style="margin-top:16px;text-align:center;">' +
+        emailButton('View Booking Details', FRONTEND_URL + '/my-bookings?highlight=' + booking._id) +
+        emailButton('Open Chat', FRONTEND_URL + '/chat-inbox', '#16A34A') +
+        '</div>'
     });
 
     fireEmail({
@@ -491,7 +500,11 @@ router.post('/accept/:id', authMiddleware, async (req, res) => {
         detailRow('Duration', hours + ' hours') +
         detailRow('Address', booking.address) +
         detailRow('Work', booking.workDescription) +
-        '<p style="margin-top:20px;color:#64748B;font-size:13px;">Please arrive on time. Payment will be arranged directly with the customer.</p>'
+        '<p style="margin-top:20px;color:#64748B;font-size:13px;">Please arrive on time. Payment will be arranged directly with the customer.</p>' +
+        '<div style="margin-top:16px;text-align:center;">' +
+        emailButton('View Booking', FRONTEND_URL + '/my-bookings?highlight=' + booking._id) +
+        emailButton('Open Chat', FRONTEND_URL + '/chat-inbox', '#16A34A') +
+        '</div>'
     });
 
     res.json({ message: 'Booking accepted and confirmed', booking });
@@ -514,14 +527,24 @@ router.post('/decline/:id', authMiddleware, async (req, res) => {
     booking.isActive = false;
     await booking.save();
 
-    // Booking status updates are push + in-app only (no email) to conserve
-    // email quota for the two truly critical moments: the initial request
-    // and confirmation. See the notification routing table in SETUP_KEYS_NEEDED.md.
     await createNotification({
       userId: booking.customer._id, type: 'booking',
       message: booking.professional.name + ' has declined your booking. Please try another professional.',
       link: '/my-bookings',
       io: req.io,
+    });
+
+    fireEmail({
+      to: booking.customer.email,
+      subject: 'Booking Declined - Carely',
+      title: 'Your booking was declined',
+      content:
+        '<p style="color:#374151;font-size:14px;line-height:1.6;">' +
+        booking.professional.name + ' was unable to accept your booking request. No charge was made - please try another professional nearby.' +
+        '</p>' +
+        '<div style="margin-top:16px;text-align:center;">' +
+        emailButton('Find Another Professional', FRONTEND_URL + '/home') +
+        '</div>'
     });
 
     res.json({ message: 'Booking declined' });
@@ -584,13 +607,24 @@ router.post('/mark-done/:id', authMiddleware, async (req, res) => {
     booking.status = 'Completed';
     await releaseCalendar(booking);
 
-    // Rating reminder - push + in-app only, no email (see routing table in
-    // SETUP_KEYS_NEEDED.md).
     await createNotification({
       userId: booking.customer._id, type: 'booking',
       message: booking.professional.name + ' marked your job as complete. Please rate your experience.',
       link: '/rate/' + booking._id,
       io: req.io,
+    });
+
+    fireEmail({
+      to: booking.customer.email,
+      subject: 'Job Completed - Carely',
+      title: 'Your job is complete!',
+      content:
+        '<p style="color:#374151;font-size:14px;line-height:1.6;">' +
+        booking.professional.name + ' marked this job as complete. Let other families know how it went by rating your experience.' +
+        '</p>' +
+        '<div style="margin-top:16px;text-align:center;">' +
+        emailButton('Rate Your Experience', FRONTEND_URL + '/my-bookings?highlight=' + booking._id) +
+        '</div>'
     });
 
     res.json({ message: 'Job marked as done' });

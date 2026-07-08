@@ -1,5 +1,5 @@
 const { Resend } = require('resend');
-const SibApiV3Sdk = require('@getbrevo/brevo');
+const { BrevoClient } = require('@getbrevo/brevo');
 const sgMail = require('@sendgrid/mail');
 
 // Render (and many hosts) block outbound raw SMTP (465/587) entirely, so
@@ -39,8 +39,37 @@ const emailTemplate = (title, content) => `
 const detailRow = (label, value) =>
   '<div class="detail-row"><div class="detail-label">' + label + '</div><div class="detail-value">' + value + '</div></div>';
 
-// Provider 1: Resend
+// Reusable call-to-action button for email templates. Buttons deep-link
+// into the app to the page where the relevant action lives - they never
+// perform the action themselves from the email/link, since anyone who
+// forwards or intercepts the link could otherwise trigger it. The user
+// always has to open the app and tap confirm there.
+const emailButton = (text, url, color = '#2563EB') => `
+  <a href="${url}" style="display:inline-block;padding:12px 28px;background:${color};color:#ffffff;text-decoration:none;border-radius:8px;font-weight:700;font-size:15px;margin:6px 4px;">${text}</a>
+`;
+
+// Provider 1: Brevo. Uses the v6 @getbrevo/brevo SDK (BrevoClient +
+// transactionalEmails.sendTransacEmail) - the older SibApiV3Sdk-style
+// classes (TransactionalEmailsApi, SendSmtpEmail) this file used to call
+// don't exist in this SDK version and threw "is not a constructor" on
+// every single send, silently falling through to Resend every time.
+const sendViaBrevo = async ({ to, subject, html }) => {
+  console.log('Trying Brevo...');
+  if (!process.env.BREVO_API_KEY) throw new Error('Brevo not configured');
+  const brevo = new BrevoClient({ apiKey: process.env.BREVO_API_KEY });
+  const result = await brevo.transactionalEmails.sendTransacEmail({
+    sender: { email: process.env.BREVO_FROM_EMAIL || 'carely.help@gmail.com', name: 'Carely' },
+    to: [{ email: to }],
+    subject,
+    htmlContent: html,
+    replyTo: { email: REPLY_TO },
+  });
+  return { provider: 'brevo', id: result.messageId };
+};
+
+// Provider 2: Resend
 const sendViaResend = async ({ to, subject, html }) => {
+  console.log('Trying Resend...');
   if (!process.env.RESEND_API_KEY) throw new Error('Resend not configured');
   const resend = new Resend(process.env.RESEND_API_KEY);
   const result = await resend.emails.send({
@@ -54,23 +83,9 @@ const sendViaResend = async ({ to, subject, html }) => {
   return { provider: 'resend', id: result.data?.id };
 };
 
-// Provider 2: Brevo
-const sendViaBrevo = async ({ to, subject, html }) => {
-  if (!process.env.BREVO_API_KEY) throw new Error('Brevo not configured');
-  const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
-  apiInstance.setApiKey(SibApiV3Sdk.TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY);
-  const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
-  sendSmtpEmail.sender = { email: process.env.BREVO_FROM_EMAIL || 'carely.help@gmail.com', name: 'Carely' };
-  sendSmtpEmail.to = [{ email: to }];
-  sendSmtpEmail.subject = subject;
-  sendSmtpEmail.htmlContent = html;
-  sendSmtpEmail.replyTo = { email: REPLY_TO };
-  const result = await apiInstance.sendTransacEmail(sendSmtpEmail);
-  return { provider: 'brevo', id: result.body?.messageId || result.messageId };
-};
-
 // Provider 3: SendGrid
 const sendViaSendGrid = async ({ to, subject, html }) => {
+  console.log('Trying SendGrid...');
   if (!process.env.SENDGRID_API_KEY) throw new Error('SendGrid not configured');
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
   const result = await sgMail.send({
@@ -120,4 +135,4 @@ const fireEmail = (opts) => {
   sendEmail(opts).catch((err) => console.error('Email send failed:', err.message));
 };
 
-module.exports = { sendEmail, fireEmail, detailRow };
+module.exports = { sendEmail, fireEmail, detailRow, emailButton };

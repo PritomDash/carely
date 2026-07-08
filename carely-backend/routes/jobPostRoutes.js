@@ -7,7 +7,9 @@ const Settings = require('../models/Settings');
 const CreditTransaction = require('../models/CreditTransaction');
 const authMiddleware = require('../middlewares/authMiddleware');
 const { getAppliedRate, computeProNet } = require('../utils/pricing');
-const { fireEmail, detailRow } = require('../utils/emailService');
+const { fireEmail, detailRow, emailButton } = require('../utils/emailService');
+
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 const { createNotification } = require('../utils/notificationService');
 const { ymd, dateAtNoonUTC, dayBoundsUTC, getEndTime, DAYS_MAP } = require('../utils/bookingHelpers');
 
@@ -313,7 +315,11 @@ router.post('/:id/select/:proId', authMiddleware, async (req, res) => {
         detailRow('Date', dateStr) +
         detailRow('Time', time) +
         detailRow('Job', post.title) +
-        '<p style="margin-top:20px;color:#64748B;font-size:13px;">Please arrange payment directly with the professional in cash or bKash. You can chat with them through the Carely app.</p>'
+        '<p style="margin-top:20px;color:#64748B;font-size:13px;">Please arrange payment directly with the professional in cash or bKash. You can chat with them through the Carely app.</p>' +
+        '<div style="margin-top:16px;text-align:center;">' +
+        emailButton('View Booking Details', FRONTEND_URL + '/my-bookings?highlight=' + booking._id) +
+        emailButton('Open Chat', FRONTEND_URL + '/chat-inbox', '#16A34A') +
+        '</div>'
     });
     fireEmail({
       to: pro.email,
@@ -325,7 +331,11 @@ router.post('/:id/select/:proId', authMiddleware, async (req, res) => {
         detailRow('Date', dateStr) +
         detailRow('Time', time) +
         detailRow('Job', post.title) +
-        '<p style="margin-top:20px;color:#64748B;font-size:13px;">Please arrive on time. Payment will be arranged directly with the customer.</p>'
+        '<p style="margin-top:20px;color:#64748B;font-size:13px;">Please arrive on time. Payment will be arranged directly with the customer.</p>' +
+        '<div style="margin-top:16px;text-align:center;">' +
+        emailButton('View Booking', FRONTEND_URL + '/my-bookings?highlight=' + booking._id) +
+        emailButton('Open Chat', FRONTEND_URL + '/chat-inbox', '#16A34A') +
+        '</div>'
     });
 
     res.json({ message: 'Professional selected and booking confirmed', post, booking });
