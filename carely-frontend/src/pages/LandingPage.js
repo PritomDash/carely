@@ -5,6 +5,7 @@ import CarelyLogo from '../components/CarelyLogo';
 import Reveal from '../components/Reveal';
 import CountUpStat from '../components/CountUpStat';
 import useReveal from '../hooks/useReveal';
+import { isStandalone, requestInstall } from '../utils/pwaInstall';
 
 const PHOTOS = {
   hero: 'https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?w=1200&q=80',
@@ -18,6 +19,7 @@ const PHOTOS = {
 
 export default function LandingPage() {
   const [scrolled, setScrolled] = useState(false);
+  const [showInstall] = useState(() => !isStandalone());
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -113,6 +115,19 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
+
+          {showInstall && (
+            <button
+              onClick={requestInstall}
+              style={{
+                marginTop: 20, background: 'none', border: '1px solid rgba(255,255,255,0.35)',
+                borderRadius: 20, padding: '7px 18px', color: 'rgba(255,255,255,0.9)',
+                fontSize: 13, fontWeight: 600, cursor: 'pointer',
+              }}
+            >
+              📱 Install App
+            </button>
+          )}
         </div>
 
         {/* Scroll indicator */}

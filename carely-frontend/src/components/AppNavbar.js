@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import socket from '../socket';
 import { setupPushNotifications } from '../utils/pushManager';
+import { isStandalone, requestInstall } from '../utils/pwaInstall';
 import CarelyLogo from './CarelyLogo';
 
 const playNotificationSound = () => {
@@ -246,7 +247,10 @@ const BottomNav = () => {
     { icon: '🔗', label: 'Share & Earn', path: '/my-credits' },
   ];
 
-  const menuItems = user?.role === 'professional' ? proMenu : customerMenu;
+  const menuItems = [
+    ...(user?.role === 'professional' ? proMenu : customerMenu),
+    ...(!isStandalone() ? [{ icon: '📱', label: 'Install App', action: requestInstall }] : []),
+  ];
 
   const navItems = [
     { icon: '🏠', label: 'Home', path: '/home' },
@@ -367,8 +371,12 @@ const BottomNav = () => {
         <div style={{ padding: '8px 0' }}>
           {menuItems.map(item => (
             <button
-              key={item.path}
-              onClick={() => { navigate(item.path); setShowSheet(false); }}
+              key={item.path || item.label}
+              onClick={() => {
+                if (item.action) item.action();
+                else navigate(item.path);
+                setShowSheet(false);
+              }}
               style={{
                 width: '100%', padding: '14px 20px',
                 display: 'flex', alignItems: 'center', gap: 14,
