@@ -13,7 +13,7 @@ The `Carely.apk` file attached to the GitHub release is expected to be **at leas
 
 2. **Generate the package**
    - Go to https://www.pwabuilder.com/
-   - Enter the production URL (e.g. `https://carely.vercel.app`)
+   - Enter the production URL (`https://mycarely.app`)
    - Let it run the manifest/service worker/security checks — all should pass (green) before packaging.
    - Choose **Android** → **Google Play** package type (this produces a proper signed TWA, not the "test package" option).
 

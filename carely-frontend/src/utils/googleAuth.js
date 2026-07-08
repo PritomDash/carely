@@ -2,7 +2,7 @@ export const handleGoogleLogin = (navigate, setError) => {
   const BACKEND = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
 
   const popup = window.open(
-    BACKEND + '/api/auth/google',
+    BACKEND + '/api/auth/google?origin=' + encodeURIComponent(window.location.origin),
     'google-auth-popup',
     'width=500,height=600,scrollbars=yes,resizable=yes,left=' +
     (window.screen.width / 2 - 250) + ',top=' +
