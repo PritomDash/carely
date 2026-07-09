@@ -22,10 +22,14 @@ const settingsSchema = new mongoose.Schema({
   featuredPacks: {
     type: [featuredPackSchema],
     default: [
-      { tier: 'basic',   days: 7,  priceBDT: 200, label: '7 Days Boost' },
-      { tier: 'premium', days: 30, priceBDT: 600, label: '30 Days Featured' },
+      { tier: 'basic',   days: 7,  priceBDT: 150, label: '7 Days Boost' },
+      { tier: 'premium', days: 30, priceBDT: 500, label: '30 Days Boost' },
     ]
   },
+  // How many minutes boosted professionals get to see a new job post before
+  // everyone else. Read by the delayed-notification cron in cronJobs.js -
+  // never hardcode this elsewhere.
+  boostNotificationDelayMinutes: { type: Number, default: 15 },
   subscriptionEnabled:    { type: Boolean, default: false },
 
   // God Mode admin controls
@@ -35,21 +39,25 @@ const settingsSchema = new mongoose.Schema({
   commissionRate:   { type: Number, default: 15 },
   emergencyPostFee: { type: Number, default: 75 },
 
-  // Credit settings
+  // Credit settings - as of the monetization rewrite, credits are a
+  // customer-only mechanic paid solely for Emergency job posts.
+  // Professionals never spend credits for anything (accepting bookings and
+  // being selected from job posts are both always free - see
+  // bookingRoutes.js accept and jobPostRoutes.js select, which no longer
+  // contain any credit check at all).
   freeCreditsEnabled:      { type: Boolean, default: true },
-  freeCreditsAmount:       { type: Number, default: 500 },
+  freeCreditsAmount:       { type: Number, default: 0 },
   customerFreeCredits:     { type: Number, default: 10 },
-  bookingAcceptCreditCost: { type: Number, default: 1 },
-  jobSelectCreditCost:     { type: Number, default: 1 },
-  emergencyPostCreditCost: { type: Number, default: 1 },
+  bookingAcceptCreditCost: { type: Number, default: 0 },
+  jobSelectCreditCost:     { type: Number, default: 0 },
+  emergencyPostCreditCost: { type: Number, default: 3 },
 
   // Credit packs
   creditPacks: {
     type: [creditPackSchema],
     default: [
-      { credits: 50,  priceBDT: 200,  label: '50 credits',  popular: false },
-      { credits: 150, priceBDT: 500,  label: '150 credits', popular: true  },
-      { credits: 400, priceBDT: 1200, label: '400 credits', popular: false },
+      { credits: 15, priceBDT: 200, label: '15 Credits', popular: false },
+      { credits: 40, priceBDT: 500, label: '40 Credits', popular: true },
     ]
   },
 

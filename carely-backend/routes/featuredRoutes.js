@@ -116,8 +116,8 @@ router.post('/request-gateway', authMiddleware, async (req, res) => {
         prefix: 'BOOST',
         token,
         store_id: storeId,
-        return_url: process.env.FRONTEND_URL + '/my-credits?status=success',
-        cancel_url: process.env.FRONTEND_URL + '/my-credits?status=cancel',
+        return_url: process.env.FRONTEND_URL + '/boost?status=success',
+        cancel_url: process.env.FRONTEND_URL + '/boost?status=cancel',
         amount: pack.priceBDT,
         order_id: orderId,
         currency: 'BDT',
@@ -153,8 +153,8 @@ router.post('/request-gateway', authMiddleware, async (req, res) => {
         currency: 'BDT',
         tran_id: orderId,
         success_url: process.env.BACKEND_URL + '/api/featured/sslcommerz-success',
-        fail_url: process.env.FRONTEND_URL + '/my-credits?status=fail',
-        cancel_url: process.env.FRONTEND_URL + '/my-credits?status=cancel',
+        fail_url: process.env.FRONTEND_URL + '/boost?status=fail',
+        cancel_url: process.env.FRONTEND_URL + '/boost?status=cancel',
         cus_name: req.user.name,
         cus_email: req.user.email,
         cus_phone: req.user.phone || '01000000000',
@@ -198,16 +198,16 @@ router.post('/sslcommerz-success', async (req, res) => {
   try {
     const { tran_id, status } = req.body;
     if (status !== 'VALID' && status !== 'VALIDATED') {
-      return res.redirect(process.env.FRONTEND_URL + '/my-credits?status=fail');
+      return res.redirect(process.env.FRONTEND_URL + '/boost?status=fail');
     }
     const request = await FeaturedRequest.findOne({ gatewayOrderId: tran_id });
     if (!request || request.status === 'Approved') {
-      return res.redirect(process.env.FRONTEND_URL + '/my-credits?status=already');
+      return res.redirect(process.env.FRONTEND_URL + '/boost?status=already');
     }
     await approveFeaturedRequest(request, null, req.io);
-    res.redirect(process.env.FRONTEND_URL + '/my-credits?status=success');
+    res.redirect(process.env.FRONTEND_URL + '/boost?status=success');
   } catch (err) {
-    res.redirect(process.env.FRONTEND_URL + '/my-credits?status=error');
+    res.redirect(process.env.FRONTEND_URL + '/boost?status=error');
   }
 });
 
@@ -242,21 +242,21 @@ const approveFeaturedRequest = async (request, adminId, io) => {
   await createNotification({
     userId: user._id,
     type: 'payment',
-    message: 'Your profile is now Featured until ' + user.featuredUntil.toLocaleDateString('en-BD') + '!',
-    link: '/my-credits',
+    message: 'Your Carely Boost is now active until ' + user.featuredUntil.toLocaleDateString('en-BD') + '!',
+    link: '/boost',
     io,
   });
 
   fireEmail({
     to: user.email,
-    subject: 'Profile Featured - Carely',
-    title: 'Your profile is now Featured!',
+    subject: 'Boost Activated - Carely',
+    title: 'Your Carely Boost is active!',
     content:
       '<p style="color:#374151;font-size:14px;line-height:1.6;">' +
-      'Your profile will now appear higher in search results until ' + user.featuredUntil.toLocaleDateString('en-BD') + '.' +
+      'Your profile will now rank first in search results, show a star badge, and you will get job alerts 15 minutes early - until ' + user.featuredUntil.toLocaleDateString('en-BD') + '.' +
       '</p>' +
       '<div style="margin-top:16px;text-align:center;">' +
-      emailButton('View My Profile', FRONTEND_URL + '/edit-profile') +
+      emailButton('View My Boost', FRONTEND_URL + '/boost') +
       '</div>'
   });
 

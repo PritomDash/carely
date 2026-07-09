@@ -29,6 +29,7 @@ export default function AppNavbar() {
   const location = useLocation();
   const [unread, setUnread] = useState(0);
   const [credits, setCredits] = useState(null);
+  const [boostStatus, setBoostStatus] = useState(null);
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -39,20 +40,29 @@ export default function AppNavbar() {
       .catch(() => {});
   }, [user, location.pathname]);
 
+  // Credits are a customer-only mechanic (paid emergency posts) - professionals
+  // never spend them, so the navbar shows Boost status for them instead.
   useEffect(() => {
-    if (!user) return;
+    if (!user || user.role === 'professional') return;
     const fetchBalance = () => {
       api.get('/api/credits/my-balance')
         .then(r => setCredits(r.data.credits ?? 0))
         .catch(() => {});
     };
     fetchBalance();
-    // Booking accept, emergency posts, top-ups etc. all happen on other
-    // pages/components - they broadcast this event so the navbar balance
-    // (which would otherwise only refetch on next full mount) stays correct
-    // instead of showing a stale pre-deduction number.
+    // Emergency posts, top-ups etc. happen on other pages/components - they
+    // broadcast this event so the navbar balance (which would otherwise
+    // only refetch on next full mount) stays correct instead of showing a
+    // stale pre-deduction number.
     window.addEventListener('carely-credits-changed', fetchBalance);
     return () => window.removeEventListener('carely-credits-changed', fetchBalance);
+  }, [user]);
+
+  useEffect(() => {
+    if (!user || user.role !== 'professional') return;
+    api.get('/api/featured/my-status')
+      .then(r => setBoostStatus(r.data))
+      .catch(() => {});
   }, [user]);
 
   useEffect(() => {
@@ -103,8 +113,7 @@ export default function AppNavbar() {
     { icon:'📢', label:'Job Feed', shortLabel:'Jobs', path:'/job-posts' },
     { icon:'💬', label:'Chat', shortLabel:'Chat', path:'/chat-inbox' },
     { icon:'👤', label:'My Profile', shortLabel:'Profile', path:'/edit-profile' },
-    { icon:'💳', label:'Credits & Top Up', shortLabel:'Credits', path:'/my-credits' },
-    { icon:'⭐', label:'Boost Profile', shortLabel:'Boost', path:'/my-credits#boost' },
+    { icon:'⭐', label:'Boost Profile', shortLabel:'Boost', path:'/boost' },
     { icon:'📄', label:'Documents', shortLabel:'Docs', path:'/upload-documents' },
   ];
 
@@ -160,7 +169,7 @@ export default function AppNavbar() {
                     <div style={{ fontWeight:700, fontSize:15, color:'#1A1A2E' }}>{user.name}</div>
                     <div style={{ fontSize:12, color:'#64748B', marginTop:3 }}>{user.email}</div>
                     <div style={{ marginTop:8, display:'inline-block', padding:'3px 14px', background:'#EBF3FF', color:'#1D4ED8', borderRadius:20, fontSize:12, fontWeight:700, textTransform:'capitalize' }}>{user.role}</div>
-                    {credits != null && (
+                    {user.role !== 'professional' && credits != null && (
                       <div
                         onClick={() => { navigate('/my-credits'); setOpen(false); }}
                         style={{
@@ -170,7 +179,22 @@ export default function AppNavbar() {
                           color: credits < 5 ? '#DC2626' : '#1D4ED8',
                         }}
                       >
-                        💳 {credits} credits{credits < 5 ? ' — Top up now' : ''}
+                        💳 {credits} credits{credits < 5 ? ' — Buy more' : ''}
+                      </div>
+                    )}
+                    {user.role === 'professional' && (
+                      <div
+                        onClick={() => { navigate('/boost'); setOpen(false); }}
+                        style={{
+                          marginTop:10, display:'inline-flex', alignItems:'center', gap:6, cursor:'pointer',
+                          padding:'4px 14px', borderRadius:20, fontSize:12, fontWeight:700,
+                          background: boostStatus?.isFeatured ? '#FEF3C7' : '#EBF3FF',
+                          color: boostStatus?.isFeatured ? '#92400E' : '#1D4ED8',
+                        }}
+                      >
+                        {boostStatus?.isFeatured
+                          ? `⭐ Boosted - ${Math.max(0, Math.ceil((new Date(boostStatus.featuredUntil) - new Date()) / (1000 * 60 * 60 * 24)))} days left`
+                          : '⭐ Boost Profile'}
                       </div>
                     )}
                   </div>
@@ -227,9 +251,10 @@ const BottomNav = () => {
   const location = useLocation();
   const [showSheet, setShowSheet] = useState(false);
   const [credits, setCredits] = useState(null);
+  const [boostStatus, setBoostStatus] = useState(null);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || user.role === 'professional') return;
     const fetchBalance = () => {
       api.get('/api/credits/my-balance')
         .then(r => setCredits(r.data.credits))
@@ -238,6 +263,13 @@ const BottomNav = () => {
     fetchBalance();
     window.addEventListener('carely-credits-changed', fetchBalance);
     return () => window.removeEventListener('carely-credits-changed', fetchBalance);
+  }, [user]);
+
+  useEffect(() => {
+    if (!user || user.role !== 'professional') return;
+    api.get('/api/featured/my-status')
+      .then(r => setBoostStatus(r.data))
+      .catch(() => {});
   }, [user]);
 
   const isActive = (path) => location.pathname === path;
@@ -253,11 +285,9 @@ const BottomNav = () => {
   const proMenu = [
     { icon: '📋', label: 'My Bookings', path: '/my-bookings' },
     { icon: '📢', label: 'Job Feed', path: '/job-posts' },
-    { icon: '💳', label: 'Credits & Top Up', path: '/my-credits' },
-    { icon: '⭐', label: 'Boost Profile', path: '/my-credits#boost' },
+    { icon: '⭐', label: 'Boost Profile', path: '/boost' },
     { icon: '📄', label: 'Documents', path: '/upload-documents' },
     { icon: '👤', label: 'Edit Profile', path: '/edit-profile' },
-    { icon: '🔗', label: 'Share & Earn', path: '/my-credits' },
   ];
 
   const menuItems = [
@@ -373,10 +403,29 @@ const BottomNav = () => {
               <div style={{ fontWeight: 700, fontSize: 15, color: '#1A1A2E' }}>{user?.name}</div>
               <div style={{ fontSize: 12, color: '#64748B', textTransform: 'capitalize' }}>{user?.role}</div>
             </div>
-            <div style={{ marginLeft: 'auto', background: '#EBF3FF', borderRadius: 8, padding: '4px 12px' }}>
-              <div style={{ fontSize: 11, color: '#64748B' }}>Credits</div>
-              <div style={{ fontSize: 16, fontWeight: 800, color: '#2563EB' }}>{credits ?? '...'}</div>
-            </div>
+            {user?.role !== 'professional' && (
+              <div style={{ marginLeft: 'auto', background: '#EBF3FF', borderRadius: 8, padding: '4px 12px' }}>
+                <div style={{ fontSize: 11, color: '#64748B' }}>Credits</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: '#2563EB' }}>{credits ?? '...'}</div>
+              </div>
+            )}
+            {user?.role === 'professional' && (
+              <div
+                onClick={() => navigate('/boost')}
+                style={{ marginLeft: 'auto', background: boostStatus?.isFeatured ? '#FEF3C7' : '#EBF3FF', borderRadius: 8, padding: '4px 12px', cursor: 'pointer' }}
+              >
+                {boostStatus?.isFeatured ? (
+                  <>
+                    <div style={{ fontSize: 11, color: '#92400E' }}>⭐ Boosted</div>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: '#92400E' }}>
+                      {Math.max(0, Math.ceil((new Date(boostStatus.featuredUntil) - new Date()) / (1000 * 60 * 60 * 24)))}d left
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ fontSize: 13, fontWeight: 800, color: '#2563EB' }}>⭐ Boost</div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

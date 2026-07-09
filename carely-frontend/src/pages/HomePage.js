@@ -337,7 +337,7 @@ function ProfessionalsGrid({ professionals, loading, cols }) {
                   position: 'absolute', top: 10, right: 10, background: '#FEF3C7', color: '#B45309',
                   fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 999,
                 }}>
-                  ⭐ Featured
+                  ⭐ Boosted
                 </span>
               )}
               <div style={{ flexShrink: 0 }}>
@@ -357,7 +357,7 @@ function ProfessionalsGrid({ professionals, loading, cols }) {
                   <span className="badge" style={{ background: typeColor.bg, color: typeColor.text, fontSize: 10 }}>
                     {p.professionalType}
                   </span>
-                  {p.isFeatured && <span className="badge" style={{ background: '#FEF3C7', color: '#B45309', fontSize: 10, marginLeft: 4 }}>⭐ Featured</span>}
+                  {p.isFeatured && <span className="badge" style={{ background: '#FEF3C7', color: '#B45309', fontSize: 10, marginLeft: 4 }}>⭐ Boosted</span>}
                 </div>
                 <div className="pro-meta" style={{ fontSize: 12, marginTop: 4 }}>
                   <Clock size={11} style={{ verticalAlign: 'middle', marginRight: 4 }} />
@@ -386,7 +386,7 @@ function ProfessionalsGrid({ professionals, loading, cols }) {
                 position: 'absolute', top: 10, right: 10, background: '#FEF3C7', color: '#B45309',
                 fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 999,
               }}>
-                ⭐ Featured
+                ⭐ Boosted
               </span>
             )}
             <div className="pro-card-header">

@@ -33,18 +33,15 @@ const Stars = ({ rating = 0 }) => (
 
 export default function ProfessionalProfile() {
   const [profile, setProfile] = useState(null);
-  const [creditsEnabled, setCreditsEnabled] = useState(false);
   const [completedCount, setCompletedCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     Promise.all([
       api.get('/api/users/me'),
-      api.get('/api/admin/settings').catch(() => ({ data: {} })),
       api.get('/api/bookings/my-bookings').catch(() => ({ data: [] })),
-    ]).then(([meRes, settingsRes, bookingsRes]) => {
+    ]).then(([meRes, bookingsRes]) => {
       setProfile(meRes.data);
-      setCreditsEnabled(!!settingsRes.data?.creditsEnabled);
       setCompletedCount((bookingsRes.data || []).filter((b) => b.status === 'Completed').length);
     }).finally(() => setLoading(false));
   }, []);
@@ -90,7 +87,7 @@ export default function ProfessionalProfile() {
             <Stars rating={profile.rating} />
             <div style={{ marginTop: 6, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <span className="badge badge-blue">{profile.professionalType}</span>
-              {profile.isFeatured && <span className="badge" style={{ background: '#FEF3C7', color: '#92400E' }}>⭐ Featured</span>}
+              {profile.isFeatured && <span className="badge" style={{ background: '#FEF3C7', color: '#92400E' }}>⭐ Boosted</span>}
             </div>
             <p className="text-muted" style={{ marginTop: 6 }}>{formatLocation(profile.location)}</p>
           </div>
@@ -108,13 +105,25 @@ export default function ProfessionalProfile() {
         </div>
       </div>
 
-      {creditsEnabled && (
-        <div className="card" style={{ marginTop: 16 }}>
-          <div className="text-muted">Credit Balance</div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--primary)' }}>{profile.credits ?? 0}</div>
-          <Link to="/my-credits" className="btn btn-primary" style={{ marginTop: 10 }}>Manage Credits</Link>
-        </div>
-      )}
+      <div className="card" style={{ marginTop: 16, background: profile.isFeatured ? '#FFFBEB' : undefined, border: profile.isFeatured ? '1px solid #FDE68A' : undefined }}>
+        {profile.isFeatured ? (
+          <>
+            <div style={{ fontWeight: 700, color: '#92400E' }}>⭐ Your Boost is active</div>
+            <p className="text-muted" style={{ marginTop: 4, marginBottom: 10 }}>
+              You're ranking first in search and getting job alerts 15 minutes early.
+            </p>
+            <Link to="/boost" className="btn btn-primary">Manage Boost</Link>
+          </>
+        ) : (
+          <>
+            <div style={{ fontWeight: 700 }}>⭐ Get seen first</div>
+            <p className="text-muted" style={{ marginTop: 4, marginBottom: 10 }}>
+              Boost your profile to rank first in search, get job alerts 15 minutes early, and show a star badge. Carely never takes money from your earnings - Boost is optional.
+            </p>
+            <Link to="/boost" className="btn btn-primary">Boost Profile</Link>
+          </>
+        )}
+      </div>
 
       <div className="card" style={{ marginTop: 16 }}>
         <h3 style={{ marginBottom: 12 }}>Quick Links</h3>

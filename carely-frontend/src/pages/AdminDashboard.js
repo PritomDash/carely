@@ -700,7 +700,7 @@ function ManualTopUpSection() {
 
 function RenewAllSection() {
   const [settings, setSettings] = useState(null);
-  const [proAmount, setProAmount] = useState(500);
+  const [proAmount, setProAmount] = useState(0);
   const [custAmount, setCustAmount] = useState(10);
   const [confirming, setConfirming] = useState(false);
   const [saving, setSaving] = useState(false);

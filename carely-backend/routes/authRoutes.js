@@ -82,7 +82,7 @@ router.post('/register', upload.fields([
     // Credits Enabled" setting on - when it's off, new accounts start at 0
     // regardless of role.
     const startingCredits = settings.freeCreditsEnabled
-      ? (userData.role === 'professional' ? (settings.freeCreditsAmount ?? 500) : (settings.customerFreeCredits ?? 10))
+      ? (userData.role === 'professional' ? (settings.freeCreditsAmount ?? 0) : (settings.customerFreeCredits ?? 10))
       : 0;
 
     const user = new User({ ...userData, credits: startingCredits, totalCreditsReceived: startingCredits });

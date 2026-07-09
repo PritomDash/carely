@@ -24,18 +24,22 @@ router.post('/', authMiddleware, async (req, res) => {
       return res.status(400).json({ message: 'Emergency posts are not currently available' });
     }
 
-    const emergencyCost = settings?.emergencyPostCreditCost ?? 1;
-    // Credit charging is gated by the global "Credits System" toggle, same
-    // as the professional-side deductions below - when it's off, emergency
-    // posts are free (still gated separately by emergencyPostEnabled above).
-    const chargeForEmergency = isEmergency && settings?.creditsEnabled;
+    const emergencyCost = settings?.emergencyPostCreditCost ?? 3;
+    // Credits are a customer-only mechanic that exist solely to pay for
+    // Emergency posts - always charged when isEmergency is true (gated
+    // separately by emergencyPostEnabled above). Professionals never have
+    // any credit check at all (see bookingRoutes.js accept and this file's
+    // select route).
+    const chargeForEmergency = !!isEmergency;
 
     if (chargeForEmergency) {
       const customer = await User.findById(req.user._id).select('credits');
-      if ((customer?.credits || 0) < emergencyCost) {
+      const currentCredits = customer?.credits || 0;
+      if (currentCredits < emergencyCost) {
         return res.status(403).json({
-          message: 'You do not have enough credits to post an emergency job. Please top up your credits.',
-          currentCredits: customer?.credits || 0,
+          message: `You need ${emergencyCost} credits to post an emergency job. You have ${currentCredits}.`,
+          credits: currentCredits,
+          required: emergencyCost,
           insufficientCredits: true,
         });
       }
@@ -59,8 +63,12 @@ router.post('/', authMiddleware, async (req, res) => {
       if (!updatedCustomer) {
         // Lost the race - don't leave an uncharged emergency post behind.
         await JobPost.deleteOne({ _id: post._id });
+        const current = await User.findById(req.user._id).select('credits');
+        const currentCredits = current?.credits || 0;
         return res.status(403).json({
-          message: 'You do not have enough credits to post an emergency job. Please top up your credits.',
+          message: `You need ${emergencyCost} credits to post an emergency job. You have ${currentCredits}.`,
+          credits: currentCredits,
+          required: emergencyCost,
           insufficientCredits: true,
         });
       }
@@ -72,20 +80,47 @@ router.post('/', authMiddleware, async (req, res) => {
       console.log('Credit deducted:', updatedCustomer.email, 'new balance:', updatedCustomer.credits);
     }
 
-    if (isEmergency && req.io) {
-      const pros = await User.find({
+    // Notify professionals in two waves (see MONETIZATION.md for the full
+    // design). Matched by serviceType only - broader reach is better at
+    // launch than restricting to the same division - with the district/
+    // thana mentioned in the message text instead.
+    //
+    // Emergency posts skip the delay entirely and notify every matching
+    // professional at once (the customer paid specifically for urgency).
+    // Normal posts notify Boosted professionals immediately (wave 1) and
+    // leave delayedNotifySent=false so the cron in cronJobs.js sends wave 2
+    // to everyone else once boostNotificationDelayMinutes has passed.
+    if (req.io) {
+      const matchingPros = await User.find({
         role: 'professional',
         professionalType: serviceType,
-        'location.division': location?.division
-      }).select('_id');
+      }).select('_id isFeatured featuredUntil');
 
-      for (const pro of pros) {
-        await createNotification({
-          userId: pro._id, type: 'jobpost',
-          message: 'URGENT: ' + title + ' - ' + (location?.thana || '') + ', ' + (location?.district || ''),
-          link: '/job-posts/' + post._id,
-          io: req.io,
-        });
+      const now = new Date();
+      const isBoosted = (p) => !!(p.isFeatured && p.featuredUntil && new Date(p.featuredUntil) > now);
+      const areaText = [location?.thana, location?.district].filter(Boolean).join(', ') || 'your area';
+
+      if (isEmergency) {
+        for (const pro of matchingPros) {
+          await createNotification({
+            userId: pro._id, type: 'jobpost',
+            message: 'URGENT: ' + title + ' - ' + areaText,
+            link: '/job-posts/' + post._id,
+            io: req.io,
+          });
+        }
+        post.delayedNotifySent = true;
+        await post.save();
+      } else {
+        const boostedPros = matchingPros.filter(isBoosted);
+        for (const pro of boostedPros) {
+          await createNotification({
+            userId: pro._id, type: 'jobpost',
+            message: 'New ' + serviceType + ' job in ' + areaText + " - you're seeing this first",
+            link: '/job-posts/' + post._id,
+            io: req.io,
+          });
+        }
       }
     }
 
@@ -174,9 +209,9 @@ router.post('/:id/apply', authMiddleware, async (req, res) => {
   }
 });
 
-// Customer selects a professional - deducts a credit AND creates a real
-// Confirmed booking (with sessions, so the calendar/chat/emails all behave
-// exactly like accepting a direct booking request does).
+// Customer selects a professional - free for the professional, creates a
+// real Confirmed booking (with sessions, so the calendar/chat/emails all
+// behave exactly like accepting a direct booking request does).
 router.post('/:id/select/:proId', authMiddleware, async (req, res) => {
   try {
     if (req.user.role !== 'customer')
@@ -189,21 +224,9 @@ router.post('/:id/select/:proId', authMiddleware, async (req, res) => {
       return res.status(400).json({ message: 'This job post is no longer open' });
 
     const settings = await Settings.findOne();
-    const cost = settings?.jobSelectCreditCost ?? 1;
-    const chargeForSelect = !!settings?.creditsEnabled;
 
     const pro = await User.findById(req.params.proId);
     if (!pro) return res.status(404).json({ message: 'Professional not found' });
-
-    if (chargeForSelect && (pro.credits || 0) < cost) {
-      await createNotification({
-        userId: pro._id, type: 'jobpost',
-        message: 'You were selected for "' + post.title + '" but have insufficient credits. Top up within 24h to confirm.',
-        link: '/my-credits',
-        io: req.io,
-      });
-      return res.status(400).json({ message: 'Professional has insufficient credits. They have been notified to top up.' });
-    }
 
     // Job posts don't collect an exact slot the way direct bookings do -
     // derive a bookable date/time/duration from the post's own schedule.
@@ -261,26 +284,8 @@ router.post('/:id/select/:proId', authMiddleware, async (req, res) => {
       }
     }
 
-    // Deduct credit only after confirming the schedule is actually bookable,
-    // using an atomic guard so two concurrent selections of the same
-    // professional can't both spend the same last credit.
-    if (chargeForSelect) {
-      const updatedPro = await User.findOneAndUpdate(
-        { _id: pro._id, credits: { $gte: cost } },
-        { $inc: { credits: -cost, totalCreditsUsed: cost } },
-        { new: true }
-      );
-      if (!updatedPro) {
-        return res.status(400).json({ message: 'Professional has insufficient credits. They have been notified to top up.' });
-      }
-      pro.credits = updatedPro.credits;
-      await CreditTransaction.create({
-        professional: pro._id, type: 'deduct', credits: cost,
-        note: 'Selected for job post: ' + post.title,
-        jobPostId: post._id
-      });
-      console.log('Credit deducted:', pro.email, 'new balance:', pro.credits);
-    }
+    // Being selected from a job post is always free for professionals -
+    // no credit check or deduction here at all.
 
     const commissionRate = settings?.commissionRate ?? 15;
     const totalBDT = rate * duration * sessions.length;

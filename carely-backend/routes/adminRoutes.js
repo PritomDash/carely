@@ -258,7 +258,7 @@ router.put('/settings', adminAuth, async (req, res) => {
       platformBkash, platformNagad,
       freeCreditsEnabled, freeCreditsAmount, customerFreeCredits,
       bookingAcceptCreditCost, jobSelectCreditCost, emergencyPostCreditCost,
-      manualTopUpEnabled,
+      manualTopUpEnabled, boostNotificationDelayMinutes,
       paymentGatewayProvider,
       shurjopayUsername, shurjopayPassword, shurjopayClientId, shurjopayClientSecret, shurjopayBaseUrl,
       sslcommerzStoreId, sslcommerzPassword, sslcommerzSandbox,
@@ -288,6 +288,7 @@ router.put('/settings', adminAuth, async (req, res) => {
     if (jobSelectCreditCost     !== undefined) settings.jobSelectCreditCost     = Number(jobSelectCreditCost);
     if (emergencyPostCreditCost !== undefined) settings.emergencyPostCreditCost = Number(emergencyPostCreditCost);
     if (manualTopUpEnabled      !== undefined) settings.manualTopUpEnabled      = manualTopUpEnabled;
+    if (boostNotificationDelayMinutes !== undefined) settings.boostNotificationDelayMinutes = Number(boostNotificationDelayMinutes);
 
     if (paymentGatewayProvider  !== undefined) settings.paymentGatewayProvider  = paymentGatewayProvider;
     if (shurjopayUsername       !== undefined) settings.shurjopayUsername       = shurjopayUsername;
@@ -435,8 +436,11 @@ router.post('/credits/renew-all', adminAuth, async (req, res) => {
   try {
     const { proAmount, custAmount } = req.body;
     const settings = await Settings.findOne();
-    const proCredits = proAmount || settings?.freeCreditsAmount || 500;
-    const custCredits = custAmount || settings?.customerFreeCredits || 10;
+    // Nullish coalescing, not ||  - freeCreditsAmount is deliberately 0 for
+    // professionals under the current monetization model, and `0 || 500`
+    // would silently override that back to the old hardcoded default.
+    const proCredits = proAmount ?? settings?.freeCreditsAmount ?? 0;
+    const custCredits = custAmount ?? settings?.customerFreeCredits ?? 10;
 
     const professionals = await User.find({ role: 'professional' });
     const customers = await User.find({ role: 'customer' });

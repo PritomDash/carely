@@ -25,6 +25,13 @@ const jobPostSchema = new mongoose.Schema({
   bookingType: { type: String, enum: ['short', 'long'] },
   budgetBDT:   { type: Number },
   isEmergency: { type: Boolean, default: false },
+  // Boosted professionals are notified immediately on creation; everyone
+  // else waits settings.boostNotificationDelayMinutes (default 15) - the
+  // delayed-notification cron in cronJobs.js flips this once it has sent
+  // that second wave, so it never re-notifies the same post twice. Always
+  // true for emergency posts (created already-sent, see jobPostRoutes.js -
+  // emergency bypasses the delay entirely, everyone is notified at once).
+  delayedNotifySent: { type: Boolean, default: false },
   status: { type: String, enum: ['Open', 'InProgress', 'Completed', 'Expired', 'Cancelled'], default: 'Open' },
   expiresAt:   { type: Date },
   selectedPro: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },

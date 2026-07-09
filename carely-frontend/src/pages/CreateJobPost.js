@@ -13,6 +13,8 @@ export default function CreateJobPost() {
   const navigate = useNavigate();
 
   const [emergencyEnabled, setEmergencyEnabled] = useState(false);
+  const [emergencyCost, setEmergencyCost] = useState(3);
+  const [credits, setCredits] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitState, setSubmitState] = useState('idle'); // idle | submitting | success | error
   const [error, setError] = useState('');
@@ -30,6 +32,10 @@ export default function CreateJobPost() {
   const [isEmergency, setIsEmergency] = useState(false);
 
   useEffect(() => {
+    if (credits != null && credits < emergencyCost) setIsEmergency(false);
+  }, [credits, emergencyCost]);
+
+  useEffect(() => {
     if (!user) {
       navigate('/login');
       return;
@@ -38,9 +44,14 @@ export default function CreateJobPost() {
       navigate('/home');
       return;
     }
-    api.get('/api/admin/settings')
-      .then((res) => setEmergencyEnabled(!!res.data?.emergencyPostEnabled))
-      .catch(() => {})
+    Promise.all([
+      api.get('/api/admin/settings'),
+      api.get('/api/credits/my-balance'),
+    ]).then(([settingsRes, balanceRes]) => {
+      setEmergencyEnabled(!!settingsRes.data?.emergencyPostEnabled);
+      setEmergencyCost(settingsRes.data?.emergencyPostCreditCost ?? 3);
+      setCredits(balanceRes.data?.credits ?? 0);
+    }).catch(() => {})
       .finally(() => setLoading(false));
   }, [user, navigate]);
 
@@ -111,7 +122,7 @@ export default function CreateJobPost() {
           <div className="badge badge-red" style={{ display: 'block', marginBottom: 16, padding: '8px 12px' }}>
             {error}
             {insufficientCredits && (
-              <> <Link to="/my-credits" style={{ fontWeight: 700, textDecoration: 'underline' }}>Top up credits</Link></>
+              <> <Link to="/my-credits" style={{ fontWeight: 700, textDecoration: 'underline' }}>Buy Credits</Link></>
             )}
           </div>
         )}
@@ -183,15 +194,28 @@ export default function CreateJobPost() {
           </div>
 
           {emergencyEnabled && (
-            <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <input
-                type="checkbox"
-                id="isEmergency"
-                style={{ width: 'auto' }}
-                checked={isEmergency}
-                onChange={(e) => setIsEmergency(e.target.checked)}
-              />
-              <label htmlFor="isEmergency" style={{ margin: 0 }}>Mark as Emergency / Urgent</label>
+            <div className="form-group">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input
+                  type="checkbox"
+                  id="isEmergency"
+                  style={{ width: 'auto' }}
+                  checked={isEmergency}
+                  disabled={credits != null && credits < emergencyCost}
+                  onChange={(e) => setIsEmergency(e.target.checked)}
+                />
+                <label htmlFor="isEmergency" style={{ margin: 0 }}>Emergency Post ({emergencyCost} credits)</label>
+              </div>
+              <p className="text-muted" style={{ fontSize: 13, marginTop: 6, marginLeft: 24 }}>
+                Instantly alerts every matching professional in your area. Your post appears at the top of the feed with an URGENT badge. Use this when you need someone urgently.
+              </p>
+
+              {credits != null && credits < emergencyCost && (
+                <div style={{ background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 8, padding: '10px 14px', marginTop: 8, fontSize: 13, color: '#92400E' }}>
+                  Emergency posts cost {emergencyCost} credits. You have {credits} credit{credits === 1 ? '' : 's'}.{' '}
+                  <Link to="/my-credits" style={{ fontWeight: 700, textDecoration: 'underline', color: '#92400E' }}>Buy Credits</Link> to post an emergency job.
+                </div>
+              )}
             </div>
           )}
 

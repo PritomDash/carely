@@ -2,7 +2,11 @@ const cron = require('node-cron');
 const Booking = require('./models/Booking');
 const JobPost = require('./models/JobPost');
 const User = require('./models/user');
+const Settings = require('./models/Settings');
 const { createNotification } = require('./utils/notificationService');
+const { fireEmail, emailButton } = require('./utils/emailService');
+
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 
 function setupCronJobs(io) {
   console.log('✅ Cron jobs started');
@@ -51,6 +55,54 @@ function setupCronJobs(io) {
     } catch (err) { console.error('Auto-decline cron error:', err.message); }
   });
 
+  // Every 5 minutes: send the delayed "wave 2" job alert to non-Boosted
+  // professionals, boostNotificationDelayMinutes (default 15) after a
+  // normal (non-emergency) job post was created. Deliberately NOT a
+  // setTimeout - Render's free tier can sleep and restart at any time, so a
+  // scheduled sweep that re-checks a persisted delayedNotifySent flag is
+  // the only reliable way to guarantee this fires eventually.
+  cron.schedule('*/5 * * * *', async () => {
+    try {
+      const settings = await Settings.findOne();
+      const delayMinutes = settings?.boostNotificationDelayMinutes ?? 15;
+      const cutoff = new Date(Date.now() - delayMinutes * 60 * 1000);
+
+      const duePosts = await JobPost.find({
+        createdAt: { $lt: cutoff },
+        delayedNotifySent: false,
+        isEmergency: false,
+        status: 'Open',
+      });
+
+      for (const post of duePosts) {
+        const matchingPros = await User.find({
+          role: 'professional',
+          professionalType: post.serviceType,
+        }).select('_id isFeatured featuredUntil');
+
+        const now = new Date();
+        const isBoosted = (p) => !!(p.isFeatured && p.featuredUntil && new Date(p.featuredUntil) > now);
+        const areaText = [post.location?.thana, post.location?.district].filter(Boolean).join(', ') || 'your area';
+        const nonBoostedPros = matchingPros.filter((p) => !isBoosted(p));
+
+        for (const pro of nonBoostedPros) {
+          await createNotification({
+            userId: pro._id, type: 'jobpost',
+            message: 'New ' + post.serviceType + ' job in ' + areaText,
+            link: '/job-posts/' + post._id,
+            io,
+          });
+        }
+
+        post.delayedNotifySent = true;
+        await post.save();
+      }
+      if (duePosts.length > 0) console.log('Sent delayed job alerts for ' + duePosts.length + ' post(s)');
+    } catch (err) {
+      console.error('Delayed job alert cron error:', err.message);
+    }
+  });
+
   // Every hour: Expire job posts older than 7 days
   cron.schedule('15 * * * *', async () => {
     try {
@@ -72,24 +124,10 @@ function setupCronJobs(io) {
     } catch (err) { console.error('Expire posts cron error:', err.message); }
   });
 
-  // Every day midnight: Low credit warning
-  cron.schedule('0 0 * * *', async () => {
-    try {
-      const Settings = require('./models/Settings');
-      const settings = await Settings.findOne();
-      if (!settings?.creditsEnabled) return;
-
-      const pros = await User.find({ role: 'professional', isVerified: true, credits: { $lte: 2, $gt: 0 } });
-      for (const pro of pros) {
-        await createNotification({
-          userId: pro._id, type: 'payment',
-          message: 'You have only ' + pro.credits + ' credit(s) left. Top up to keep accepting bookings.',
-          link: '/my-credits',
-          io,
-        });
-      }
-    } catch (err) { console.error('Credit warning cron error:', err.message); }
-  });
+  // NOTE: the old "low credit warning" cron for professionals was removed
+  // here - under the current monetization model professionals never spend
+  // credits to accept bookings, so that warning ("top up to keep accepting
+  // bookings") is no longer true and would actively mislead them.
 
   const DOC_FIELDS = ['idDocument', 'passport', 'policeClearance', 'courseCertificate', 'studentID'];
 
@@ -172,13 +210,43 @@ function setupCronJobs(io) {
     }
   });
 
-  // Every day at 1am: Expire featured profiles past their featuredUntil date
+  // Every day at 1am: Expire Boost past its featuredUntil date. Done as a
+  // per-user loop (not a bulk updateMany) so each professional gets a
+  // friendly notification + email - losing Boost never locks them out of
+  // anything, it just drops the search-ranking/early-alert/star perks.
   cron.schedule('0 1 * * *', async () => {
-    await User.updateMany(
-      { isFeatured: true, featuredUntil: { $lte: new Date() } },
-      { isFeatured: false, featuredUntil: null }
-    );
-    console.log('Expired featured profiles cleaned');
+    try {
+      const expired = await User.find({ isFeatured: true, featuredUntil: { $lte: new Date() } });
+      for (const pro of expired) {
+        pro.isFeatured = false;
+        pro.featuredUntil = null;
+        pro.featuredTier = 'none';
+        await pro.save();
+
+        await createNotification({
+          userId: pro._id, type: 'payment',
+          message: 'Your Carely Boost has ended. You can still browse and accept all jobs as normal. Renew your Boost to appear first and get job alerts 15 minutes early.',
+          link: '/boost',
+          io,
+        });
+
+        fireEmail({
+          to: pro.email,
+          subject: 'Your Boost Has Ended - Carely',
+          title: 'Your Carely Boost has ended',
+          content:
+            '<p style="color:#374151;font-size:14px;line-height:1.6;">' +
+            'You can still browse and accept all jobs as normal - nothing on Carely is locked. Renew your Boost to appear first in search results and get job alerts 15 minutes before other professionals.' +
+            '</p>' +
+            '<div style="margin-top:16px;text-align:center;">' +
+            emailButton('Renew Boost', FRONTEND_URL + '/boost') +
+            '</div>'
+        });
+      }
+      if (expired.length > 0) console.log('Expired Boost for ' + expired.length + ' professionals');
+    } catch (err) {
+      console.error('Boost expiry cron error:', err.message);
+    }
   });
 }
 
