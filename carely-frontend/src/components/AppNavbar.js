@@ -6,39 +6,16 @@ import socket from '../socket';
 import { setupPushNotifications } from '../utils/pushManager';
 import { isStandalone, requestInstall } from '../utils/pwaInstall';
 import CarelyLogo from './CarelyLogo';
-
-const playNotificationSound = () => {
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = ctx.createOscillator();
-    const gain = ctx.createGain();
-    oscillator.connect(gain);
-    gain.connect(ctx.destination);
-    oscillator.frequency.value = 880;
-    oscillator.type = 'sine';
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-    oscillator.start(ctx.currentTime);
-    oscillator.stop(ctx.currentTime + 0.3);
-  } catch (e) {}
-};
+import NotificationBell from './NotificationBell';
 
 export default function AppNavbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [unread, setUnread] = useState(0);
   const [credits, setCredits] = useState(null);
   const [boostStatus, setBoostStatus] = useState(null);
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
-
-  useEffect(() => {
-    if (!user) return;
-    api.get('/api/notifications/count-unread')
-      .then(r => setUnread(r.data.unreadCount || 0))
-      .catch(() => {});
-  }, [user, location.pathname]);
 
   // Credits are a customer-only mechanic (paid emergency posts) - professionals
   // never spend them, so the navbar shows Boost status for them instead.
@@ -68,14 +45,6 @@ export default function AppNavbar() {
   useEffect(() => {
     if (!user) return;
     socket.emit('joinRoom', user._id);
-
-    const handleNewNotification = () => {
-      setUnread(prev => prev + 1);
-      playNotificationSound();
-    };
-
-    socket.on('newNotification', handleNewNotification);
-    return () => socket.off('newNotification', handleNewNotification);
   }, [user]);
 
   useEffect(() => {
@@ -147,14 +116,7 @@ export default function AppNavbar() {
 
         {user ? (
           <div style={{ display:'flex', alignItems:'center', gap:20 }}>
-            <div style={{ position:'relative', cursor:'pointer' }} onClick={() => navigate('/notifications')}>
-              <span style={{ fontSize:22 }}>🔔</span>
-              {unread > 0 && (
-                <span style={{ position:'absolute', top:-5, right:-5, background:'#EF4444', color:'#fff', borderRadius:'50%', width:18, height:18, fontSize:11, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', border:'2px solid white' }}>
-                  {unread > 9 ? '9+' : unread}
-                </span>
-              )}
-            </div>
+            <NotificationBell userId={user._id} />
             <span className="hide-mobile" style={{ fontSize:14, fontWeight:600, color:'#374151' }}>{user.name}</span>
             <div ref={ref} style={{ position:'relative' }}>
               <div onClick={() => setOpen(!open)} style={{ width:40, height:40, borderRadius:'50%', background:'linear-gradient(135deg,#2B7FFF,#60A5FA)', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:800, fontSize:15, cursor:'pointer', boxShadow:'0 2px 8px rgba(43,127,255,0.35)', userSelect:'none' }}>
@@ -322,7 +284,10 @@ const BottomNav = () => {
           <button
             key={item.label}
             onClick={() => {
-              if (item.path) {
+              if (item.label === 'Alerts') {
+                window.dispatchEvent(new Event('carely-open-notifications'));
+                setShowSheet(false);
+              } else if (item.path) {
                 navigate(item.path);
                 setShowSheet(false);
               } else {
