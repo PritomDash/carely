@@ -44,15 +44,21 @@ export default function CreateJobPost() {
       navigate('/home');
       return;
     }
+    // Independent .catch() per request - a transient failure of one call
+    // (e.g. the balance fetch) must not wipe out the other's successfully
+    // fetched data. Promise.all would reject the whole thing on a single
+    // failure, silently leaving emergencyEnabled at its false default even
+    // when the setting is actually on.
     Promise.all([
-      api.get('/api/admin/settings'),
-      api.get('/api/credits/my-balance'),
+      api.get('/api/admin/settings').catch(() => null),
+      api.get('/api/credits/my-balance').catch(() => null),
     ]).then(([settingsRes, balanceRes]) => {
-      setEmergencyEnabled(!!settingsRes.data?.emergencyPostEnabled);
-      setEmergencyCost(settingsRes.data?.emergencyPostCreditCost ?? 3);
-      setCredits(balanceRes.data?.credits ?? 0);
-    }).catch(() => {})
-      .finally(() => setLoading(false));
+      if (settingsRes) {
+        setEmergencyEnabled(!!settingsRes.data?.emergencyPostEnabled);
+        setEmergencyCost(settingsRes.data?.emergencyPostCreditCost ?? 3);
+      }
+      if (balanceRes) setCredits(balanceRes.data?.credits ?? 0);
+    }).finally(() => setLoading(false));
   }, [user, navigate]);
 
   const toggleDay = (day) => {
