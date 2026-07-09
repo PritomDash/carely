@@ -279,4 +279,163 @@ test.describe.serial('Launch Polish Verification', () => {
     await expect(page.getByText('No notifications yet')).not.toBeVisible();
     console.log('✅ Clicking an unread notification marked it read, closed the panel, and navigated to /my-bookings');
   });
+
+  // Part 8: manual payment flow. Assumes Settings.platformBkash/platformNagad
+  // are temporarily set to a placeholder for this test run - the server now
+  // refuses topup-manual/request-manual submissions when either is empty.
+  test('Manual credit top up: full cycle grants exactly the pack amount and records a transaction', async ({ request }) => {
+    const cust = await registerCustomer(request);
+    const trx = 'TESTCREDIT' + Date.now() + Math.floor(Math.random() * 100000);
+
+    // New customers get free signup credits, so the balance isn't 0 before
+    // the top up - assert on the delta, not an absolute value.
+    const beforeRes = await request.get(`${BACKEND_URL}/api/credits/my-balance`, { headers: authHeader(cust.token) });
+    const before = (await beforeRes.json()).credits;
+
+    const submitRes = await request.post(`${BACKEND_URL}/api/credits/topup-manual`, {
+      headers: authHeader(cust.token),
+      data: { credits: 15, amountBDT: 200, transactionID: trx, senderNumber: '01712345678', paymentMethod: 'bkash' },
+    });
+    expect(submitRes.status()).toBe(200);
+    const { requestId } = await submitRes.json();
+
+    const approveRes = await request.put(`${BACKEND_URL}/api/admin/topup-requests/${requestId}/approve`, {
+      headers: authHeader(adminToken),
+    });
+    expect(approveRes.status()).toBe(200);
+
+    const balanceRes = await request.get(`${BACKEND_URL}/api/credits/my-balance`, { headers: authHeader(cust.token) });
+    const balance = await balanceRes.json();
+    expect(balance.credits).toBe(before + 15);
+
+    const txRes = await request.get(`${BACKEND_URL}/api/credits/my-transactions`, { headers: authHeader(cust.token) });
+    const txs = await txRes.json();
+    expect(txs.some((t) => t.credits === 15 && t.type === 'purchase')).toBe(true);
+    console.log('✅ Manual credit top up granted exactly 15 credits and recorded a CreditTransaction');
+  });
+
+  test('Manual payment: a forged credits amount that matches no pack is rejected', async ({ request }) => {
+    const cust = await registerCustomer(request);
+    const trx = 'TESTFORGE' + Date.now() + Math.floor(Math.random() * 100000);
+
+    const res = await request.post(`${BACKEND_URL}/api/credits/topup-manual`, {
+      headers: authHeader(cust.token),
+      data: { credits: 99999, amountBDT: 1, transactionID: trx, senderNumber: '01712345678', paymentMethod: 'bkash' },
+    });
+    expect(res.status()).toBe(400);
+    console.log('✅ A credits amount not matching any real pack is rejected server-side');
+  });
+
+  test('Manual payment: duplicate transaction ID is rejected on both credit top up and boost', async ({ request }) => {
+    const custA = await registerCustomer(request);
+    const custB = await registerCustomer(request);
+    const trx = 'TESTDUPE' + Date.now() + Math.floor(Math.random() * 100000);
+
+    const first = await request.post(`${BACKEND_URL}/api/credits/topup-manual`, {
+      headers: authHeader(custA.token),
+      data: { credits: 15, amountBDT: 200, transactionID: trx, senderNumber: '01712345678', paymentMethod: 'bkash' },
+    });
+    expect(first.status()).toBe(200);
+
+    const second = await request.post(`${BACKEND_URL}/api/credits/topup-manual`, {
+      headers: authHeader(custB.token),
+      data: { credits: 15, amountBDT: 200, transactionID: trx, senderNumber: '01712345678', paymentMethod: 'bkash' },
+    });
+    expect(second.status()).toBe(400);
+
+    const proA = await registerPro(request);
+    const proB = await registerPro(request);
+    const boostTrx = 'TESTDUPEBOOST' + Date.now() + Math.floor(Math.random() * 100000);
+
+    const firstBoost = await request.post(`${BACKEND_URL}/api/featured/request-manual`, {
+      headers: authHeader(proA.token),
+      data: { tier: 'basic', transactionID: boostTrx, senderNumber: '01712345678', method: 'bkash' },
+    });
+    expect(firstBoost.status()).toBe(200);
+
+    const secondBoost = await request.post(`${BACKEND_URL}/api/featured/request-manual`, {
+      headers: authHeader(proB.token),
+      data: { tier: 'basic', transactionID: boostTrx, senderNumber: '01712345678', method: 'bkash' },
+    });
+    expect(secondBoost.status()).toBe(400);
+    console.log('✅ Duplicate transaction IDs are rejected on both the credit top up and boost paths');
+  });
+
+  test('Manual payment: the same request cannot be approved twice', async ({ request }) => {
+    const cust = await registerCustomer(request);
+    const trx = 'TESTNODOUBLE' + Date.now() + Math.floor(Math.random() * 100000);
+
+    const beforeRes = await request.get(`${BACKEND_URL}/api/credits/my-balance`, { headers: authHeader(cust.token) });
+    const before = (await beforeRes.json()).credits;
+
+    const submitRes = await request.post(`${BACKEND_URL}/api/credits/topup-manual`, {
+      headers: authHeader(cust.token),
+      data: { credits: 15, amountBDT: 200, transactionID: trx, senderNumber: '01712345678', paymentMethod: 'bkash' },
+    });
+    const { requestId } = await submitRes.json();
+
+    const firstApprove = await request.put(`${BACKEND_URL}/api/admin/topup-requests/${requestId}/approve`, {
+      headers: authHeader(adminToken),
+    });
+    expect(firstApprove.status()).toBe(200);
+
+    const secondApprove = await request.put(`${BACKEND_URL}/api/admin/topup-requests/${requestId}/approve`, {
+      headers: authHeader(adminToken),
+    });
+    expect(secondApprove.status()).toBe(400);
+
+    const balanceRes = await request.get(`${BACKEND_URL}/api/credits/my-balance`, { headers: authHeader(cust.token) });
+    const balance = await balanceRes.json();
+    expect(balance.credits).toBe(before + 15);
+    console.log('✅ Approving the same request twice is rejected and credits are not double-granted');
+  });
+
+  test('Manual payment: admin cannot approve their own request', async ({ request }) => {
+    const trx = 'TESTSELFAPPROVE' + Date.now() + Math.floor(Math.random() * 100000);
+
+    const submitRes = await request.post(`${BACKEND_URL}/api/credits/topup-manual`, {
+      headers: authHeader(adminToken),
+      data: { credits: 15, amountBDT: 200, transactionID: trx, senderNumber: '01712345678', paymentMethod: 'bkash' },
+    });
+    expect(submitRes.status()).toBe(200);
+    const { requestId } = await submitRes.json();
+
+    const approveRes = await request.put(`${BACKEND_URL}/api/admin/topup-requests/${requestId}/approve`, {
+      headers: authHeader(adminToken),
+    });
+    expect(approveRes.status()).toBe(403);
+    console.log('✅ An admin cannot approve their own top up request');
+  });
+
+  test('Manual payment: rejection notifies the user with the admin\'s reason', async ({ request }) => {
+    const cust = await registerCustomer(request);
+    const trx = 'TESTREJECT' + Date.now() + Math.floor(Math.random() * 100000);
+
+    const beforeRes = await request.get(`${BACKEND_URL}/api/credits/my-balance`, { headers: authHeader(cust.token) });
+    const before = (await beforeRes.json()).credits;
+
+    const submitRes = await request.post(`${BACKEND_URL}/api/credits/topup-manual`, {
+      headers: authHeader(cust.token),
+      data: { credits: 15, amountBDT: 200, transactionID: trx, senderNumber: '01712345678', paymentMethod: 'bkash' },
+    });
+    const { requestId } = await submitRes.json();
+
+    const reason = 'Transaction ID does not match any received payment';
+    const rejectRes = await request.put(`${BACKEND_URL}/api/admin/topup-requests/${requestId}/reject`, {
+      headers: authHeader(adminToken),
+      data: { reason },
+    });
+    expect(rejectRes.status()).toBe(200);
+
+    const topupsRes = await request.get(`${BACKEND_URL}/api/credits/my-topups`, { headers: authHeader(cust.token) });
+    const topups = await topupsRes.json();
+    const rejected = topups.find((t) => t._id === requestId);
+    expect(rejected.status).toBe('Rejected');
+    expect(rejected.rejectedReason).toBe(reason);
+
+    const balanceRes = await request.get(`${BACKEND_URL}/api/credits/my-balance`, { headers: authHeader(cust.token) });
+    const balance = await balanceRes.json();
+    expect(balance.credits).toBe(before);
+    console.log('✅ Rejecting a top up request records the admin\'s reason and grants no credits');
+  });
 });
