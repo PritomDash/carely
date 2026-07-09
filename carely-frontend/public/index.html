@@ -4,6 +4,25 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="manifest" href="/manifest.json" />
+    <script>
+      // Capture beforeinstallprompt as early as physically possible - inline
+      // and in <head>, so it runs before the React bundle even starts
+      // downloading. Chrome can fire this event very early on a page load,
+      // and a listener registered only after the main JS bundle parses
+      // (even a few hundred ms later on a slow connection) can miss it
+      // entirely, which silently degrades Android from a real one-tap
+      // install down to "no prompt available" for the rest of the session.
+      window.__deferredInstallPrompt = null;
+      window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        window.__deferredInstallPrompt = e;
+        window.dispatchEvent(new Event('carely-can-install'));
+      });
+      window.addEventListener('appinstalled', function () {
+        window.__deferredInstallPrompt = null;
+        window.dispatchEvent(new Event('carely-can-install'));
+      });
+    </script>
     <link rel="icon" href="/favicon-32.png" />
     <meta name="theme-color" content="#2B7FFF" />
     <meta name="apple-mobile-web-app-capable" content="yes" />

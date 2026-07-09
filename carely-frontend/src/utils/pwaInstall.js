@@ -1,27 +1,24 @@
 // Centralizes PWA install state so every "Install App" entry point in the
 // app (floating banner, navbar/bottom-sheet menu item, landing page button)
-// shares one beforeinstallprompt capture instead of racing separate
-// listeners, and so non-Chromium platforms (iOS Safari never fires
-// beforeinstallprompt at all) still get a manual instruction path.
+// reads from one place instead of racing separate listeners, and so
+// non-Chromium platforms (iOS Safari never fires beforeinstallprompt at
+// all) still get a manual instruction path.
+//
+// The actual beforeinstallprompt capture happens in an inline <script> in
+// public/index.html, in <head>, before the React bundle even starts
+// downloading - that's the earliest point a listener can possibly attach.
+// This module only ever *reads* window.__deferredInstallPrompt; it does
+// not register its own competing beforeinstallprompt listener.
 export const SHOW_INSTRUCTIONS_EVENT = 'carely-show-install-instructions';
+const CAN_INSTALL_EVENT = 'carely-can-install';
 
-let deferredPrompt = null;
 let installed = false;
 let listeners = [];
 
 const notify = () => listeners.forEach((fn) => fn());
 
-// Captured as early as possible (module runs once at app load, before any
-// component mounts) so the prompt is already available the first time a
-// user taps any install button, on Android and desktop Chrome/Edge alike.
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-  notify();
-});
-
+window.addEventListener(CAN_INSTALL_EVENT, notify);
 window.addEventListener('appinstalled', () => {
-  deferredPrompt = null;
   installed = true;
   notify();
 });
@@ -33,7 +30,7 @@ export const isStandalone = () =>
   window.matchMedia('(display-mode: standalone)').matches ||
   !!window.navigator.standalone;
 
-export const canPromptInstall = () => !!deferredPrompt;
+export const canPromptInstall = () => !!window.__deferredInstallPrompt;
 
 // Subscribe to changes in install availability (prompt captured, or app
 // installed). Returns an unsubscribe function.
@@ -43,11 +40,11 @@ export const subscribeInstallAvailability = (fn) => {
 };
 
 const triggerNativeInstall = async () => {
-  const promptEvent = deferredPrompt;
+  const promptEvent = window.__deferredInstallPrompt;
   if (!promptEvent) return null;
   promptEvent.prompt();
   const { outcome } = await promptEvent.userChoice;
-  deferredPrompt = null;
+  window.__deferredInstallPrompt = null;
   if (outcome === 'accepted') installed = true;
   notify();
   return outcome;
@@ -61,7 +58,7 @@ const triggerNativeInstall = async () => {
 // beforeinstallprompt at all (an Apple platform restriction, not something
 // any web code can work around).
 export const requestInstall = async () => {
-  if (deferredPrompt) return triggerNativeInstall();
+  if (window.__deferredInstallPrompt) return triggerNativeInstall();
   window.dispatchEvent(new CustomEvent(SHOW_INSTRUCTIONS_EVENT));
   return null;
 };

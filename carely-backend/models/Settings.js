@@ -16,7 +16,7 @@ const featuredPackSchema = new mongoose.Schema({
 
 const settingsSchema = new mongoose.Schema({
   creditsEnabled:         { type: Boolean, default: false },
-  emergencyPostEnabled:   { type: Boolean, default: false },
+  emergencyPostEnabled:   { type: Boolean, default: true },
   cashPaymentEnabled:     { type: Boolean, default: false },
   featuredListingEnabled: { type: Boolean, default: true },
   featuredPacks: {

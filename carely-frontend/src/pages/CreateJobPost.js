@@ -200,7 +200,12 @@ export default function CreateJobPost() {
           </div>
 
           {emergencyEnabled && (
-            <div className="form-group">
+            <div className="form-group" style={{ border: '1px solid #E8EDF3', borderRadius: 10, padding: 14, background: '#FAFBFF' }}>
+              {credits != null && (
+                <div className="text-muted" style={{ fontSize: 13, marginBottom: 8 }}>
+                  Your credit balance: <strong style={{ color: '#1A1A2E' }}>{credits}</strong>
+                </div>
+              )}
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <input
                   type="checkbox"
@@ -210,7 +215,7 @@ export default function CreateJobPost() {
                   disabled={credits != null && credits < emergencyCost}
                   onChange={(e) => setIsEmergency(e.target.checked)}
                 />
-                <label htmlFor="isEmergency" style={{ margin: 0 }}>Emergency Post ({emergencyCost} credits)</label>
+                <label htmlFor="isEmergency" style={{ margin: 0, fontWeight: 700 }}>Emergency Post ({emergencyCost} credits)</label>
               </div>
               <p className="text-muted" style={{ fontSize: 13, marginTop: 6, marginLeft: 24 }}>
                 Instantly alerts every matching professional in your area. Your post appears at the top of the feed with an URGENT badge. Use this when you need someone urgently.
