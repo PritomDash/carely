@@ -172,4 +172,67 @@ test.describe.serial('Launch Polish Verification', () => {
     expect(blocked).toBe(false);
     console.log('✅ A pending (AwaitingAcceptance) request does not block the calendar for other customers');
   });
+
+  // Boost a professional via the real manual-payment path (request + admin
+  // approve), the same flow a real professional would use. Uses a unique
+  // transaction ID per call since duplicates are rejected.
+  const boostPro = async (request, token) => {
+    const trx = 'TESTTRX' + Date.now() + Math.floor(Math.random() * 100000);
+    const reqRes = await request.post(`${BACKEND_URL}/api/featured/request-manual`, {
+      headers: authHeader(token),
+      data: { tier: 'basic', transactionID: trx, senderNumber: '01712345678', method: 'bkash' },
+    });
+    const { requestId } = await reqRes.json();
+    const approveRes = await request.put(`${BACKEND_URL}/api/admin/featured-requests/${requestId}/approve`, {
+      headers: authHeader(adminToken),
+    });
+    expect(approveRes.status()).toBe(200);
+  };
+
+  test('Search ranking: same-thana non-boosted outranks a boosted professional in another district', async ({ request }) => {
+    // Both share the Dhaka division (so neither gets filtered out of a
+    // Gulshan-thana search entirely) but proFar is a different district
+    // (Gazipur) with a lower location tier (1) than proLocal's exact
+    // thana match (3) - proLocal must win regardless of the boost.
+    const proLocal = await registerPro(request, {
+      professionalType: 'Nurse',
+      location: { division: 'Dhaka', district: 'Dhaka', thana: 'Gulshan' },
+    });
+    const proFar = await registerPro(request, {
+      professionalType: 'Nurse',
+      location: { division: 'Dhaka', district: 'Gazipur', thana: 'Tongi' },
+    });
+    await boostPro(request, proFar.token);
+
+    const searchRes = await request.get(`${BACKEND_URL}/api/users/professionals`, {
+      params: { division: 'Dhaka', district: 'Dhaka', thana: 'Gulshan', serviceType: 'Nurse' },
+    });
+    const results = await searchRes.json();
+    const idxLocal = results.findIndex((p) => p._id === proLocal.user._id);
+    const idxFar = results.findIndex((p) => p._id === proFar.user._id);
+
+    expect(idxLocal).toBeGreaterThanOrEqual(0);
+    expect(idxFar).toBeGreaterThanOrEqual(0);
+    expect(idxLocal).toBeLessThan(idxFar);
+    console.log('✅ Same-thana non-boosted professional ranks above a boosted professional in a different district');
+  });
+
+  test('Search ranking: within the same thana, boosted outranks non-boosted', async ({ request }) => {
+    const location = { division: 'Dhaka', district: 'Dhaka', thana: 'Gulshan' };
+    const proBoosted = await registerPro(request, { professionalType: 'Nurse', location });
+    const proPlain = await registerPro(request, { professionalType: 'Nurse', location });
+    await boostPro(request, proBoosted.token);
+
+    const searchRes = await request.get(`${BACKEND_URL}/api/users/professionals`, {
+      params: { division: 'Dhaka', district: 'Dhaka', thana: 'Gulshan', serviceType: 'Nurse' },
+    });
+    const results = await searchRes.json();
+    const idxBoosted = results.findIndex((p) => p._id === proBoosted.user._id);
+    const idxPlain = results.findIndex((p) => p._id === proPlain.user._id);
+
+    expect(idxBoosted).toBeGreaterThanOrEqual(0);
+    expect(idxPlain).toBeGreaterThanOrEqual(0);
+    expect(idxBoosted).toBeLessThan(idxPlain);
+    console.log('✅ Within the same thana, a boosted professional ranks above a non-boosted one');
+  });
 });
