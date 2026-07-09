@@ -334,6 +334,7 @@ router.post('/create', authMiddleware, async (req, res) => {
       to: pro.email,
       subject: 'New Booking Request - Carely',
       title: 'You have a new booking request!',
+      status: 'Pending',
       content:
         detailRow('Customer', req.user.name) +
         detailRow('Date', date) +
@@ -446,6 +447,7 @@ router.post('/accept/:id', authMiddleware, async (req, res) => {
       to: booking.customer.email,
       subject: 'Booking Confirmed - Carely',
       title: 'Your booking is confirmed!',
+      status: 'Confirmed',
       content:
         detailRow('Professional Name', booking.professional.name) +
         detailRow('Professional Phone', booking.professional.phone) +
@@ -465,6 +467,7 @@ router.post('/accept/:id', authMiddleware, async (req, res) => {
       to: booking.professional.email,
       subject: 'Booking Accepted - Carely',
       title: 'You accepted a booking!',
+      status: 'Confirmed',
       content:
         detailRow('Customer Name', booking.customer.name) +
         detailRow('Customer Phone', booking.customer.phone) +
@@ -511,6 +514,7 @@ router.post('/decline/:id', authMiddleware, async (req, res) => {
       to: booking.customer.email,
       subject: 'Booking Declined - Carely',
       title: 'Your booking was declined',
+      status: 'Declined',
       content:
         '<p style="color:#374151;font-size:14px;line-height:1.6;">' +
         booking.professional.name + ' was unable to accept your booking request. No charge was made - please try another professional nearby.' +
@@ -591,6 +595,7 @@ router.post('/mark-done/:id', authMiddleware, async (req, res) => {
       to: booking.customer.email,
       subject: 'Job Completed - Carely',
       title: 'Your job is complete!',
+      status: 'Completed',
       content:
         '<p style="color:#374151;font-size:14px;line-height:1.6;">' +
         booking.professional.name + ' marked this job as complete. Let other families know how it went by rating your experience.' +

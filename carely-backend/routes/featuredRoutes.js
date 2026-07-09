@@ -5,7 +5,7 @@ const FeaturedRequest = require('../models/FeaturedRequest');
 const Settings = require('../models/Settings');
 const authMiddleware = require('../middlewares/authMiddleware');
 const { createNotification } = require('../utils/notificationService');
-const { fireEmail, emailButton } = require('../utils/emailService');
+const { fireEmail, emailButton, detailRow } = require('../utils/emailService');
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 
@@ -62,7 +62,7 @@ router.post('/request-manual', authMiddleware, async (req, res) => {
       senderNumber,
     });
 
-    const admins = await User.find({ role: 'admin' }).select('_id');
+    const admins = await User.find({ role: 'admin' }).select('_id email');
     for (const admin of admins) {
       await createNotification({
         userId: admin._id,
@@ -70,6 +70,21 @@ router.post('/request-manual', authMiddleware, async (req, res) => {
         message: req.user.name + ' requested a ' + pack.label + ' boost (৳' + pack.priceBDT + '). TRX: ' + transactionID,
         link: '/admin',
         io: req.io,
+      });
+      fireEmail({
+        to: admin.email,
+        subject: 'New Boost Request - Carely Admin',
+        title: 'A professional submitted a boost purchase request',
+        status: 'Pending',
+        content:
+          detailRow('Professional', req.user.name) +
+          detailRow('Pack', pack.label) +
+          detailRow('Amount', '৳' + pack.priceBDT) +
+          detailRow('Method', method || 'bkash') +
+          detailRow('Transaction ID', transactionID.trim()) +
+          '<div style="margin-top:16px;text-align:center;">' +
+          emailButton('Review in Admin Panel', FRONTEND_URL + '/admin?highlight=' + request._id) +
+          '</div>'
       });
     }
 
@@ -253,8 +268,10 @@ const approveFeaturedRequest = async (request, adminId, io) => {
     title: 'Your Carely Boost is active!',
     content:
       '<p style="color:#374151;font-size:14px;line-height:1.6;">' +
-      'Your profile will now rank first in search results, show a star badge, and you will get job alerts 15 minutes early - until ' + user.featuredUntil.toLocaleDateString('en-BD') + '.' +
+      'Your profile now shows a gold star badge and ranks first among professionals in your area. You will also get new job alerts before non-boosted professionals see them.' +
       '</p>' +
+      detailRow('Days Remaining', Math.max(0, Math.ceil((user.featuredUntil - Date.now()) / 86400000)) + ' days') +
+      detailRow('Active Until', user.featuredUntil.toLocaleDateString('en-BD')) +
       '<div style="margin-top:16px;text-align:center;">' +
       emailButton('View My Boost', FRONTEND_URL + '/boost') +
       '</div>'

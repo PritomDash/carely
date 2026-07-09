@@ -6,7 +6,7 @@ const TopUpRequest = require('../models/TopUpRequest');
 const Settings = require('../models/Settings');
 const authMiddleware = require('../middlewares/authMiddleware');
 const { createNotification } = require('../utils/notificationService');
-const { fireEmail, emailButton } = require('../utils/emailService');
+const { fireEmail, emailButton, detailRow } = require('../utils/emailService');
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 
@@ -77,7 +77,7 @@ router.post('/topup-manual', authMiddleware, async (req, res) => {
     });
 
     // Notify all admins
-    const admins = await User.find({ role: 'admin' }).select('_id');
+    const admins = await User.find({ role: 'admin' }).select('_id email');
     for (const admin of admins) {
       await createNotification({
         userId: admin._id,
@@ -85,6 +85,21 @@ router.post('/topup-manual', authMiddleware, async (req, res) => {
         message: req.user.name + ' requested ' + credits + ' credits top up (৳' + amountBDT + ') via ' + paymentMethod + '. TRX: ' + transactionID,
         link: '/admin',
         io: req.io,
+      });
+      fireEmail({
+        to: admin.email,
+        subject: 'New Top Up Request - Carely Admin',
+        title: 'A customer submitted a credit top up request',
+        status: 'Pending',
+        content:
+          detailRow('Customer', req.user.name) +
+          detailRow('Credits', String(credits)) +
+          detailRow('Amount', '৳' + amountBDT) +
+          detailRow('Method', paymentMethod || 'bkash') +
+          detailRow('Transaction ID', transactionID.trim()) +
+          '<div style="margin-top:16px;text-align:center;">' +
+          emailButton('Review in Admin Panel', FRONTEND_URL + '/admin?highlight=' + request._id) +
+          '</div>'
       });
     }
 
@@ -295,8 +310,10 @@ const approveTopUp = async (request, adminId, io) => {
     title: 'Credits added to your account!',
     content:
       '<p style="color:#374151;font-size:14px;line-height:1.6;">' +
-      claimed.credits + ' credits have been added to your account. Your new balance is ' + user.credits + ' credits.' +
+      claimed.credits + ' credits have been added to your account.' +
       '</p>' +
+      detailRow('New Balance', user.credits + ' credits') +
+      '<p style="margin-top:16px;color:#64748B;font-size:13px;">Credits are used to post Emergency jobs, which alert every matching professional in your area instantly. Normal job posts and bookings are always free.</p>' +
       '<div style="margin-top:16px;text-align:center;">' +
       emailButton('View My Credits', FRONTEND_URL + '/my-credits') +
       '</div>'

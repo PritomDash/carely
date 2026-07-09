@@ -342,6 +342,7 @@ router.post('/:id/select/:proId', authMiddleware, async (req, res) => {
       to: customer.email,
       subject: 'Booking Confirmed - Carely',
       title: 'Your booking is confirmed!',
+      status: 'Confirmed',
       content:
         detailRow('Professional Name', pro.name) +
         detailRow('Professional Phone', pro.phone) +
@@ -358,6 +359,7 @@ router.post('/:id/select/:proId', authMiddleware, async (req, res) => {
       to: pro.email,
       subject: 'Job Selection Confirmed - Carely',
       title: 'You were selected and confirmed!',
+      status: 'Confirmed',
       content:
         detailRow('Customer Name', customer.name) +
         detailRow('Customer Phone', customer.phone) +

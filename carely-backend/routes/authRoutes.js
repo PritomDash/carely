@@ -5,7 +5,7 @@ const CreditTransaction = require('../models/CreditTransaction');
 const Settings = require('../models/Settings');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const { sendEmail } = require('../utils/emailService');
+const { sendEmail, emailButton } = require('../utils/emailService');
 const { createNotification } = require('../utils/notificationService');
 const { upload } = require('../middlewares/uploadMiddleware');
 
@@ -198,7 +198,9 @@ router.post('/forgot-password', async (req, res) => {
       title: 'Reset your password',
       content:
         '<p style="color:#1A1A2E;font-size:14px;line-height:1.7;">Click the button below to reset your password. This link expires in 1 hour.</p>' +
-        '<p style="margin-top:20px;"><a href="' + resetUrl + '" style="display:inline-block;padding:12px 28px;background:#2563EB;color:#fff;border-radius:8px;text-decoration:none;font-weight:700;">Reset Password</a></p>' +
+        '<div style="margin-top:16px;text-align:center;">' +
+        emailButton('Reset Password', resetUrl) +
+        '</div>' +
         '<p style="margin-top:20px;color:#64748B;font-size:12px;">If the button does not work, copy this link: ' + resetUrl + '</p>',
     });
 
