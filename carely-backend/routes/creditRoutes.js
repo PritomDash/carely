@@ -50,15 +50,25 @@ router.get('/my-topups', authMiddleware, async (req, res) => {
 // Submit manual top up request (bKash or Nagad)
 router.post('/topup-manual', authMiddleware, async (req, res) => {
   try {
-    const { credits, amountBDT, transactionID, senderNumber, paymentMethod } = req.body;
+    const { credits, transactionID, senderNumber, paymentMethod } = req.body;
 
-    if (!credits || !amountBDT || !transactionID) {
-      return res.status(400).json({ error: 'Credits, amount and transaction ID required' });
+    if (!credits || !transactionID) {
+      return res.status(400).json({ error: 'Credits and transaction ID required' });
     }
 
     const settings = await Settings.findOne();
     if (!settings?.manualTopUpEnabled) {
       return res.status(400).json({ error: 'Manual top up is not available' });
+    }
+
+    // The price is always looked up server-side from the matching pack in
+    // Settings.creditPacks by credits amount - amountBDT is never trusted
+    // from the client, since a forged request body could otherwise claim
+    // any number of credits for any price and rely on an admin approving
+    // it without cross-checking against the current pack list.
+    const pack = (settings.creditPacks || []).find((p) => p.credits === Number(credits));
+    if (!pack) {
+      return res.status(400).json({ error: 'Invalid credit pack' });
     }
 
     // Prevent duplicate transaction IDs
@@ -69,8 +79,8 @@ router.post('/topup-manual', authMiddleware, async (req, res) => {
 
     const request = await TopUpRequest.create({
       user: req.user._id,
-      credits: Number(credits),
-      amountBDT: Number(amountBDT),
+      credits: pack.credits,
+      amountBDT: pack.priceBDT,
       transactionID: transactionID.trim(),
       senderNumber,
       paymentMethod: paymentMethod || 'bkash',
@@ -82,7 +92,7 @@ router.post('/topup-manual', authMiddleware, async (req, res) => {
       await createNotification({
         userId: admin._id,
         type: 'payment',
-        message: req.user.name + ' requested ' + credits + ' credits top up (৳' + amountBDT + ') via ' + paymentMethod + '. TRX: ' + transactionID,
+        message: req.user.name + ' requested ' + pack.credits + ' credits top up (৳' + pack.priceBDT + ') via ' + paymentMethod + '. TRX: ' + transactionID,
         link: '/admin',
         io: req.io,
       });
@@ -93,8 +103,8 @@ router.post('/topup-manual', authMiddleware, async (req, res) => {
         status: 'Pending',
         content:
           detailRow('Customer', req.user.name) +
-          detailRow('Credits', String(credits)) +
-          detailRow('Amount', '৳' + amountBDT) +
+          detailRow('Credits', String(pack.credits)) +
+          detailRow('Amount', '৳' + pack.priceBDT) +
           detailRow('Method', paymentMethod || 'bkash') +
           detailRow('Transaction ID', transactionID.trim()) +
           '<div style="margin-top:16px;text-align:center;">' +
@@ -105,7 +115,7 @@ router.post('/topup-manual', authMiddleware, async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Top up request submitted! Credits will be added after verification (usually within 1 hour).',
+      message: 'Top up request submitted! Your credits are added once we verify - usually within a few hours.',
       requestId: request._id,
     });
   } catch (err) {
@@ -116,12 +126,18 @@ router.post('/topup-manual', authMiddleware, async (req, res) => {
 // Initiate payment gateway top up (ShurjoPay or SSLCommerz)
 router.post('/topup-gateway', authMiddleware, async (req, res) => {
   try {
-    const { credits, amountBDT } = req.body;
+    const { credits } = req.body;
     const settings = await Settings.findOne();
 
     if (!settings?.paymentGatewayEnabled) {
       return res.status(400).json({ error: 'Payment gateway not enabled' });
     }
+
+    // Same rule as the manual top up path: the price always comes from the
+    // matching pack in Settings.creditPacks, never from the client.
+    const pack = (settings.creditPacks || []).find((p) => p.credits === Number(credits));
+    if (!pack) return res.status(400).json({ error: 'Invalid credit pack' });
+    const amountBDT = pack.priceBDT;
 
     const provider = settings?.paymentGatewayProvider;
 
@@ -268,6 +284,18 @@ router.post('/sslcommerz-success', async (req, res) => {
 // race gets a non-null result back and proceeds to grant credits; every
 // other caller sees null and bails out immediately.
 const approveTopUp = async (request, adminId, io) => {
+  // Checked before the Pending->Approved claim: if the account was deleted
+  // after the request was submitted, it must not get stuck "Approved" with
+  // no credits actually granted and no way to tell from the request itself.
+  const userExists = await User.exists({ _id: request.user });
+  if (!userExists) {
+    await TopUpRequest.findOneAndUpdate(
+      { _id: request._id, status: 'Pending' },
+      { status: 'Rejected', rejectedReason: 'User account no longer exists' }
+    );
+    return { error: 'user_not_found' };
+  }
+
   const claimed = await TopUpRequest.findOneAndUpdate(
     { _id: request._id, status: 'Pending' },
     {

@@ -12,8 +12,10 @@ const FeaturedRequest = require('../models/FeaturedRequest');
 const { approveTopUp } = require('./creditRoutes');
 const { approveFeaturedRequest } = require('./featuredRoutes');
 const adminAuth = require('../middlewares/adminAuthMiddleware');
-const { sendEmail } = require('../utils/emailService');
+const { sendEmail, fireEmail, emailButton } = require('../utils/emailService');
 const { createNotification } = require('../utils/notificationService');
+
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 
 // Diagnostic: send a real test email to the admin's own address and report
 // whether it actually succeeded (unlike normal booking emails, which are
@@ -153,8 +155,14 @@ router.put('/featured-requests/:id/approve', adminAuth, async (req, res) => {
   try {
     const request = await FeaturedRequest.findById(req.params.id);
     if (!request) return res.status(404).json({ error: 'Not found' });
+    if (request.user.toString() === req.admin._id.toString()) {
+      return res.status(403).json({ error: 'Cannot approve your own request' });
+    }
     const result = await approveFeaturedRequest(request, req.admin._id, req.io);
     if (!result) return res.status(400).json({ error: 'Already approved' });
+    if (result.error === 'user_not_found') {
+      return res.status(400).json({ error: 'That user account no longer exists - request was rejected automatically' });
+    }
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Failed' });
@@ -163,8 +171,11 @@ router.put('/featured-requests/:id/approve', adminAuth, async (req, res) => {
 
 router.put('/featured-requests/:id/reject', adminAuth, async (req, res) => {
   try {
-    const request = await FeaturedRequest.findById(req.params.id).populate('user', '_id name');
+    const request = await FeaturedRequest.findById(req.params.id).populate('user', '_id name email');
     if (!request) return res.status(404).json({ error: 'Not found' });
+    if (request.status !== 'Pending') {
+      return res.status(400).json({ error: 'This request has already been ' + request.status.toLowerCase() });
+    }
 
     request.status = 'Rejected';
     request.rejectedReason = req.body.reason || 'Could not verify transaction';
@@ -174,8 +185,22 @@ router.put('/featured-requests/:id/reject', adminAuth, async (req, res) => {
       userId: request.user._id,
       type: 'payment',
       message: 'Your boost request was rejected. Reason: ' + request.rejectedReason,
-      link: '/my-credits',
+      link: '/boost',
       io: req.io,
+    });
+
+    fireEmail({
+      to: request.user.email,
+      subject: 'Boost Request Rejected - Carely',
+      title: 'Your boost request could not be verified',
+      status: 'Declined',
+      content:
+        '<p style="color:#374151;font-size:14px;line-height:1.6;">' +
+        'We could not verify your boost payment. Reason: ' + request.rejectedReason +
+        '</p>' +
+        '<div style="margin-top:16px;text-align:center;">' +
+        emailButton('Try Again', FRONTEND_URL + '/boost') +
+        '</div>'
     });
 
     res.json({ success: true });
@@ -398,8 +423,14 @@ router.put('/topup-requests/:id/approve', adminAuth, async (req, res) => {
   try {
     const request = await TopUpRequest.findById(req.params.id);
     if (!request) return res.status(404).json({ error: 'Not found' });
+    if (request.user.toString() === req.admin._id.toString()) {
+      return res.status(403).json({ error: 'Cannot approve your own request' });
+    }
     const result = await approveTopUp(request, req.admin._id, req.io);
     if (!result) return res.status(400).json({ error: 'Already approved' });
+    if (result.error === 'user_not_found') {
+      return res.status(400).json({ error: 'That user account no longer exists - request was rejected automatically' });
+    }
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Failed' });
@@ -410,8 +441,11 @@ router.put('/topup-requests/:id/approve', adminAuth, async (req, res) => {
 router.put('/topup-requests/:id/reject', adminAuth, async (req, res) => {
   try {
     const request = await TopUpRequest.findById(req.params.id)
-      .populate('user', '_id name');
+      .populate('user', '_id name email');
     if (!request) return res.status(404).json({ error: 'Not found' });
+    if (request.status !== 'Pending') {
+      return res.status(400).json({ error: 'This request has already been ' + request.status.toLowerCase() });
+    }
 
     request.status = 'Rejected';
     request.rejectedReason = req.body.reason || 'Could not verify transaction';
@@ -423,6 +457,20 @@ router.put('/topup-requests/:id/reject', adminAuth, async (req, res) => {
       message: 'Your top up request was rejected. Reason: ' + request.rejectedReason,
       link: '/my-credits',
       io: req.io,
+    });
+
+    fireEmail({
+      to: request.user.email,
+      subject: 'Top Up Request Rejected - Carely',
+      title: 'Your top up request could not be verified',
+      status: 'Declined',
+      content:
+        '<p style="color:#374151;font-size:14px;line-height:1.6;">' +
+        'We could not verify your credit top up payment. Reason: ' + request.rejectedReason +
+        '</p>' +
+        '<div style="margin-top:16px;text-align:center;">' +
+        emailButton('Try Again', FRONTEND_URL + '/my-credits') +
+        '</div>'
     });
 
     res.json({ success: true });

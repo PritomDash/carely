@@ -90,7 +90,7 @@ router.post('/request-manual', authMiddleware, async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Boost request submitted! Your profile will be featured after verification (usually within 1 hour).',
+      message: 'Boost request submitted! Your profile is featured once we verify - usually within a few hours.',
       requestId: request._id,
     });
   } catch (err) {
@@ -231,6 +231,19 @@ router.post('/sslcommerz-success', async (req, res) => {
 // first and is what gets raced, so a double-click or duplicate webhook can
 // only ever grant the boost once.
 const approveFeaturedRequest = async (request, adminId, io) => {
+  // Checked before the Pending->Approved claim, not after: if the account
+  // was deleted after the request was submitted, the request must not get
+  // stuck as "Approved" with nothing actually granted (which would also
+  // make it look done and hide the problem from the admin).
+  const userExists = await User.exists({ _id: request.user });
+  if (!userExists) {
+    await FeaturedRequest.findOneAndUpdate(
+      { _id: request._id, status: 'Pending' },
+      { status: 'Rejected', rejectedReason: 'User account no longer exists' }
+    );
+    return { error: 'user_not_found' };
+  }
+
   const claimed = await FeaturedRequest.findOneAndUpdate(
     { _id: request._id, status: 'Pending' },
     {

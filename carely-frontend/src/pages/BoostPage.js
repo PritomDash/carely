@@ -48,6 +48,7 @@ export default function BoostPage() {
   const [submitState, setSubmitState] = useState('idle');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [refCopied, setRefCopied] = useState(false);
 
   const fetchAll = useCallback(() => {
     setLoading(true);
@@ -80,6 +81,13 @@ export default function BoostPage() {
     const yy = String(now.getFullYear()).slice(-2);
     return 'BOOST-' + id.slice(-6) + '-' + dd + mm + yy;
   })();
+
+  const copyRefCode = () => {
+    navigator.clipboard?.writeText(refCode).then(() => {
+      setRefCopied(true);
+      setTimeout(() => setRefCopied(false), 2000);
+    }).catch(() => {});
+  };
 
   const handleGatewayPay = async () => {
     if (!selectedPack) return;
@@ -266,7 +274,23 @@ export default function BoostPage() {
                         {paymentTab === 'bkash' ? (settings.platformBkash || 'Not set') : (settings.platformNagad || 'Not set')}
                       </div>
                       <div className="text-muted" style={{ marginTop: 8 }}>Reference</div>
-                      <div style={{ fontWeight: 700 }}>{refCode}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontWeight: 700 }}>{refCode}</span>
+                        <button
+                          type="button"
+                          onClick={copyRefCode}
+                          style={{
+                            background: refCopied ? '#DCFCE7' : '#FFFBEB', color: refCopied ? '#15803D' : '#B45309',
+                            border: 'none', borderRadius: 6, padding: '3px 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                          }}
+                        >
+                          {refCopied ? 'Copied!' : 'Copy'}
+                        </button>
+                      </div>
+                      <p style={{ marginTop: 10, marginBottom: 0, fontSize: 13, color: '#374151', lineHeight: 1.6 }}>
+                        Send exactly {formatBDT(selectedPack.priceBDT)} to the number above, then enter the Transaction ID below.
+                        Your Boost activates once we verify - usually within a few hours.
+                      </p>
                     </div>
 
                     <form onSubmit={handleManualSubmit}>
