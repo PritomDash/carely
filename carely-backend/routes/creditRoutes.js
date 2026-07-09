@@ -71,6 +71,12 @@ router.post('/topup-manual', authMiddleware, async (req, res) => {
       return res.status(400).json({ error: 'Invalid credit pack' });
     }
 
+    const method = paymentMethod || 'bkash';
+    const platformNumber = method === 'nagad' ? settings.platformNagad : settings.platformBkash;
+    if (!platformNumber) {
+      return res.status(400).json({ error: 'Payment number is not configured yet. Please contact support.' });
+    }
+
     // Prevent duplicate transaction IDs
     const duplicate = await TopUpRequest.findOne({ transactionID: transactionID.trim() });
     if (duplicate) {

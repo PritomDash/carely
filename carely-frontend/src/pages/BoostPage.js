@@ -107,10 +107,17 @@ export default function BoostPage() {
     }
   };
 
+  const platformNumber = paymentTab === 'bkash' ? settings?.platformBkash : settings?.platformNagad;
+
   const handleManualSubmit = async (e) => {
     e.preventDefault();
     if (!selectedPack) return;
     setError(''); setSuccess('');
+
+    if (!platformNumber) {
+      setError('Payment number is not configured yet. Please contact support.');
+      return;
+    }
 
     if (!transactionID.trim()) {
       setError('Please enter the transaction ID.');
@@ -270,9 +277,13 @@ export default function BoostPage() {
 
                     <div style={{ background: '#F7FAFF', border: '1px solid #E8EDF3', borderRadius: 10, padding: 14, marginBottom: 16 }}>
                       <div className="text-muted">Send {formatBDT(selectedPack.priceBDT)} to</div>
-                      <div style={{ fontWeight: 700, fontSize: 16 }}>
-                        {paymentTab === 'bkash' ? (settings.platformBkash || 'Not set') : (settings.platformNagad || 'Not set')}
-                      </div>
+                      {platformNumber ? (
+                        <div style={{ fontWeight: 700, fontSize: 16 }}>{platformNumber}</div>
+                      ) : (
+                        <div style={{ color: '#991B1B', fontWeight: 700, fontSize: 14 }}>
+                          Not configured yet - please contact support before sending payment.
+                        </div>
+                      )}
                       <div className="text-muted" style={{ marginTop: 8 }}>Reference</div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ fontWeight: 700 }}>{refCode}</span>
@@ -305,7 +316,7 @@ export default function BoostPage() {
                       <button
                         type="submit"
                         className="btn btn-primary btn-block"
-                        disabled={submitState === 'submitting' || submitState === 'success'}
+                        disabled={submitState === 'submitting' || submitState === 'success' || !platformNumber}
                         style={{ background: submitState === 'success' ? '#22C55E' : undefined }}
                       >
                         {submitState === 'idle' && 'Submit Request'}

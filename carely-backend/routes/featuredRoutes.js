@@ -47,6 +47,12 @@ router.post('/request-manual', authMiddleware, async (req, res) => {
     const pack = packForTier(settings, tier);
     if (!pack) return res.status(400).json({ error: 'Invalid tier' });
 
+    const payMethod = method || 'bkash';
+    const platformNumber = payMethod === 'nagad' ? settings.platformNagad : settings.platformBkash;
+    if (!platformNumber) {
+      return res.status(400).json({ error: 'Payment number is not configured yet. Please contact support.' });
+    }
+
     const duplicate = await FeaturedRequest.findOne({ transactionID: transactionID.trim() });
     if (duplicate) {
       return res.status(400).json({ error: 'This transaction ID has already been submitted' });
