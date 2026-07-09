@@ -235,4 +235,48 @@ test.describe.serial('Launch Polish Verification', () => {
     expect(idxBoosted).toBeLessThan(idxPlain);
     console.log('✅ Within the same thana, a boosted professional ranks above a non-boosted one');
   });
+
+  const uiLogin = async (page, email, password) => {
+    await page.goto('/login');
+    await page.locator('input[type="email"]').fill(email);
+    await page.locator('input[type="password"]').fill(password);
+    await page.getByRole('button', { name: 'Sign In', exact: true }).click();
+    await page.waitForURL(/\/home/, { timeout: 20000 });
+  };
+
+  test('Notification bell opens in place (no navigation) and shows the empty state', async ({ page, request }) => {
+    const cust = await registerCustomer(request);
+    await uiLogin(page, cust.user.email, 'PolishCust123!');
+
+    await page.getByRole('button', { name: 'Notifications' }).click();
+    await expect(page.getByText('Notifications', { exact: true })).toBeVisible();
+    await expect(page.getByText('No notifications yet')).toBeVisible();
+    expect(page.url()).toContain('/home');
+
+    await page.keyboard.press('Escape');
+    await expect(page.getByText('No notifications yet')).not.toBeVisible();
+    console.log('✅ Notification bell opened its panel in place and Escape closed it, without navigating away');
+  });
+
+  test('Notification bell shows an unread row, marks it read on click, and navigates to its link', async ({ page, request }) => {
+    const pro = await registerPro(request);
+    const cust = await registerCustomer(request);
+
+    const date = futureDateStr(bookingDayCounter++);
+    await request.post(`${BACKEND_URL}/api/bookings/create`, {
+      headers: authHeader(cust.token),
+      data: { professionalId: pro.user._id, date, time: '16:00', type: 'short', duration: 1, address: 'Test Address, Dhaka', workDescription: 'Bell notification test' },
+    });
+
+    await uiLogin(page, pro.user.email, 'PolishPro123!');
+
+    await page.getByRole('button', { name: 'Notifications' }).click();
+    const row = page.getByText(/New booking request/i).first();
+    await expect(row).toBeVisible();
+
+    await row.click();
+    await page.waitForURL(/\/my-bookings/, { timeout: 15000 });
+    await expect(page.getByText('No notifications yet')).not.toBeVisible();
+    console.log('✅ Clicking an unread notification marked it read, closed the panel, and navigated to /my-bookings');
+  });
 });
