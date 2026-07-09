@@ -313,7 +313,7 @@ export default function LandingPage() {
               { icon: '💬', title: 'Chat in App', desc: 'Once booking is confirmed chat directly through the app. Safe and private.' },
               { icon: '📅', title: 'Smart Booking', desc: 'See real-time availability. No double bookings. Book your exact time slot.' },
               { icon: '⭐', title: 'Rated by Users', desc: 'Read honest reviews from other customers before making your choice.' },
-              { icon: '🆓', title: 'Free for Customers', desc: 'Finding and booking care professionals is completely free for customers.' },
+              { icon: '🆓', title: 'Free for Everyone', desc: 'Finding and booking care professionals is completely free for families. Carely never takes a cut of what professionals earn.' },
             ].map((f, i) => (
               <Reveal key={f.title} delay={i * 90} style={{ padding: '28px 24px', border: '1.5px solid #E8EDF3', borderRadius: 16, textAlign: 'left', transition: 'box-shadow 0.2s, opacity 0.6s ease-out, transform 0.6s ease-out', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
                 <div style={{ fontSize: 32, marginBottom: 14 }}>{f.icon}</div>
@@ -321,6 +321,29 @@ export default function LandingPage() {
                 <p style={{ fontSize: 14, color: '#64748B', lineHeight: 1.7, margin: 0 }}>{f.desc}</p>
               </Reveal>
             ))}
+          </div>
+        </div>
+      </div>
+
+      {/* SIMPLE PRICING SECTION */}
+      <div className="landing-section" style={{ padding: '80px 40px', background: '#F8FAFF' }}>
+        <div style={{ maxWidth: 700, margin: '0 auto', textAlign: 'center' }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#2563EB', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 12 }}>HOW CARELY MAKES MONEY</div>
+          <h2 style={{ fontSize: 38, fontWeight: 900, color: '#1A1A2E', marginBottom: 20, letterSpacing: '-1px' }}>Free for Everyone</h2>
+          <p style={{ fontSize: 17, color: '#374151', lineHeight: 1.8, marginBottom: 32 }}>
+            Carely is free for families and free for professionals.<br />We never take a cut of what professionals earn.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 20, textAlign: 'left' }}>
+            <div style={{ background: 'white', border: '1.5px solid #E8EDF3', borderRadius: 16, padding: 24 }}>
+              <div style={{ fontSize: 28, marginBottom: 10 }}>⭐</div>
+              <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 6 }}>Professionals can Boost their profile</h3>
+              <p style={{ fontSize: 14, color: '#64748B', margin: 0 }}>Optional paid feature to appear first in search results and get job alerts early.</p>
+            </div>
+            <div style={{ background: 'white', border: '1.5px solid #E8EDF3', borderRadius: 16, padding: 24 }}>
+              <div style={{ fontSize: 28, marginBottom: 10 }}>🚨</div>
+              <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 6 }}>Families can post Emergency jobs</h3>
+              <p style={{ fontSize: 14, color: '#64748B', margin: 0 }}>Pay a small credit fee for instant matching when you need someone urgently.</p>
+            </div>
           </div>
         </div>
       </div>

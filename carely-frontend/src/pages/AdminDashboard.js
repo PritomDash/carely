@@ -744,6 +744,7 @@ function RenewAllSection() {
         <div className="form-group">
           <label>Professional Credits</label>
           <input type="number" min="0" value={proAmount} onChange={(e) => setProAmount(e.target.value)} />
+          <p className="text-muted" style={{ fontSize: 12, marginTop: 4 }}>Cosmetic only - professionals never spend credits for anything.</p>
         </div>
         <div className="form-group">
           <label>Customer Credits</label>
@@ -892,12 +893,24 @@ function CreditSettingsSection() {
     packs[i] = { ...packs[i], [field]: value };
     return { ...s, creditPacks: packs };
   });
+  const addPack = () => setSettings((s) => ({
+    ...s, creditPacks: [...(s.creditPacks || []), { credits: 10, priceBDT: 100, label: 'New Pack', popular: false }],
+  }));
+  const removePack = (i) => setSettings((s) => ({
+    ...s, creditPacks: (s.creditPacks || []).filter((_, idx) => idx !== i),
+  }));
 
   const setFeaturedPack = (i, field, value) => setSettings((s) => {
     const packs = [...(s.featuredPacks || [])];
     packs[i] = { ...packs[i], [field]: value };
     return { ...s, featuredPacks: packs };
   });
+  const addFeaturedPack = () => setSettings((s) => ({
+    ...s, featuredPacks: [...(s.featuredPacks || []), { tier: 'basic', days: 7, priceBDT: 150, label: 'New Boost Pack' }],
+  }));
+  const removeFeaturedPack = (i) => setSettings((s) => ({
+    ...s, featuredPacks: (s.featuredPacks || []).filter((_, idx) => idx !== i),
+  }));
 
   const handleSave = async () => {
     setSaving(true); setError(''); setSuccess('');
@@ -911,6 +924,7 @@ function CreditSettingsSection() {
         emergencyPostCreditCost: settings.emergencyPostCreditCost,
         creditPacks: settings.creditPacks,
         featuredPacks: settings.featuredPacks,
+        boostNotificationDelayMinutes: settings.boostNotificationDelayMinutes,
       });
       setSettings(res.data);
       setSuccess('Credit settings saved.');
@@ -930,8 +944,8 @@ function CreditSettingsSection() {
       {success && <div className="badge badge-green" style={{ display: 'block', marginBottom: 12, padding: '8px 12px' }}>{success}</div>}
 
       <Toggle
-        label="Free Credits Enabled"
-        description="Show 'Credits are FREE' banner to users"
+        label="Free Starting Credits Enabled"
+        description="Grant the starter credit amounts below to every new registration. When off, new accounts start at 0 regardless of role."
         value={!!settings.freeCreditsEnabled}
         onChange={(v) => setField('freeCreditsEnabled', v)}
       />
@@ -940,6 +954,7 @@ function CreditSettingsSection() {
         <div className="form-group">
           <label>Professional Starter Credits</label>
           <input type="number" min="0" value={settings.freeCreditsAmount ?? 0} onChange={(e) => setField('freeCreditsAmount', Number(e.target.value))} />
+          <p className="text-muted" style={{ fontSize: 12, marginTop: 4 }}>Cosmetic only - professionals never spend credits for anything.</p>
         </div>
         <div className="form-group">
           <label>Customer Starter Credits</label>
@@ -950,23 +965,24 @@ function CreditSettingsSection() {
       <div className="grid-3">
         <div className="form-group">
           <label>Booking Accept Cost</label>
-          <input type="number" min="0" value={settings.bookingAcceptCreditCost ?? 1} onChange={(e) => setField('bookingAcceptCreditCost', Number(e.target.value))} />
+          <input type="number" min="0" value={settings.bookingAcceptCreditCost ?? 0} onChange={(e) => setField('bookingAcceptCreditCost', Number(e.target.value))} />
+          <p className="text-muted" style={{ fontSize: 12, marginTop: 4 }}>Not currently charged - accepting bookings is always free for professionals.</p>
         </div>
         <div className="form-group">
           <label>Job Selection Cost</label>
-          <input type="number" min="0" value={settings.jobSelectCreditCost ?? 1} onChange={(e) => setField('jobSelectCreditCost', Number(e.target.value))} />
+          <input type="number" min="0" value={settings.jobSelectCreditCost ?? 0} onChange={(e) => setField('jobSelectCreditCost', Number(e.target.value))} />
+          <p className="text-muted" style={{ fontSize: 12, marginTop: 4 }}>Not currently charged - being selected is always free for professionals.</p>
         </div>
         <div className="form-group">
           <label>Emergency Post Cost</label>
-          <input type="number" min="0" value={settings.emergencyPostCreditCost ?? 1} onChange={(e) => setField('emergencyPostCreditCost', Number(e.target.value))} />
+          <input type="number" min="0" value={settings.emergencyPostCreditCost ?? 3} onChange={(e) => setField('emergencyPostCreditCost', Number(e.target.value))} />
         </div>
       </div>
 
-      <h4 style={{ margin: '16px 0 10px' }}>Credit Packs</h4>
+      <h4 style={{ margin: '16px 0 10px' }}>Credit Packs (customers only)</h4>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {(settings.creditPacks || []).map((pack, i) => (
           <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', background: '#F7FAFF', padding: 10, borderRadius: 8 }}>
-            <span className="text-muted">Pack {i + 1}:</span>
             <input
               type="number" min="0" value={pack.credits ?? 0}
               onChange={(e) => setPack(i, 'credits', Number(e.target.value))}
@@ -977,19 +993,30 @@ function CreditSettingsSection() {
               onChange={(e) => setPack(i, 'priceBDT', Number(e.target.value))}
               style={{ width: 90, padding: '6px 8px' }}
             />
+            <input
+              type="text" value={pack.label ?? ''}
+              onChange={(e) => setPack(i, 'label', e.target.value)}
+              style={{ width: 140, padding: '6px 8px' }}
+              placeholder="Label"
+            />
             <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
               <input type="checkbox" style={{ width: 'auto' }} checked={!!pack.popular} onChange={(e) => setPack(i, 'popular', e.target.checked)} />
               Popular
             </label>
+            <button type="button" className="btn btn-danger" style={{ padding: '4px 10px', fontSize: 12, marginLeft: 'auto' }} onClick={() => removePack(i)}>Remove</button>
           </div>
         ))}
       </div>
+      <button type="button" className="btn btn-outline" style={{ marginTop: 10 }} onClick={addPack}>+ Add Credit Pack</button>
 
-      <h4 style={{ margin: '16px 0 10px' }}>Featured/Boost Packs</h4>
+      <h4 style={{ margin: '20px 0 10px' }}>Boost Packs (professionals only)</h4>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {(settings.featuredPacks || []).map((pack, i) => (
           <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', background: '#FFFBEB', padding: 10, borderRadius: 8 }}>
-            <span className="text-muted" style={{ textTransform: 'capitalize' }}>{pack.tier}:</span>
+            <select value={pack.tier} onChange={(e) => setFeaturedPack(i, 'tier', e.target.value)} style={{ width: 110, padding: '6px 8px' }}>
+              <option value="basic">basic</option>
+              <option value="premium">premium</option>
+            </select>
             <input
               type="number" min="1" value={pack.days ?? 0}
               onChange={(e) => setFeaturedPack(i, 'days', Number(e.target.value))}
@@ -1006,8 +1033,23 @@ function CreditSettingsSection() {
               style={{ width: 160, padding: '6px 8px' }}
               placeholder="Label"
             />
+            <button type="button" className="btn btn-danger" style={{ padding: '4px 10px', fontSize: 12, marginLeft: 'auto' }} onClick={() => removeFeaturedPack(i)}>Remove</button>
           </div>
         ))}
+      </div>
+      <button type="button" className="btn btn-outline" style={{ marginTop: 10 }} onClick={addFeaturedPack}>+ Add Boost Pack</button>
+
+      <h4 style={{ margin: '20px 0 10px' }}>Boost Job Alert Timing</h4>
+      <div className="form-group" style={{ maxWidth: 260 }}>
+        <label>Non-boosted alert delay (minutes)</label>
+        <input
+          type="number" min="1"
+          value={settings.boostNotificationDelayMinutes ?? 15}
+          onChange={(e) => setField('boostNotificationDelayMinutes', Number(e.target.value))}
+        />
+        <p className="text-muted" style={{ fontSize: 12, marginTop: 4 }}>
+          Boosted professionals are notified about new job posts immediately. Everyone else waits this many minutes (emergency posts always notify everyone at once).
+        </p>
       </div>
 
       <button className="btn btn-primary" style={{ marginTop: 16 }} disabled={saving} onClick={handleSave}>
@@ -1381,14 +1423,14 @@ function SettingsTab() {
 
       <div className="card">
         <Toggle
-          label="Credits System"
-          description="Charge professionals credits to accept bookings"
+          label="Referral Credit Bonus"
+          description="Give +1 credit to a customer when someone joins using their referral link (credits are otherwise only spent on Emergency posts - professionals never spend credits for anything)"
           value={!!settings.creditsEnabled}
           onChange={(v) => handleToggle('creditsEnabled', v)}
         />
         <Toggle
           label="Emergency Posts"
-          description="Allow customers to pay for priority job posts"
+          description="Allow customers to pay credits for instant, top-of-feed priority job posts"
           value={!!settings.emergencyPostEnabled}
           onChange={(v) => handleToggle('emergencyPostEnabled', v)}
         />

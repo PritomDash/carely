@@ -61,9 +61,9 @@ const SECTIONS = [
     content: 'Carely does not process, hold, transfer, or guarantee any payment between customers and professionals. All payment arrangements are made directly between customers and professionals outside the platform. Carely has no responsibility for payment disputes, non-payment, overcharging, or any other financial matter between users. There are no cancellation fees or penalties charged by Carely.'
   },
   {
-    title: '8. Credit System',
+    title: '8. Credits and Boost',
     icon: '💳',
-    content: 'Professionals may purchase credits to use certain platform features. Credits are non-transferable and non-refundable once used to accept a booking. Carely reserves the right to change credit pricing and availability at any time.'
+    content: 'Browsing, booking, chatting, and accepting bookings are free for everyone - Carely does not charge professionals to accept work and does not take a commission from their earnings. Customers receive free starter credits and may purchase additional credits, which are used solely for posting Emergency job posts. Professionals may separately purchase a paid Boost subscription to appear first in search results, receive job alerts earlier than other professionals, and display a Boost badge - Boost is optional, does not guarantee bookings, and is not a form of verification. Credits and Boost purchases are non-transferable and non-refundable once used or activated. Carely reserves the right to change pricing and availability of credits and Boost at any time.'
   },
   {
     title: '9. Limitation of Liability',

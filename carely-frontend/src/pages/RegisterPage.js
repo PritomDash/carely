@@ -159,8 +159,8 @@ export default function RegisterPage() {
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {[
-              '✓ Free for customers',
-              '✓ Earn money as a professional',
+              '✓ Free for families',
+              '✓ Free for professionals - no commission ever',
               '✓ Trusted marketplace platform',
               '✓ Available across all of Bangladesh',
             ].map(f => (
@@ -221,6 +221,12 @@ export default function RegisterPage() {
             <div style={{ fontWeight: 700, fontSize: 14, color: '#1A1A2E' }}>I'm a Professional</div>
             <div style={{ fontSize: 12, color: '#64748B', marginTop: 4 }}>Offer your services</div>
           </div>
+        </div>
+
+        <div style={{ background: '#F0F7FF', border: '1px solid #BFDBFE', borderRadius: 8, padding: '10px 14px', marginBottom: 20, fontSize: 13, color: '#1E40AF', textAlign: 'center' }}>
+          {role === 'professional'
+            ? 'Free to join. Free to work. Carely never takes a commission from your earnings.'
+            : 'Free to browse and book. You get 10 free credits for emergency posts.'}
         </div>
 
         {role === 'customer' && (
