@@ -211,24 +211,33 @@ router.post('/sslcommerz-success', async (req, res) => {
   }
 });
 
-// Helper to approve any boost request
+// Helper to approve any boost request. Same atomic-guard pattern as
+// approveTopUp() in creditRoutes.js - the Pending->Approved flip happens
+// first and is what gets raced, so a double-click or duplicate webhook can
+// only ever grant the boost once.
 const approveFeaturedRequest = async (request, adminId, io) => {
-  const user = await User.findById(request.user);
+  const claimed = await FeaturedRequest.findOneAndUpdate(
+    { _id: request._id, status: 'Pending' },
+    {
+      status: 'Approved',
+      approvedAt: new Date(),
+      autoVerified: !adminId,
+      ...(adminId ? { approvedBy: adminId } : {}),
+    },
+    { new: true }
+  );
+  if (!claimed) return null;
+
+  const user = await User.findById(claimed.user);
   const now = new Date();
   const base = user.isFeatured && user.featuredUntil && new Date(user.featuredUntil) > now
     ? new Date(user.featuredUntil)
     : now;
 
   user.isFeatured = true;
-  user.featuredTier = request.tier;
-  user.featuredUntil = new Date(base.getTime() + request.days * 24 * 60 * 60 * 1000);
+  user.featuredTier = claimed.tier;
+  user.featuredUntil = new Date(base.getTime() + claimed.days * 24 * 60 * 60 * 1000);
   await user.save();
-
-  request.status = 'Approved';
-  request.approvedAt = new Date();
-  request.autoVerified = !adminId;
-  if (adminId) request.approvedBy = adminId;
-  await request.save();
 
   await createNotification({
     userId: user._id,
@@ -250,6 +259,8 @@ const approveFeaturedRequest = async (request, adminId, io) => {
       emailButton('View My Profile', FRONTEND_URL + '/edit-profile') +
       '</div>'
   });
+
+  return claimed;
 };
 
 module.exports = router;

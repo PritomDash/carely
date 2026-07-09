@@ -217,12 +217,10 @@ router.post('/shurjopay-callback', async (req, res) => {
     if (sp_code !== '1000') return res.redirect(process.env.FRONTEND_URL + '/my-credits?status=fail');
 
     const request = await TopUpRequest.findOne({ gatewayOrderId: order_id });
-    if (!request || request.status === 'Approved') {
-      return res.redirect(process.env.FRONTEND_URL + '/my-credits?status=already');
-    }
+    if (!request) return res.redirect(process.env.FRONTEND_URL + '/my-credits?status=fail');
 
-    await approveTopUp(request, null, req.io);
-    res.redirect(process.env.FRONTEND_URL + '/my-credits?status=success');
+    const result = await approveTopUp(request, null, req.io);
+    res.redirect(process.env.FRONTEND_URL + '/my-credits?status=' + (result ? 'success' : 'already'));
   } catch (err) {
     res.redirect(process.env.FRONTEND_URL + '/my-credits?status=error');
   }
@@ -236,44 +234,57 @@ router.post('/sslcommerz-success', async (req, res) => {
       return res.redirect(process.env.FRONTEND_URL + '/my-credits?status=fail');
     }
     const request = await TopUpRequest.findOne({ gatewayOrderId: tran_id });
-    if (!request || request.status === 'Approved') {
-      return res.redirect(process.env.FRONTEND_URL + '/my-credits?status=already');
-    }
-    await approveTopUp(request, null, req.io);
-    res.redirect(process.env.FRONTEND_URL + '/my-credits?status=success');
+    if (!request) return res.redirect(process.env.FRONTEND_URL + '/my-credits?status=fail');
+
+    const result = await approveTopUp(request, null, req.io);
+    res.redirect(process.env.FRONTEND_URL + '/my-credits?status=' + (result ? 'success' : 'already'));
   } catch (err) {
     res.redirect(process.env.FRONTEND_URL + '/my-credits?status=error');
   }
 });
 
-// Helper function to approve any top up. Credit updates are push + in-app
-// only, no email (see routing table in SETUP_KEYS_NEEDED.md).
+// Helper function to approve any top up. Returns the claimed request on
+// success, or null if it was already approved by another call (admin
+// double-click, or a payment gateway sending a duplicate webhook - both
+// happen in practice, so this must not be able to double-credit).
+//
+// The status flip is done as one atomic findOneAndUpdate guarded on the
+// request still being Pending - only whichever concurrent call wins that
+// race gets a non-null result back and proceeds to grant credits; every
+// other caller sees null and bails out immediately.
 const approveTopUp = async (request, adminId, io) => {
-  const user = await User.findById(request.user);
-  user.credits += request.credits;
-  user.totalCreditsReceived = (user.totalCreditsReceived || 0) + request.credits;
-  await user.save();
+  const claimed = await TopUpRequest.findOneAndUpdate(
+    { _id: request._id, status: 'Pending' },
+    {
+      status: 'Approved',
+      approvedAt: new Date(),
+      autoVerified: !adminId,
+      ...(adminId ? { approvedBy: adminId } : {}),
+    },
+    { new: true }
+  );
+  if (!claimed) return null;
+
+  const user = await User.findByIdAndUpdate(
+    claimed.user,
+    { $inc: { credits: claimed.credits, totalCreditsReceived: claimed.credits } },
+    { new: true }
+  );
 
   await CreditTransaction.create({
     professional: user._id,
     type: 'purchase',
-    credits: request.credits,
-    note: request.autoVerified
+    credits: claimed.credits,
+    note: claimed.autoVerified
       ? 'Top up via payment gateway (auto verified)'
-      : 'Top up approved by admin. TRX: ' + request.transactionID,
+      : 'Top up approved by admin. TRX: ' + claimed.transactionID,
     addedBy: adminId || null,
   });
-
-  request.status = 'Approved';
-  request.approvedAt = new Date();
-  request.autoVerified = !adminId;
-  if (adminId) request.approvedBy = adminId;
-  await request.save();
 
   await createNotification({
     userId: user._id,
     type: 'payment',
-    message: request.credits + ' credits added to your account successfully!',
+    message: claimed.credits + ' credits added to your account successfully!',
     link: '/my-credits',
     io,
   });
@@ -284,12 +295,14 @@ const approveTopUp = async (request, adminId, io) => {
     title: 'Credits added to your account!',
     content:
       '<p style="color:#374151;font-size:14px;line-height:1.6;">' +
-      request.credits + ' credits have been added to your account. Your new balance is ' + user.credits + ' credits.' +
+      claimed.credits + ' credits have been added to your account. Your new balance is ' + user.credits + ' credits.' +
       '</p>' +
       '<div style="margin-top:16px;text-align:center;">' +
       emailButton('View My Credits', FRONTEND_URL + '/my-credits') +
       '</div>'
   });
+
+  return claimed;
 };
 
 module.exports = router;

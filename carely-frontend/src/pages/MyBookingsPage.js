@@ -53,6 +53,7 @@ export default function MyBookingsPage() {
   const [activeTab, setActiveTab] = useState('All');
   const [expandedId, setExpandedId] = useState(null);
   const [highlightFaded, setHighlightFaded] = useState(false);
+  const [insufficientCredits, setInsufficientCredits] = useState(false);
 
   const fetchBookings = useCallback(() => {
     setLoading(true);
@@ -83,12 +84,17 @@ export default function MyBookingsPage() {
   const runAction = async (id, request) => {
     setError('');
     setSuccess('');
+    setInsufficientCredits(false);
     setActionLoadingId(id);
     try {
       await request();
       fetchBookings();
+      // Accept deducts a credit - let the navbar balance refresh instead of
+      // showing a stale pre-deduction number until the next page load.
+      window.dispatchEvent(new Event('carely-credits-changed'));
     } catch (err) {
       setError(err.response?.data?.message || 'Action failed. Please try again.');
+      setInsufficientCredits(!!err.response?.data?.insufficientCredits);
     } finally {
       setActionLoadingId(null);
     }
@@ -140,7 +146,14 @@ export default function MyBookingsPage() {
         ))}
       </div>
 
-      {error && <div className="msg-error">{error}</div>}
+      {error && (
+        <div className="msg-error">
+          {error}
+          {insufficientCredits && (
+            <> <Link to="/my-credits" style={{ fontWeight: 700, textDecoration: 'underline' }}>Top up credits</Link></>
+          )}
+        </div>
+      )}
       {success && <div className="msg-success">{success}</div>}
 
       {filtered.length === 0 ? (

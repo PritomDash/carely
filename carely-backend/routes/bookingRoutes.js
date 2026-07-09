@@ -367,35 +367,9 @@ router.post('/accept/:id', authMiddleware, async (req, res) => {
     if (booking.status === 'Confirmed')
       return res.json({ message: 'Already confirmed', booking });
 
-    // Check and deduct credits
     let settings = await Settings.findOne();
     if (!settings) settings = await Settings.create({});
-
     const creditCost = settings.bookingAcceptCreditCost ?? 1;
-    const professional = await User.findById(req.user._id);
-
-    if ((professional.credits || 0) < creditCost) {
-      return res.status(403).json({
-        message: 'You do not have enough credits to accept this booking. Please top up your credits.',
-        credits: professional.credits || 0,
-        required: creditCost,
-        insufficientCredits: true,
-      });
-    }
-
-    professional.credits = (professional.credits || 0) - creditCost;
-    professional.totalCreditsUsed = (professional.totalCreditsUsed || 0) + creditCost;
-    await professional.save();
-
-    await CreditTransaction.create({
-      professional: professional._id,
-      type: 'deduct',
-      credits: creditCost,
-      note: 'Accepted booking request',
-      bookingId: booking._id,
-    });
-
-    console.log('Credit deducted:', professional.email, 'new balance:', professional.credits);
 
     // Re-check for conflicts at accept time
     const hours = booking.duration || 1;
@@ -446,6 +420,38 @@ router.post('/accept/:id', authMiddleware, async (req, res) => {
           message: 'A conflicting booking was confirmed while this request was pending'
         });
       }
+    }
+
+    // Deduct credit only now, after every other check has passed - if
+    // anything above fails, the professional was never charged. The
+    // findOneAndUpdate guard (credits >= creditCost) is atomic, so two
+    // concurrent accepts from the same professional can't both succeed off
+    // a single remaining credit (a plain read-then-save would race here).
+    if (settings.creditsEnabled) {
+      const updatedPro = await User.findOneAndUpdate(
+        { _id: req.user._id, credits: { $gte: creditCost } },
+        { $inc: { credits: -creditCost, totalCreditsUsed: creditCost } },
+        { new: true }
+      );
+      if (!updatedPro) {
+        const current = await User.findById(req.user._id).select('credits');
+        return res.status(403).json({
+          message: 'You do not have enough credits to accept this booking. Please top up your credits.',
+          credits: current?.credits || 0,
+          required: creditCost,
+          insufficientCredits: true,
+        });
+      }
+
+      await CreditTransaction.create({
+        professional: updatedPro._id,
+        type: 'deduct',
+        credits: creditCost,
+        note: 'Accepted booking request',
+        bookingId: booking._id,
+      });
+
+      console.log('Credit deducted:', updatedPro.email, 'new balance:', updatedPro.credits);
     }
 
     booking.sessions = sessions;

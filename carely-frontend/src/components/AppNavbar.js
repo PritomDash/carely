@@ -41,9 +41,18 @@ export default function AppNavbar() {
 
   useEffect(() => {
     if (!user) return;
-    api.get('/api/credits/my-balance')
-      .then(r => setCredits(r.data.credits ?? 0))
-      .catch(() => {});
+    const fetchBalance = () => {
+      api.get('/api/credits/my-balance')
+        .then(r => setCredits(r.data.credits ?? 0))
+        .catch(() => {});
+    };
+    fetchBalance();
+    // Booking accept, emergency posts, top-ups etc. all happen on other
+    // pages/components - they broadcast this event so the navbar balance
+    // (which would otherwise only refetch on next full mount) stays correct
+    // instead of showing a stale pre-deduction number.
+    window.addEventListener('carely-credits-changed', fetchBalance);
+    return () => window.removeEventListener('carely-credits-changed', fetchBalance);
   }, [user]);
 
   useEffect(() => {
@@ -220,11 +229,15 @@ const BottomNav = () => {
   const [credits, setCredits] = useState(null);
 
   useEffect(() => {
-    if (user) {
+    if (!user) return;
+    const fetchBalance = () => {
       api.get('/api/credits/my-balance')
         .then(r => setCredits(r.data.credits))
         .catch(() => {});
-    }
+    };
+    fetchBalance();
+    window.addEventListener('carely-credits-changed', fetchBalance);
+    return () => window.removeEventListener('carely-credits-changed', fetchBalance);
   }, [user]);
 
   const isActive = (path) => location.pathname === path;

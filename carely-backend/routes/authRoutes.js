@@ -76,25 +76,26 @@ router.post('/register', upload.fields([
       if (files.courseCertificate) userData.courseCertificate = files.courseCertificate[0].path;
     }
 
-    const user = new User(userData);
-    await user.save();
-
     if (!settings) settings = await Settings.create({});
 
-    const startingCredits = userData.role === 'professional'
-      ? (settings.freeCreditsAmount ?? 500)
-      : (settings.customerFreeCredits ?? 10);
+    // Starting credits are only granted while the admin has the "Free
+    // Credits Enabled" setting on - when it's off, new accounts start at 0
+    // regardless of role.
+    const startingCredits = settings.freeCreditsEnabled
+      ? (userData.role === 'professional' ? (settings.freeCreditsAmount ?? 500) : (settings.customerFreeCredits ?? 10))
+      : 0;
 
-    user.credits = startingCredits;
-    user.totalCreditsReceived = startingCredits;
+    const user = new User({ ...userData, credits: startingCredits, totalCreditsReceived: startingCredits });
     await user.save();
 
-    await CreditTransaction.create({
-      professional: user._id,
-      type: 'bonus',
-      credits: startingCredits,
-      note: 'Welcome bonus',
-    });
+    if (startingCredits > 0) {
+      await CreditTransaction.create({
+        professional: user._id,
+        type: 'bonus',
+        credits: startingCredits,
+        note: 'Welcome bonus',
+      });
+    }
 
     const prefix = user.name.split(' ')[0].toUpperCase().slice(0, 4);
     const suffix = Math.random().toString(36).slice(2, 6).toUpperCase();

@@ -25,13 +25,18 @@ router.post('/', authMiddleware, async (req, res) => {
     }
 
     const emergencyCost = settings?.emergencyPostCreditCost ?? 1;
-    let customer;
-    if (isEmergency) {
-      customer = await User.findById(req.user._id);
-      if (customer.credits < emergencyCost) {
+    // Credit charging is gated by the global "Credits System" toggle, same
+    // as the professional-side deductions below - when it's off, emergency
+    // posts are free (still gated separately by emergencyPostEnabled above).
+    const chargeForEmergency = isEmergency && settings?.creditsEnabled;
+
+    if (chargeForEmergency) {
+      const customer = await User.findById(req.user._id).select('credits');
+      if ((customer?.credits || 0) < emergencyCost) {
         return res.status(403).json({
           message: 'You do not have enough credits to post an emergency job. Please top up your credits.',
-          currentCredits: customer.credits,
+          currentCredits: customer?.credits || 0,
+          insufficientCredits: true,
         });
       }
     }
@@ -43,16 +48,28 @@ router.post('/', authMiddleware, async (req, res) => {
       isEmergency: !!isEmergency
     });
 
-    if (isEmergency) {
-      customer.credits -= emergencyCost;
-      customer.totalCreditsUsed = (customer.totalCreditsUsed || 0) + emergencyCost;
-      await customer.save();
+    if (chargeForEmergency) {
+      // Atomic guard so two concurrent emergency posts from the same
+      // customer can't both spend the same last credit.
+      const updatedCustomer = await User.findOneAndUpdate(
+        { _id: req.user._id, credits: { $gte: emergencyCost } },
+        { $inc: { credits: -emergencyCost, totalCreditsUsed: emergencyCost } },
+        { new: true }
+      );
+      if (!updatedCustomer) {
+        // Lost the race - don't leave an uncharged emergency post behind.
+        await JobPost.deleteOne({ _id: post._id });
+        return res.status(403).json({
+          message: 'You do not have enough credits to post an emergency job. Please top up your credits.',
+          insufficientCredits: true,
+        });
+      }
       await CreditTransaction.create({
-        professional: customer._id, type: 'deduct', credits: emergencyCost,
+        professional: updatedCustomer._id, type: 'deduct', credits: emergencyCost,
         note: 'Emergency post: ' + title,
         jobPostId: post._id,
       });
-      console.log('Credit deducted:', customer.email, 'new balance:', customer.credits);
+      console.log('Credit deducted:', updatedCustomer.email, 'new balance:', updatedCustomer.credits);
     }
 
     if (isEmergency && req.io) {
@@ -173,11 +190,12 @@ router.post('/:id/select/:proId', authMiddleware, async (req, res) => {
 
     const settings = await Settings.findOne();
     const cost = settings?.jobSelectCreditCost ?? 1;
+    const chargeForSelect = !!settings?.creditsEnabled;
 
     const pro = await User.findById(req.params.proId);
     if (!pro) return res.status(404).json({ message: 'Professional not found' });
 
-    if ((pro.credits || 0) < cost) {
+    if (chargeForSelect && (pro.credits || 0) < cost) {
       await createNotification({
         userId: pro._id, type: 'jobpost',
         message: 'You were selected for "' + post.title + '" but have insufficient credits. Top up within 24h to confirm.',
@@ -243,16 +261,26 @@ router.post('/:id/select/:proId', authMiddleware, async (req, res) => {
       }
     }
 
-    // Deduct credit only after confirming the schedule is actually bookable.
-    pro.credits = (pro.credits || 0) - cost;
-    pro.totalCreditsUsed = (pro.totalCreditsUsed || 0) + cost;
-    await pro.save();
-    await CreditTransaction.create({
-      professional: pro._id, type: 'deduct', credits: cost,
-      note: 'Selected for job post: ' + post.title,
-      jobPostId: post._id
-    });
-    console.log('Credit deducted:', pro.email, 'new balance:', pro.credits);
+    // Deduct credit only after confirming the schedule is actually bookable,
+    // using an atomic guard so two concurrent selections of the same
+    // professional can't both spend the same last credit.
+    if (chargeForSelect) {
+      const updatedPro = await User.findOneAndUpdate(
+        { _id: pro._id, credits: { $gte: cost } },
+        { $inc: { credits: -cost, totalCreditsUsed: cost } },
+        { new: true }
+      );
+      if (!updatedPro) {
+        return res.status(400).json({ message: 'Professional has insufficient credits. They have been notified to top up.' });
+      }
+      pro.credits = updatedPro.credits;
+      await CreditTransaction.create({
+        professional: pro._id, type: 'deduct', credits: cost,
+        note: 'Selected for job post: ' + post.title,
+        jobPostId: post._id
+      });
+      console.log('Credit deducted:', pro.email, 'new balance:', pro.credits);
+    }
 
     const commissionRate = settings?.commissionRate ?? 15;
     const totalBDT = rate * duration * sessions.length;

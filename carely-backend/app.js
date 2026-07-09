@@ -53,8 +53,9 @@ app.use('/api/featured',      require('./routes/featuredRoutes'));
 
 app.get('/', (req, res) => res.send('🚀 Carely API running'));
 
-// ── Seed fake professionals (only runs if fewer than 5 exist) ──────────────────
+// ── Seed fake professionals (dev/demo only - never in production) ──────────────
 const seedProfessionals = async () => {
+  if (process.env.NODE_ENV === 'production') return;
   const User = require('./models/user');
   try {
     const count = await User.countDocuments({ role: 'professional' });

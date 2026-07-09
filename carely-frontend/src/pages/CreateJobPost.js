@@ -16,6 +16,7 @@ export default function CreateJobPost() {
   const [loading, setLoading] = useState(true);
   const [submitState, setSubmitState] = useState('idle'); // idle | submitting | success | error
   const [error, setError] = useState('');
+  const [insufficientCredits, setInsufficientCredits] = useState(false);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -50,6 +51,7 @@ export default function CreateJobPost() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setInsufficientCredits(false);
 
     if (!location.division || !location.district || !location.thana) {
       setError('Please select a full location.');
@@ -73,10 +75,14 @@ export default function CreateJobPost() {
         isEmergency: emergencyEnabled ? isEmergency : false,
       });
       setSubmitState('success');
+      // Emergency posts deduct a credit - let the navbar balance refresh
+      // instead of showing a stale pre-deduction number.
+      if (isEmergency) window.dispatchEvent(new Event('carely-credits-changed'));
       setTimeout(() => navigate('/my-posts'), 1200);
     } catch (err) {
       setSubmitState('error');
       setError(err.response?.data?.message || 'Failed to create job post.');
+      setInsufficientCredits(!!err.response?.data?.insufficientCredits);
       setTimeout(() => setSubmitState('idle'), 3000);
     }
   };
@@ -102,7 +108,12 @@ export default function CreateJobPost() {
         <h2 style={{ marginBottom: 20 }}>Post a Job</h2>
 
         {error && (
-          <div className="badge badge-red" style={{ display: 'block', marginBottom: 16, padding: '8px 12px' }}>{error}</div>
+          <div className="badge badge-red" style={{ display: 'block', marginBottom: 16, padding: '8px 12px' }}>
+            {error}
+            {insufficientCredits && (
+              <> <Link to="/my-credits" style={{ fontWeight: 700, textDecoration: 'underline' }}>Top up credits</Link></>
+            )}
+          </div>
         )}
 
         <form onSubmit={handleSubmit}>

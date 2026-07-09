@@ -153,8 +153,8 @@ router.put('/featured-requests/:id/approve', adminAuth, async (req, res) => {
   try {
     const request = await FeaturedRequest.findById(req.params.id);
     if (!request) return res.status(404).json({ error: 'Not found' });
-    if (request.status === 'Approved') return res.status(400).json({ error: 'Already approved' });
-    await approveFeaturedRequest(request, req.admin._id, req.io);
+    const result = await approveFeaturedRequest(request, req.admin._id, req.io);
+    if (!result) return res.status(400).json({ error: 'Already approved' });
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Failed' });
@@ -391,13 +391,14 @@ router.get('/topup-requests/all', adminAuth, async (req, res) => {
   }
 });
 
-// Approve top up
+// Approve top up. approveTopUp() itself does the atomic Pending->Approved
+// guard, so this stays correct even if two approve clicks race each other.
 router.put('/topup-requests/:id/approve', adminAuth, async (req, res) => {
   try {
     const request = await TopUpRequest.findById(req.params.id);
     if (!request) return res.status(404).json({ error: 'Not found' });
-    if (request.status === 'Approved') return res.status(400).json({ error: 'Already approved' });
-    await approveTopUp(request, req.admin._id, req.io);
+    const result = await approveTopUp(request, req.admin._id, req.io);
+    if (!result) return res.status(400).json({ error: 'Already approved' });
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Failed' });
@@ -494,27 +495,38 @@ router.get('/credits', adminAuth, async (req, res) => {
   }
 });
 
-// Add credits to specific user
+// Add (or remove, with a negative amount) credits for a specific user
 router.put('/credits/:userId', adminAuth, async (req, res) => {
   try {
-    const { credits, note } = req.body;
+    const amount = Number(req.body.credits);
+    const note = req.body.note;
+    if (!Number.isFinite(amount) || amount === 0) {
+      return res.status(400).json({ error: 'credits must be a non-zero number' });
+    }
+
     const user = await User.findById(req.params.userId);
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    user.credits += Number(credits);
-    user.totalCreditsReceived = (user.totalCreditsReceived || 0) + Number(credits);
+    // Floor at 0 - an admin deduction (negative amount) larger than the
+    // user's balance must never push credits negative.
+    user.credits = Math.max(0, (user.credits || 0) + amount);
+    if (amount > 0) {
+      user.totalCreditsReceived = (user.totalCreditsReceived || 0) + amount;
+    }
     await user.save();
 
     await CreditTransaction.create({
-      professional: user._id, type: 'bonus',
-      credits: Number(credits),
-      note: note || 'Credits added by admin',
+      professional: user._id, type: amount > 0 ? 'bonus' : 'deduct',
+      credits: Math.abs(amount),
+      note: note || 'Credits adjusted by admin',
       addedBy: req.admin._id,
     });
 
     await createNotification({
       userId: user._id, type: 'payment',
-      message: credits + ' credits added to your account.',
+      message: amount > 0
+        ? amount + ' credits added to your account.'
+        : Math.abs(amount) + ' credits removed from your account.',
       link: '/my-credits',
       io: req.io,
     });

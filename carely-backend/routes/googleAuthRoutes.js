@@ -33,7 +33,9 @@ if (googleConfigured) {
       if (!user) {
         let settings = await Settings.findOne();
         if (!settings) settings = await Settings.create({});
-        const startingCredits = settings.customerFreeCredits ?? 10;
+        // Same rule as email/password registration: only grant a starting
+        // balance while "Free Credits Enabled" is on.
+        const startingCredits = settings.freeCreditsEnabled ? (settings.customerFreeCredits ?? 10) : 0;
 
         user = await User.create({
           name: profile.displayName,
@@ -48,12 +50,14 @@ if (googleConfigured) {
           totalCreditsReceived: startingCredits,
         });
 
-        await CreditTransaction.create({
-          professional: user._id,
-          type: 'bonus',
-          credits: startingCredits,
-          note: 'Welcome bonus',
-        });
+        if (startingCredits > 0) {
+          await CreditTransaction.create({
+            professional: user._id,
+            type: 'bonus',
+            credits: startingCredits,
+            note: 'Welcome bonus',
+          });
+        }
       }
       return done(null, user);
     } catch (err) {

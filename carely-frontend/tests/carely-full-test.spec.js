@@ -810,15 +810,23 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
 
     // This is a two-step confirm flow: "Renew Credits for Everyone" reveals a
     // confirmation prompt, then "Yes, Renew for Everyone" actually executes it.
+    // This suite runs against production (see playwright.config.js baseURL),
+    // and "Yes, Renew for Everyone" grants bonus credits to every single real
+    // user in the live database - actually clicking it here previously
+    // inflated real accounts' balances by hundreds/thousands of credits every
+    // time the suite ran (found during the 2026-07-09 credit audit). So this
+    // test only verifies the confirm-guard UI appears and Cancel backs out of
+    // it, and never executes the real mass grant.
     const renewBtn = page.locator('button:has-text("Renew Credits for Everyone")').first();
     if (await renewBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
       await renewBtn.click();
       await page.waitForTimeout(500);
       const confirmBtn = page.locator('button:has-text("Yes, Renew for Everyone")').first();
       await expect(confirmBtn).toBeVisible({ timeout: 3000 });
-      await confirmBtn.click();
-      await page.waitForTimeout(2000);
-      console.log('✅ Admin renew credits works');
+      const cancelBtn = page.locator('button:has-text("Cancel")').first();
+      await cancelBtn.click();
+      await expect(confirmBtn).not.toBeVisible({ timeout: 3000 });
+      console.log('✅ Admin renew credits confirm-guard works (not executed against production)');
     } else {
       console.log('⚠️ Renew Credits button not found');
     }

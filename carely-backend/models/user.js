@@ -48,7 +48,7 @@ const userSchema = new mongoose.Schema({
   availability: { type: AvailabilitySchema, default: {} },
   ratings: [RatingSchema],
   rating:  { type: Number, default: 0 },
-  credits:              { type: Number, default: 9999 },
+  credits:              { type: Number, default: 0 },
   totalCreditsUsed:     { type: Number, default: 0 },
   totalCreditsReceived: { type: Number, default: 0 },
   bkashNumber:  { type: String },
