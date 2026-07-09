@@ -65,6 +65,7 @@ const userSchema = new mongoose.Schema({
   isFeatured:    { type: Boolean, default: false },
   featuredUntil: { type: Date, default: null },
   featuredTier:  { type: String, enum: ['none', 'basic', 'premium'], default: 'none' },
+  completedBookingsCount: { type: Number, default: 0 },
   pushSubscription: { type: Object, default: null },
 }, { timestamps: true });
 

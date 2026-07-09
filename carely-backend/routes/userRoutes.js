@@ -120,21 +120,27 @@ router.get('/professionals', async (req, res) => {
 
     const now = Date.now();
     const isActiveFeatured = (p) => !!(p.isFeatured && p.featuredUntil && new Date(p.featuredUntil).getTime() > now);
+    const qualityScore = (p) => (p.rating || 0) * 10 + (p.completedBookingsCount || 0) + (p.referralScore || 0);
 
+    // Exactly one sort, on three keys in this order: location tier, then
+    // boost, then quality. Boost buys top-of-your-own-area, not
+    // top-of-country - a boosted pro two tiers away must never outrank a
+    // non-boosted pro in the customer's own thana. A previous version of
+    // this sort checked boost before location, which let a boosted
+    // professional in a different district beat a closer non-boosted one;
+    // do not reorder these keys.
     professionals.sort((a, b) => {
-      const aFeatured = isActiveFeatured(a);
-      const bFeatured = isActiveFeatured(b);
-      if (aFeatured && !bFeatured) return -1;
-      if (!aFeatured && bFeatured) return 1;
-
       if (hasLocationFilter) {
         const proximityDiff = locationScore(b) - locationScore(a);
         if (proximityDiff !== 0) return proximityDiff;
       }
 
-      const scoreA = (a.referralScore || 0) + (a.rating || 0) * 10 + (a.ratings?.length || 0);
-      const scoreB = (b.referralScore || 0) + (b.rating || 0) * 10 + (b.ratings?.length || 0);
-      return scoreB - scoreA;
+      const aFeatured = isActiveFeatured(a);
+      const bFeatured = isActiveFeatured(b);
+      if (aFeatured && !bFeatured) return -1;
+      if (!aFeatured && bFeatured) return 1;
+
+      return qualityScore(b) - qualityScore(a);
     });
 
     res.json(professionals);

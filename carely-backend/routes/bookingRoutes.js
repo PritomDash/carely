@@ -583,6 +583,7 @@ router.post('/mark-done/:id', authMiddleware, async (req, res) => {
 
     booking.status = 'Completed';
     await releaseCalendar(booking);
+    await User.findByIdAndUpdate(booking.professional._id, { $inc: { completedBookingsCount: 1 } });
 
     await createNotification({
       userId: booking.customer._id, type: 'booking',

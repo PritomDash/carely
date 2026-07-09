@@ -434,6 +434,7 @@ export default function HomePage() {
   const [serviceType, setServiceType] = useState('');
   const [professionals, setProfessionals] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [resultMeta, setResultMeta] = useState({ locationLabel: '', serviceLabel: '' });
 
   const width = useWindowWidth();
   const cols = width < 600 ? 1 : width < 900 ? 2 : width < 1200 ? 3 : 4;
@@ -461,6 +462,11 @@ export default function HomePage() {
 
     if (serviceType) params.serviceType = serviceType;
     if (keyword.trim()) params.search = keyword.trim();
+
+    setResultMeta({
+      locationLabel: resolvedLocation ? resolvedLocation.thana : '',
+      serviceLabel: serviceType ? `${serviceType}s` : 'Professionals',
+    });
 
     api.get('/api/users/professionals', { params })
       .then((res) => setProfessionals(res.data || []))
@@ -510,6 +516,17 @@ export default function HomePage() {
 
       <div className="app-page-content" style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
         <Leaderboard />
+        {!loading && (
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#1A1A2E' }}>
+              {professionals.length} {resultMeta.serviceLabel}
+              {resultMeta.locationLabel ? ` near ${resultMeta.locationLabel}` : ''}
+            </div>
+            <div style={{ fontSize: 12, color: '#94A3B8', marginTop: 2 }}>
+              Boosted profiles appear first in your area. Carely does not verify professionals.
+            </div>
+          </div>
+        )}
         <ProfessionalsGrid professionals={professionals} loading={loading} cols={cols} />
       </div>
     </div>
