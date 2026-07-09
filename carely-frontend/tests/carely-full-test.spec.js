@@ -817,8 +817,14 @@ test.describe.serial('Carely BD - Complete A to Z Test', () => {
     // time the suite ran (found during the 2026-07-09 credit audit). So this
     // test only verifies the confirm-guard UI appears and Cancel backs out of
     // it, and never executes the real mass grant.
+    //
+    // The Credits tab now renders several sections (topup, renew-all,
+    // individual credits, settings, plus the newer Boost sections), each
+    // with its own async data fetch, so this button can take longer than a
+    // fixed sleep to appear - waitFor() actively polls instead of checking
+    // once, unlike isVisible({timeout}).
     const renewBtn = page.locator('button:has-text("Renew Credits for Everyone")').first();
-    if (await renewBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
+    if (await renewBtn.waitFor({ state: 'visible', timeout: 10000 }).then(() => true).catch(() => false)) {
       await renewBtn.click();
       await page.waitForTimeout(500);
       const confirmBtn = page.locator('button:has-text("Yes, Renew for Everyone")').first();
