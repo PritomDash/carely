@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { formatBDT } from '../utils/currency';
 import AppNavbar from '../components/AppNavbar';
+import BoostStar from '../components/BoostStar';
 import { Star, MessageCircle, MapPin } from 'lucide-react';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -115,10 +116,9 @@ export default function ViewProfilePage() {
             )}
           </div>
           <div style={{ minWidth: 0 }}>
-            <h2>{pro.name}</h2>
+            <h2>{pro.name}{pro.isFeatured && <BoostStar />}</h2>
             <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
               <span className="badge badge-blue">{pro.professionalType}</span>
-              {pro.isFeatured && <span className="badge" style={{ background: '#FEF3C7', color: '#92400E' }}>⭐ Boosted</span>}
             </div>
             <div style={{ marginTop: 8 }}><Stars rating={pro.rating} /></div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, color: 'var(--text-muted)', fontSize: 13 }}>

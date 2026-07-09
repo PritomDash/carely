@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { formatBDT } from '../utils/currency';
 import { Star } from 'lucide-react';
 import AppNavbar from '../components/AppNavbar';
+import BoostStar from '../components/BoostStar';
 
 const fileUrl = (p) => {
   if (!p) return null;
@@ -83,11 +84,10 @@ export default function ProfessionalProfile() {
             )}
           </div>
           <div style={{ minWidth: 0 }}>
-            <h2>{profile.name}</h2>
+            <h2>{profile.name}{profile.isFeatured && <BoostStar />}</h2>
             <Stars rating={profile.rating} />
             <div style={{ marginTop: 6, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <span className="badge badge-blue">{profile.professionalType}</span>
-              {profile.isFeatured && <span className="badge" style={{ background: '#FEF3C7', color: '#92400E' }}>⭐ Boosted</span>}
             </div>
             <p className="text-muted" style={{ marginTop: 6 }}>{formatLocation(profile.location)}</p>
           </div>

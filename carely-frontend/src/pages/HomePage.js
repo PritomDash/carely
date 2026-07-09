@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { formatBDT } from '../utils/currency';
 import { getAllThanas } from '../utils/locations';
 import AppNavbar from '../components/AppNavbar';
+import BoostStar from '../components/BoostStar';
 import socket from '../socket';
 import { Search, MapPin, Clock, Star } from 'lucide-react';
 
@@ -332,14 +333,6 @@ function ProfessionalsGrid({ professionals, loading, cols }) {
                 padding: 14, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', position: 'relative',
               }}
             >
-              {p.isFeatured && (
-                <span style={{
-                  position: 'absolute', top: 10, right: 10, background: '#FEF3C7', color: '#B45309',
-                  fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 999,
-                }}>
-                  ⭐ Boosted
-                </span>
-              )}
               <div style={{ flexShrink: 0 }}>
                 {p.profilePhoto ? (
                   <img className="pro-avatar" src={fileUrl(p.profilePhoto)} alt={p.name} style={{ width: 56, height: 56 }} />
@@ -348,7 +341,9 @@ function ProfessionalsGrid({ professionals, loading, cols }) {
                 )}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div className="pro-name" style={{ fontSize: 15, fontWeight: 700 }}>{p.name}</div>
+                <div className="pro-name" style={{ fontSize: 15, fontWeight: 700 }}>
+                  {p.name}{p.isFeatured && <BoostStar />}
+                </div>
                 <div className="pro-meta" style={{ fontSize: 12 }}>
                   <MapPin size={11} style={{ verticalAlign: 'middle', marginRight: 4 }} />
                   {formatLocation(p.location)}
@@ -357,7 +352,6 @@ function ProfessionalsGrid({ professionals, loading, cols }) {
                   <span className="badge" style={{ background: typeColor.bg, color: typeColor.text, fontSize: 10 }}>
                     {p.professionalType}
                   </span>
-                  {p.isFeatured && <span className="badge" style={{ background: '#FEF3C7', color: '#B45309', fontSize: 10, marginLeft: 4 }}>⭐ Boosted</span>}
                 </div>
                 <div className="pro-meta" style={{ fontSize: 12, marginTop: 4 }}>
                   <Clock size={11} style={{ verticalAlign: 'middle', marginRight: 4 }} />
@@ -381,14 +375,6 @@ function ProfessionalsGrid({ professionals, loading, cols }) {
             className="pro-card"
             style={{ position: 'relative', padding: compact ? 12 : 18 }}
           >
-            {p.isFeatured && (
-              <span style={{
-                position: 'absolute', top: 10, right: 10, background: '#FEF3C7', color: '#B45309',
-                fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 999,
-              }}>
-                ⭐ Boosted
-              </span>
-            )}
             <div className="pro-card-header">
               {p.profilePhoto ? (
                 <img className="pro-avatar" src={fileUrl(p.profilePhoto)} alt={p.name} style={{ width: avatarSize, height: avatarSize }} />
@@ -396,7 +382,9 @@ function ProfessionalsGrid({ professionals, loading, cols }) {
                 <div className="pro-avatar" style={{ width: avatarSize, height: avatarSize }}>{getInitials(p.name)}</div>
               )}
               <div>
-                <div className="pro-name" style={{ fontSize: compact ? 14 : 16 }}>{p.name}</div>
+                <div className="pro-name" style={{ fontSize: compact ? 14 : 16 }}>
+                  {p.name}{p.isFeatured && <BoostStar />}
+                </div>
                 <div className="pro-meta">
                   <MapPin size={12} style={{ verticalAlign: 'middle', marginRight: 4 }} />
                   {formatLocation(p.location)}
