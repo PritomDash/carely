@@ -157,8 +157,7 @@ router.put('/featured-requests/:id/approve', adminAuth, async (req, res) => {
     if (!result) return res.status(400).json({ error: 'Already approved' });
     res.json({ success: true });
   } catch (err) {
-    console.error('featured-requests/approve failed:', err);
-    res.status(500).json({ error: 'Failed', detail: err.message });
+    res.status(500).json({ error: 'Failed' });
   }
 });
 
