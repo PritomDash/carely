@@ -470,4 +470,64 @@ test.describe.serial('Launch Polish Verification', () => {
     expect(body.professionals.some((p) => p._id === pro.user._id)).toBe(true);
     console.log('✅ A search with 0 results in the requested division widened nationwide and surfaced a professional from a different division, instead of dead-ending');
   });
+
+  const LANDING_HERO_TEXT = 'Find Trusted Care';
+
+  test('Logged-out browser visitor sees landing page at /', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByText(LANDING_HERO_TEXT)).toBeVisible();
+    expect(page.url()).toMatch(/\/$/);
+    console.log('✅ Logged-out browser visitor at / sees the landing page');
+  });
+
+  test('Logged-in user visiting / is redirected to /home', async ({ page, request }) => {
+    const cust = await registerCustomer(request);
+    await uiLogin(page, cust.user.email, 'PolishCust123!');
+
+    await page.goto('/');
+    await page.waitForURL(/\/home/, { timeout: 15000 });
+    await expect(page.getByText(LANDING_HERO_TEXT)).not.toBeVisible();
+    console.log('✅ Logged-in user visiting / was redirected to /home, not shown the landing page');
+  });
+
+  test('Landing page still reachable at /welcome', async ({ page, request }) => {
+    const cust = await registerCustomer(request);
+    await uiLogin(page, cust.user.email, 'PolishCust123!');
+
+    await page.goto('/welcome');
+    await expect(page.getByText(LANDING_HERO_TEXT)).toBeVisible();
+    console.log('✅ /welcome shows the landing page even for a logged-in user');
+  });
+
+  test('Login redirects to /home not /', async ({ page, request }) => {
+    const cust = await registerCustomer(request);
+    await page.goto('/login');
+    await page.locator('input[type="email"]').fill(cust.user.email);
+    await page.locator('input[type="password"]').fill('PolishCust123!');
+    await page.getByRole('button', { name: 'Sign In', exact: true }).click();
+    await page.waitForURL(/\/home/, { timeout: 20000 });
+    expect(page.url()).not.toMatch(/\/$/);
+    console.log('✅ Login navigated straight to /home, never bounced through /');
+  });
+
+  test('No landing-page flash for a logged-in user visiting /', async ({ page, request }) => {
+    const cust = await registerCustomer(request);
+    await uiLogin(page, cust.user.email, 'PolishCust123!');
+
+    // Reload at / directly (simulates reopening the installed app while
+    // already logged in) and assert the landing hero is never painted,
+    // not even for a single frame, while the redirect resolves.
+    await page.goto('/');
+    await expect(page.getByText(LANDING_HERO_TEXT)).not.toBeVisible();
+    await page.waitForURL(/\/home/, { timeout: 15000 });
+    await expect(page.getByText(LANDING_HERO_TEXT)).not.toBeVisible();
+    console.log('✅ No landing-page flash for a logged-in user opening /');
+  });
+
+  test('PWA launch (?source=pwa) while logged out goes to /login, not the landing page', async ({ page }) => {
+    await page.goto('/?source=pwa');
+    await page.waitForURL(/\/login/, { timeout: 15000 });
+    await expect(page.getByText(LANDING_HERO_TEXT)).not.toBeVisible();
+    console.log('✅ A logged-out PWA launch (?source=pwa) skipped the landing pitch and went straight to /login');
+  });
 });

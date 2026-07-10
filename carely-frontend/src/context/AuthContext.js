@@ -10,9 +10,17 @@ const readStoredUser = () => {
 };
 
 export const AuthProvider = ({ children }) => {
+  // user is hydrated synchronously from localStorage via the lazy useState
+  // initializer, so it's never null-then-populated for an already-logged-in
+  // visitor - but consumers like RootRedirect still need an explicit
+  // "have we checked yet" signal for the very first render, otherwise a
+  // route decision could theoretically run before this provider mounts.
   const [user, setUser] = useState(readStoredUser);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(false);
+
     const syncFromStorage = () => setUser(readStoredUser());
     window.addEventListener('carely-auth-changed', syncFromStorage);
     window.addEventListener('storage', syncFromStorage);
@@ -42,7 +50,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, setUser, login, logout }}>
+    <AuthContext.Provider value={{ user, setUser, login, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );

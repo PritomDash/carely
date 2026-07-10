@@ -32,7 +32,7 @@ export default function AppFooter() {
 
           <div>
             <h4 style={{ fontWeight:700, marginBottom:16, fontSize:15 }}>Company</h4>
-            <a href="/" style={{ display:'block', color:'#94A3B8', fontSize:14, marginBottom:8, textDecoration:'none' }}>Home</a>
+            <a href="/welcome" style={{ display:'block', color:'#94A3B8', fontSize:14, marginBottom:8, textDecoration:'none' }}>Home</a>
             <a href="/register" style={{ display:'block', color:'#94A3B8', fontSize:14, marginBottom:8, textDecoration:'none' }}>Find Professionals</a>
             <a href="/register" style={{ display:'block', color:'#94A3B8', fontSize:14, marginBottom:8, textDecoration:'none' }}>Post a Job</a>
             <a href="/register" style={{ display:'block', color:'#94A3B8', fontSize:14, marginBottom:8, textDecoration:'none' }}>Register</a>
