@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useSearchParams, Link } from 'react-router-dom';
 import { formatBDT } from '../utils/currency';
 import AppNavbar from '../components/AppNavbar';
+import { isValidBDPhone, BD_PHONE_ERROR } from '../utils/phoneValidation';
 
 const timeAgo = (dateStr) => {
   const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
@@ -164,6 +165,11 @@ export default function CreditsPage() {
 
     if (!transactionID.trim()) {
       setError('Please enter the transaction ID.');
+      return;
+    }
+
+    if (senderNumber && !isValidBDPhone(senderNumber)) {
+      setError(BD_PHONE_ERROR);
       return;
     }
 

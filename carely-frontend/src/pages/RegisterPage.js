@@ -5,6 +5,7 @@ import LocationSelector from '../components/LocationSelector';
 import { User, Briefcase } from 'lucide-react';
 import { handleGoogleLogin } from '../utils/googleAuth';
 import CarelyLogo from '../components/CarelyLogo';
+import { isValidBDPhone, BD_PHONE_ERROR } from '../utils/phoneValidation';
 
 const PROFESSIONAL_TYPES = ['Child Care', 'Aged Care', 'Nurse', 'Physiotherapist'];
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -75,6 +76,12 @@ export default function RegisterPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (!isValidBDPhone(phone)) {
+      setError(BD_PHONE_ERROR);
+      return;
+    }
+
     setSubmitState('submitting');
 
     try {

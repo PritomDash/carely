@@ -2,7 +2,10 @@ import axios from 'axios';
 
 const API_BASE = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
 
-const api = axios.create({ baseURL: API_BASE, timeout: 30000 });
+// 15s: long enough for Render's free-tier cold start / a slow BD mobile
+// connection, short enough that a request that's genuinely stuck doesn't
+// leave the UI hanging silently for 30s+ with no feedback.
+const api = axios.create({ baseURL: API_BASE, timeout: 15000 });
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('carelyToken');

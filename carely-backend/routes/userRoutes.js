@@ -4,6 +4,7 @@ const authMiddleware = require('../middlewares/authMiddleware');
 const { upload } = require('../middlewares/uploadMiddleware');
 const User = require('../models/user');
 const { findNearbyProfessionals } = require('../utils/nearbySearch');
+const { isValidBDPhone } = require('../utils/phoneValidation');
 
 router.get('/me', authMiddleware, async (req, res) => {
   try {
@@ -20,6 +21,10 @@ router.put('/update-profile', authMiddleware, async (req, res) => {
     const { name, phone, experience, availability, location, about,
             weekdayRate, saturdayRate, sundayRate, hourlyRate,
             bkashNumber, nagadNumber, payoutMethod, bankDetails } = req.body;
+
+    if (phone !== undefined && !isValidBDPhone(phone)) {
+      return res.status(400).json({ message: 'Enter a valid Bangladeshi mobile number (e.g. 01712345678)' });
+    }
 
     const num = (v) => (v === "" || v == null ? 0 : Number(v));
 

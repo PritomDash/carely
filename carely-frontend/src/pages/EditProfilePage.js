@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import LocationSelector from '../components/LocationSelector';
 import AppNavbar from '../components/AppNavbar';
 import ShareCard from '../components/ShareCard';
+import { isValidBDPhone, BD_PHONE_ERROR } from '../utils/phoneValidation';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -89,6 +90,12 @@ export default function EditProfilePage() {
     e.preventDefault();
     setError('');
     setSuccess('');
+
+    if (!isValidBDPhone(form.phone)) {
+      setError(BD_PHONE_ERROR);
+      return;
+    }
+
     setSubmitState('submitting');
     try {
       if (photoFile) {

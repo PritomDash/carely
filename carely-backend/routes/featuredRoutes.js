@@ -6,6 +6,7 @@ const Settings = require('../models/Settings');
 const authMiddleware = require('../middlewares/authMiddleware');
 const { createNotification } = require('../utils/notificationService');
 const { fireEmail, emailButton, detailRow } = require('../utils/emailService');
+const { isValidBDPhone } = require('../utils/phoneValidation');
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 
@@ -34,6 +35,10 @@ router.post('/request-manual', authMiddleware, async (req, res) => {
     const { tier, transactionID, senderNumber, method } = req.body;
     if (!tier || !transactionID) {
       return res.status(400).json({ error: 'Tier and transaction ID required' });
+    }
+
+    if (senderNumber && !isValidBDPhone(senderNumber)) {
+      return res.status(400).json({ error: 'Enter a valid Bangladeshi mobile number (e.g. 01712345678)' });
     }
 
     const settings = await Settings.findOne();

@@ -32,6 +32,7 @@ import Privacy            from './pages/Privacy';
 import ReferralPage       from './pages/ReferralPage';
 import NotificationsPage  from './pages/NotificationsPage';
 import InstallBanner      from './components/InstallBanner';
+import OfflineBanner      from './components/OfflineBanner';
 import MaintenanceGate     from './components/MaintenanceGate';
 import BlogPage           from './pages/BlogPage';
 import BlogPost           from './pages/BlogPost';
@@ -40,6 +41,7 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <OfflineBanner />
         <MaintenanceGate>
         <Routes>
           <Route path="/"                       element={<LandingPage />} />
