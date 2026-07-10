@@ -90,6 +90,16 @@ router.post('/', authMiddleware, async (req, res) => {
     // Normal posts notify Boosted professionals immediately (wave 1) and
     // leave delayedNotifySent=false so the cron in cronJobs.js sends wave 2
     // to everyone else once boostNotificationDelayMinutes has passed.
+    //
+    // Parallelized with Promise.all, not a sequential for-await loop - the
+    // old loop did one createNotification round-trip per matching
+    // professional in series, which scales linearly and can push job
+    // creation itself past any reasonable timeout as the professional base
+    // grows (already slow enough with a few dozen test accounts to exceed
+    // a 20s timeout). Still awaited (not fire-and-forget) so
+    // delayedNotifySent is reliably set before the response, since a
+    // customer can otherwise fetch the post immediately after and see a
+    // stale value.
     if (req.io) {
       const matchingPros = await User.find({
         role: 'professional',
@@ -101,26 +111,22 @@ router.post('/', authMiddleware, async (req, res) => {
       const areaText = [location?.thana, location?.district].filter(Boolean).join(', ') || 'your area';
 
       if (isEmergency) {
-        for (const pro of matchingPros) {
-          await createNotification({
-            userId: pro._id, type: 'jobpost',
-            message: 'URGENT: ' + title + ' - ' + areaText,
-            link: '/job-posts/' + post._id,
-            io: req.io,
-          });
-        }
+        await Promise.all(matchingPros.map((pro) => createNotification({
+          userId: pro._id, type: 'jobpost',
+          message: 'URGENT: ' + title + ' - ' + areaText,
+          link: '/job-posts/' + post._id,
+          io: req.io,
+        })));
         post.delayedNotifySent = true;
         await post.save();
       } else {
         const boostedPros = matchingPros.filter(isBoosted);
-        for (const pro of boostedPros) {
-          await createNotification({
-            userId: pro._id, type: 'jobpost',
-            message: 'New ' + serviceType + ' job in ' + areaText + " - you're seeing this first",
-            link: '/job-posts/' + post._id,
-            io: req.io,
-          });
-        }
+        await Promise.all(boostedPros.map((pro) => createNotification({
+          userId: pro._id, type: 'jobpost',
+          message: 'New ' + serviceType + ' job in ' + areaText + " - you're seeing this first",
+          link: '/job-posts/' + post._id,
+          io: req.io,
+        })));
       }
     }
 
