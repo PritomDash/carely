@@ -453,7 +453,7 @@ export default function HomePage() {
   const [serviceType, setServiceType] = useState('');
   const [professionals, setProfessionals] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [resultMeta, setResultMeta] = useState({ locationLabel: '', serviceLabel: '', district: '', division: '', widenedTo: null });
+  const [resultMeta, setResultMeta] = useState({ locationLabel: '', serviceLabel: '', widenedTo: null });
 
   const width = useWindowWidth();
   const cols = width < 600 ? 1 : width < 900 ? 2 : width < 1200 ? 3 : 4;
@@ -490,12 +490,10 @@ export default function HomePage() {
         setResultMeta({
           locationLabel: resolvedLocation ? resolvedLocation.thana : '',
           serviceLabel,
-          district: resolvedLocation?.district || '',
-          division: resolvedLocation?.division || '',
           widenedTo: res.data?.widenedTo || null,
         });
       })
-      .catch(() => { setProfessionals([]); setResultMeta({ locationLabel: '', serviceLabel, district: '', division: '', widenedTo: null }); })
+      .catch(() => { setProfessionals([]); setResultMeta({ locationLabel: '', serviceLabel, widenedTo: null }); })
       .finally(() => setLoading(false));
   }, [selectedLocation, locationQuery, serviceType, keyword]);
 
@@ -545,9 +543,12 @@ export default function HomePage() {
           <div style={{ marginBottom: 12 }}>
             {resultMeta.widenedTo ? (
               <div style={{ fontSize: 14, fontWeight: 700, color: '#1A1A2E' }}>
-                No {resultMeta.serviceLabel} in {resultMeta.locationLabel} yet. Here {professionals.length === 1 ? 'is' : 'are'}{' '}
-                {professionals.length} {resultMeta.serviceLabel} near{' '}
-                {resultMeta.widenedTo === 'district' ? resultMeta.district : resultMeta.division}:
+                {professionals.length === 0 ? (
+                  <>No {resultMeta.serviceLabel} on Carely yet{resultMeta.locationLabel ? ` (including near ${resultMeta.locationLabel})` : ''}.</>
+                ) : (
+                  <>No {resultMeta.serviceLabel} in {resultMeta.locationLabel} yet. Here {professionals.length === 1 ? 'is' : 'are'}{' '}
+                  {professionals.length} {resultMeta.serviceLabel} across Bangladesh:</>
+                )}
               </div>
             ) : (
               <div style={{ fontSize: 14, fontWeight: 700, color: '#1A1A2E' }}>

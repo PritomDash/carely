@@ -108,23 +108,23 @@ router.get('/professionals', async (req, res) => {
     };
 
     let professionals = allProfessionals;
-    // Never dead-end on an empty search - widen thana -> district -> division
-    // rather than showing a blank screen. `widenedTo` tells the frontend
-    // which level actually produced results, so it can be honest about it
-    // ("No Nurses in Gulshan yet. Here are Nurses nearby:") instead of
-    // silently mixing in results from a wider area.
+    // Never dead-end on an empty search. findNearbyProfessionals already
+    // matches on thana OR district OR division in one pass (each pro's
+    // location.division is checked regardless of whether their thana or
+    // district also matched), so a thana-specific search already silently
+    // includes district/division-level results - a search only ever comes
+    // back with 0 results when literally nobody of that service type is
+    // registered anywhere in the whole division. The only meaningful widen
+    // left at that point is to drop the location filter entirely and show
+    // that service type nationwide, rather than a blank screen.
     let widenedTo = null;
 
     if (hasLocationFilter) {
       professionals = applySearch(findNearbyProfessionals(allProfessionals, { division, district, thana }, serviceType));
 
-      if (professionals.length === 0 && thana && (district || division)) {
-        professionals = applySearch(findNearbyProfessionals(allProfessionals, { division, district }, serviceType));
-        widenedTo = 'district';
-      }
-      if (professionals.length === 0 && division) {
-        professionals = applySearch(findNearbyProfessionals(allProfessionals, { division }, serviceType));
-        widenedTo = 'division';
+      if (professionals.length === 0) {
+        professionals = applySearch(allProfessionals);
+        widenedTo = 'nationwide';
       }
     } else {
       professionals = applySearch(professionals);

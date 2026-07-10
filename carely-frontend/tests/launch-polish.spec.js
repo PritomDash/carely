@@ -438,4 +438,36 @@ test.describe.serial('Launch Polish Verification', () => {
     expect(balance.credits).toBe(before);
     console.log('✅ Rejecting a top up request records the admin\'s reason and grants no credits');
   });
+
+  test('Empty marketplace: a search with 0 local/regional results auto-widens nationwide instead of dead-ending', async ({ request }) => {
+    // findNearbyProfessionals already matches on thana OR district OR
+    // division in one pass, so a division-only search already includes
+    // every district/thana within it - a 0-result response only happens
+    // when literally nobody of that type is registered anywhere in the
+    // whole division. Confirmed live: "Aged Care" currently has 0
+    // professionals in any division at all, which makes this deterministic
+    // - the only way the search below can find the professional this test
+    // registers is via the nationwide widen path.
+    const searchType = 'Aged Care';
+
+    const baselineRes = await request.get(`${BACKEND_URL}/api/users/professionals`, {
+      params: { division: 'Barisal', serviceType: searchType },
+    });
+    const baseline = await baselineRes.json();
+    expect(baseline.widenedTo).toBe('nationwide');
+
+    const pro = await registerPro(request, {
+      professionalType: searchType,
+      location: { division: 'Khulna', district: 'Khulna', thana: 'Khulna Sadar' },
+    });
+
+    const searchRes = await request.get(`${BACKEND_URL}/api/users/professionals`, {
+      params: { division: 'Barisal', district: 'Barisal', thana: 'Barisal Sadar', serviceType: searchType },
+    });
+    const body = await searchRes.json();
+
+    expect(body.widenedTo).toBe('nationwide');
+    expect(body.professionals.some((p) => p._id === pro.user._id)).toBe(true);
+    console.log('✅ A search with 0 results in the requested division widened nationwide and surfaced a professional from a different division, instead of dead-ending');
+  });
 });
