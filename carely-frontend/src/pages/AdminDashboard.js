@@ -539,6 +539,14 @@ function ManualTopUpSection() {
   const [rejectReason, setRejectReason] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [copiedId, setCopiedId] = useState(null);
+
+  const copyTrx = (id, trx) => {
+    navigator.clipboard?.writeText(trx).then(() => {
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    }).catch(() => {});
+  };
 
   const fetchAll = useCallback(() => {
     setLoading(true);
@@ -665,7 +673,12 @@ function ManualTopUpSection() {
                     <td>{r.credits}</td>
                     <td>{formatBDT(r.amountBDT)}</td>
                     <td style={{ textTransform: 'capitalize' }}>{r.paymentMethod}</td>
-                    <td>{r.transactionID}</td>
+                    <td>
+                      <span style={{ marginRight: 6 }}>{r.transactionID}</span>
+                      <button onClick={() => copyTrx(r._id, r.transactionID)} style={{ background: copiedId === r._id ? '#DCFCE7' : '#EBF3FF', color: copiedId === r._id ? '#15803D' : '#2B7FFF', border: 'none', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                        {copiedId === r._id ? 'Copied!' : 'Copy'}
+                      </button>
+                    </td>
                     <td>{new Date(r.createdAt).toLocaleString('en-BD')}</td>
                     <td>
                       {rejectingId === r._id ? (
@@ -691,6 +704,61 @@ function ManualTopUpSection() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {sortedOldestFirst.length > 0 && (
+          <div className="admin-mobile-cards">
+            {sortedOldestFirst.map((r) => (
+              <div key={r._id} style={{ background: 'white', border: '1px solid #E8EDF3', borderRadius: 10, padding: 14, marginBottom: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 15 }}>{r.user?.name || '—'}</div>
+                    <div className="text-muted" style={{ fontSize: 12, textTransform: 'capitalize' }}>{r.user?.role}</div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontWeight: 800, fontSize: 16, color: '#2B7FFF' }}>{formatBDT(r.amountBDT)}</div>
+                    <div className="text-muted" style={{ fontSize: 12 }}>{r.credits} credits</div>
+                  </div>
+                </div>
+                <div style={{ marginTop: 10, background: '#F7FAFF', border: '1px solid #E8EDF3', borderRadius: 8, padding: 10 }}>
+                  <div className="text-muted" style={{ fontSize: 11, textTransform: 'capitalize' }}>{r.paymentMethod} transaction ID</div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 2 }}>
+                    <span style={{ fontWeight: 700, fontSize: 15, wordBreak: 'break-all' }}>{r.transactionID}</span>
+                    <button
+                      onClick={() => copyTrx(r._id, r.transactionID)}
+                      style={{ background: copiedId === r._id ? '#DCFCE7' : '#EBF3FF', color: copiedId === r._id ? '#15803D' : '#2B7FFF', border: 'none', borderRadius: 6, padding: '4px 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}
+                    >
+                      {copiedId === r._id ? 'Copied!' : 'Copy'}
+                    </button>
+                  </div>
+                </div>
+                <div className="text-muted" style={{ fontSize: 12, marginTop: 8 }}>
+                  Submitted {new Date(r.createdAt).toLocaleString('en-BD')}
+                </div>
+
+                {rejectingId === r._id ? (
+                  <div style={{ marginTop: 12 }}>
+                    <input
+                      type="text"
+                      value={rejectReason}
+                      onChange={(e) => setRejectReason(e.target.value)}
+                      placeholder="Reason for rejection"
+                      style={{ width: '100%', padding: '10px 12px', fontSize: 14, marginBottom: 8 }}
+                    />
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button className="btn btn-danger" style={{ flex: 1, padding: '12px 0', fontSize: 14, fontWeight: 700 }} disabled={busyId === r._id} onClick={() => handleReject(r._id)}>Confirm Reject</button>
+                      <button className="btn btn-secondary" style={{ flex: 1, padding: '12px 0', fontSize: 14 }} onClick={() => setRejectingId(null)}>Cancel</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                    <button className="btn btn-success" style={{ flex: 1, padding: '14px 0', fontSize: 15, fontWeight: 700 }} disabled={busyId === r._id} onClick={() => handleApprove(r._id)}>✓ Approve</button>
+                    <button className="btn btn-danger" style={{ flex: 1, padding: '14px 0', fontSize: 15, fontWeight: 700 }} disabled={busyId === r._id} onClick={() => { setRejectingId(r._id); setRejectReason(''); }}>✗ Reject</button>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -1083,6 +1151,14 @@ function FeaturedRequestsSection() {
   const [rejectReason, setRejectReason] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [copiedId, setCopiedId] = useState(null);
+
+  const copyTrx = (id, trx) => {
+    navigator.clipboard?.writeText(trx).then(() => {
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    }).catch(() => {});
+  };
 
   const fetchAll = useCallback(() => {
     setLoading(true);
@@ -1153,7 +1229,12 @@ function FeaturedRequestsSection() {
                   <td>{r.days}</td>
                   <td>{formatBDT(r.amountBDT)}</td>
                   <td style={{ textTransform: 'capitalize' }}>{r.method}</td>
-                  <td>{r.transactionID}</td>
+                  <td>
+                    <span style={{ marginRight: 6 }}>{r.transactionID}</span>
+                    <button onClick={() => copyTrx(r._id, r.transactionID)} style={{ background: copiedId === r._id ? '#DCFCE7' : '#FFFBEB', color: copiedId === r._id ? '#15803D' : '#B45309', border: 'none', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                      {copiedId === r._id ? 'Copied!' : 'Copy'}
+                    </button>
+                  </td>
                   <td>{new Date(r.createdAt).toLocaleString('en-BD')}</td>
                   <td>
                     {rejectingId === r._id ? (
@@ -1179,6 +1260,58 @@ function FeaturedRequestsSection() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {sortedOldestFirst.length > 0 && (
+        <div className="admin-mobile-cards">
+          {sortedOldestFirst.map((r) => (
+            <div key={r._id} style={{ background: 'white', border: '1px solid #E8EDF3', borderRadius: 10, padding: 14, marginBottom: 10 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 15 }}>{r.user?.name || '—'}</div>
+                  <div className="text-muted" style={{ fontSize: 12, textTransform: 'capitalize' }}>{r.tier} tier · {r.days} days</div>
+                </div>
+                <div style={{ fontWeight: 800, fontSize: 16, color: '#B45309' }}>{formatBDT(r.amountBDT)}</div>
+              </div>
+              <div style={{ marginTop: 10, background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 8, padding: 10 }}>
+                <div className="text-muted" style={{ fontSize: 11, textTransform: 'capitalize' }}>{r.method} transaction ID</div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 2 }}>
+                  <span style={{ fontWeight: 700, fontSize: 15, wordBreak: 'break-all' }}>{r.transactionID}</span>
+                  <button
+                    onClick={() => copyTrx(r._id, r.transactionID)}
+                    style={{ background: copiedId === r._id ? '#DCFCE7' : '#FEF3C7', color: copiedId === r._id ? '#15803D' : '#B45309', border: 'none', borderRadius: 6, padding: '4px 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}
+                  >
+                    {copiedId === r._id ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+              </div>
+              <div className="text-muted" style={{ fontSize: 12, marginTop: 8 }}>
+                Submitted {new Date(r.createdAt).toLocaleString('en-BD')}
+              </div>
+
+              {rejectingId === r._id ? (
+                <div style={{ marginTop: 12 }}>
+                  <input
+                    type="text"
+                    value={rejectReason}
+                    onChange={(e) => setRejectReason(e.target.value)}
+                    placeholder="Reason for rejection"
+                    style={{ width: '100%', padding: '10px 12px', fontSize: 14, marginBottom: 8 }}
+                  />
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button className="btn btn-danger" style={{ flex: 1, padding: '12px 0', fontSize: 14, fontWeight: 700 }} disabled={busyId === r._id} onClick={() => handleReject(r._id)}>Confirm Reject</button>
+                    <button className="btn btn-secondary" style={{ flex: 1, padding: '12px 0', fontSize: 14 }} onClick={() => setRejectingId(null)}>Cancel</button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                  <button className="btn btn-success" style={{ flex: 1, padding: '14px 0', fontSize: 15, fontWeight: 700 }} disabled={busyId === r._id} onClick={() => handleApprove(r._id)}>✓ Approve</button>
+                  <button className="btn btn-danger" style={{ flex: 1, padding: '14px 0', fontSize: 15, fontWeight: 700 }} disabled={busyId === r._id} onClick={() => { setRejectingId(r._id); setRejectReason(''); }}>✗ Reject</button>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       )}
     </div>

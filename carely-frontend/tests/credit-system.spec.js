@@ -357,7 +357,7 @@ test.describe.serial('Monetization Model Verification', () => {
     });
 
     const listRes = await request.get(`${BACKEND_URL}/api/users/professionals?serviceType=${encodeURIComponent('Child Care')}`);
-    const list = await listRes.json();
+    const { professionals: list } = await listRes.json();
     const boostedIndex = list.findIndex((p) => p._id === boostedBody.user._id);
     const nonBoostedIndex = list.findIndex((p) => p._id === nonBoostedBody.user._id);
     expect(boostedIndex).toBeGreaterThanOrEqual(0);

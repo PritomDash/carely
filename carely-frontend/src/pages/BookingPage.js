@@ -292,6 +292,9 @@ export default function BookingPage() {
               Booking ID: <strong>{confirmation}</strong>
             </p>
             <p className="text-muted" style={{ marginBottom: 20 }}>Redirecting to My Bookings...</p>
+            <p style={{ fontSize: 12, color: '#94A3B8', marginBottom: 20 }}>
+              Meet in a safe place. Verify identity before letting anyone into your home. Carely does not verify professionals.
+            </p>
             <Link to="/my-bookings" className="btn btn-primary">View My Bookings</Link>
           </div>
         </div>

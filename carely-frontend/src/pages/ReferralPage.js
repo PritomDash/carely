@@ -29,7 +29,7 @@ export default function ReferralPage() {
   useEffect(() => {
     api.get('/api/users/professionals')
       .then((res) => {
-        const match = (res.data || []).find((p) => p.referralCode === code);
+        const match = (res.data?.professionals || []).find((p) => p.referralCode === code);
         setPro(match || null);
       })
       .catch(() => setPro(null))

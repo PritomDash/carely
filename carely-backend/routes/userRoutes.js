@@ -94,25 +94,40 @@ router.get('/professionals', async (req, res) => {
 
     if (serviceType) query.professionalType = serviceType;
 
-    let professionals = await User.find(query).select('-password');
-
+    const allProfessionals = await User.find(query).select('-password');
     const hasLocationFilter = !!(division || district || thana);
 
-    if (hasLocationFilter) {
-      professionals = findNearbyProfessionals(
-        professionals,
-        { division, district, thana },
-        serviceType
-      );
-    }
-
-    if (search) {
+    const applySearch = (list) => {
+      if (!search) return list;
       const s = search.toLowerCase();
-      professionals = professionals.filter(p =>
+      return list.filter(p =>
         p.name.toLowerCase().includes(s) ||
         (p.about || '').toLowerCase().includes(s) ||
         (p.experience || '').toLowerCase().includes(s)
       );
+    };
+
+    let professionals = allProfessionals;
+    // Never dead-end on an empty search - widen thana -> district -> division
+    // rather than showing a blank screen. `widenedTo` tells the frontend
+    // which level actually produced results, so it can be honest about it
+    // ("No Nurses in Gulshan yet. Here are Nurses nearby:") instead of
+    // silently mixing in results from a wider area.
+    let widenedTo = null;
+
+    if (hasLocationFilter) {
+      professionals = applySearch(findNearbyProfessionals(allProfessionals, { division, district, thana }, serviceType));
+
+      if (professionals.length === 0 && thana && (district || division)) {
+        professionals = applySearch(findNearbyProfessionals(allProfessionals, { division, district }, serviceType));
+        widenedTo = 'district';
+      }
+      if (professionals.length === 0 && division) {
+        professionals = applySearch(findNearbyProfessionals(allProfessionals, { division }, serviceType));
+        widenedTo = 'division';
+      }
+    } else {
+      professionals = applySearch(professionals);
     }
 
     const locationScore = (pro) => {
@@ -125,7 +140,17 @@ router.get('/professionals', async (req, res) => {
 
     const now = Date.now();
     const isActiveFeatured = (p) => !!(p.isFeatured && p.featuredUntil && new Date(p.featuredUntil).getTime() > now);
-    const qualityScore = (p) => (p.rating || 0) * 10 + (p.completedBookingsCount || 0) + (p.referralScore || 0);
+
+    // Bayesian average pulls a brand-new professional's rating toward 3.5
+    // instead of 0, so one unrated (or unlucky first-review) professional
+    // isn't buried at the bottom of the quality tier forever just for being
+    // new - the weight of 3 "phantom" reviews fades out fast as real
+    // reviews accumulate.
+    const effectiveRating = (p) => {
+      const reviewCount = p.ratings?.length || 0;
+      return ((3.5 * 3) + ((p.rating || 0) * reviewCount)) / (3 + reviewCount);
+    };
+    const qualityScore = (p) => effectiveRating(p) * 10 + (p.completedBookingsCount || 0) + (p.referralScore || 0);
 
     // Exactly one sort, on three keys in this order: location tier, then
     // boost, then quality. Boost buys top-of-your-own-area, not
@@ -148,7 +173,7 @@ router.get('/professionals', async (req, res) => {
       return qualityScore(b) - qualityScore(a);
     });
 
-    res.json(professionals);
+    res.json({ professionals, widenedTo });
   } catch (err) {
     res.status(500).json({ message: 'Failed to fetch professionals' });
   }

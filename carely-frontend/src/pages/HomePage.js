@@ -31,6 +31,19 @@ const formatLocation = (loc) => {
 const getInitials = (name = '') =>
   name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase()).join('') || '?';
 
+// Honest, verifiable trust signals - a real completed-job count and a real
+// join date, never a "verified" claim Carely can't actually back up.
+const trustSignals = (p) => {
+  const parts = [];
+  if (p.completedBookingsCount > 0) {
+    parts.push(`${p.completedBookingsCount} job${p.completedBookingsCount === 1 ? '' : 's'} completed`);
+  }
+  if (p.createdAt) {
+    parts.push('Joined ' + new Date(p.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }));
+  }
+  return parts.join(' · ');
+};
+
 const useWindowWidth = () => {
   const [width, setWidth] = useState(window.innerWidth);
   useEffect(() => {
@@ -360,6 +373,9 @@ function ProfessionalsGrid({ professionals, loading, cols }) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
                   <Stars rating={p.rating} />
                 </div>
+                {trustSignals(p) && (
+                  <div className="text-muted" style={{ fontSize: 11, marginTop: 2 }}>{trustSignals(p)}</div>
+                )}
                 <div style={{ fontWeight: 800, color: '#2B7FFF', fontSize: 14, marginTop: 4, marginBottom: 8 }}>
                   {formatBDT(p.weekdayRate || p.hourlyRate)}/hr
                 </div>
@@ -407,6 +423,9 @@ function ProfessionalsGrid({ professionals, loading, cols }) {
               <Stars rating={p.rating} />
               <span className="pro-meta">({p.ratings?.length || 0} reviews)</span>
             </div>
+            {trustSignals(p) && (
+              <div className="text-muted" style={{ fontSize: 11, marginTop: 2 }}>{trustSignals(p)}</div>
+            )}
 
             <div style={{ fontWeight: 800, color: '#2B7FFF', fontSize: 16 }}>
               {formatBDT(p.weekdayRate || p.hourlyRate)}/hr
@@ -434,7 +453,7 @@ export default function HomePage() {
   const [serviceType, setServiceType] = useState('');
   const [professionals, setProfessionals] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [resultMeta, setResultMeta] = useState({ locationLabel: '', serviceLabel: '' });
+  const [resultMeta, setResultMeta] = useState({ locationLabel: '', serviceLabel: '', district: '', division: '', widenedTo: null });
 
   const width = useWindowWidth();
   const cols = width < 600 ? 1 : width < 900 ? 2 : width < 1200 ? 3 : 4;
@@ -463,14 +482,20 @@ export default function HomePage() {
     if (serviceType) params.serviceType = serviceType;
     if (keyword.trim()) params.search = keyword.trim();
 
-    setResultMeta({
-      locationLabel: resolvedLocation ? resolvedLocation.thana : '',
-      serviceLabel: serviceType ? `${serviceType}s` : 'Professionals',
-    });
+    const serviceLabel = serviceType ? `${serviceType}s` : 'Professionals';
 
     api.get('/api/users/professionals', { params })
-      .then((res) => setProfessionals(res.data || []))
-      .catch(() => setProfessionals([]))
+      .then((res) => {
+        setProfessionals(res.data?.professionals || []);
+        setResultMeta({
+          locationLabel: resolvedLocation ? resolvedLocation.thana : '',
+          serviceLabel,
+          district: resolvedLocation?.district || '',
+          division: resolvedLocation?.division || '',
+          widenedTo: res.data?.widenedTo || null,
+        });
+      })
+      .catch(() => { setProfessionals([]); setResultMeta({ locationLabel: '', serviceLabel, district: '', division: '', widenedTo: null }); })
       .finally(() => setLoading(false));
   }, [selectedLocation, locationQuery, serviceType, keyword]);
 
@@ -518,10 +543,18 @@ export default function HomePage() {
         <Leaderboard />
         {!loading && (
           <div style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#1A1A2E' }}>
-              {professionals.length} {resultMeta.serviceLabel}
-              {resultMeta.locationLabel ? ` near ${resultMeta.locationLabel}` : ''}
-            </div>
+            {resultMeta.widenedTo ? (
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#1A1A2E' }}>
+                No {resultMeta.serviceLabel} in {resultMeta.locationLabel} yet. Here {professionals.length === 1 ? 'is' : 'are'}{' '}
+                {professionals.length} {resultMeta.serviceLabel} near{' '}
+                {resultMeta.widenedTo === 'district' ? resultMeta.district : resultMeta.division}:
+              </div>
+            ) : (
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#1A1A2E' }}>
+                {professionals.length} {resultMeta.serviceLabel}
+                {resultMeta.locationLabel ? ` near ${resultMeta.locationLabel}` : ''}
+              </div>
+            )}
             <div style={{ fontSize: 12, color: '#94A3B8', marginTop: 2 }}>
               Boosted profiles appear first in your area. Carely does not verify professionals.
             </div>

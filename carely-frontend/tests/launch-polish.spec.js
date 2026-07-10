@@ -207,7 +207,7 @@ test.describe.serial('Launch Polish Verification', () => {
     const searchRes = await request.get(`${BACKEND_URL}/api/users/professionals`, {
       params: { division: 'Dhaka', district: 'Dhaka', thana: 'Gulshan', serviceType: 'Nurse' },
     });
-    const results = await searchRes.json();
+    const { professionals: results } = await searchRes.json();
     const idxLocal = results.findIndex((p) => p._id === proLocal.user._id);
     const idxFar = results.findIndex((p) => p._id === proFar.user._id);
 
@@ -226,7 +226,7 @@ test.describe.serial('Launch Polish Verification', () => {
     const searchRes = await request.get(`${BACKEND_URL}/api/users/professionals`, {
       params: { division: 'Dhaka', district: 'Dhaka', thana: 'Gulshan', serviceType: 'Nurse' },
     });
-    const results = await searchRes.json();
+    const { professionals: results } = await searchRes.json();
     const idxBoosted = results.findIndex((p) => p._id === proBoosted.user._id);
     const idxPlain = results.findIndex((p) => p._id === proPlain.user._id);
 
