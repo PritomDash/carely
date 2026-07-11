@@ -530,4 +530,120 @@ test.describe.serial('Launch Polish Verification', () => {
     await expect(page.getByText(LANDING_HERO_TEXT)).not.toBeVisible();
     console.log('✅ A logged-out PWA launch (?source=pwa) skipped the landing pitch and went straight to /login');
   });
+
+  // The only place a notification is allowed to be delayed is the wave-2
+  // "new job post" alert to non-boosted professionals, via the cron in
+  // cronJobs.js scanning JobPost.delayedNotifySent. Every other
+  // createNotification call site (bookings, chat, credits, boost) is a
+  // plain awaited call with no wrapping delay - these tests prove that
+  // holds live, not just by reading the code.
+  const notificationsFor = async (request, token) => {
+    const res = await request.get(`${BACKEND_URL}/api/notifications`, { headers: authHeader(token) });
+    return (await res.json()).notifications;
+  };
+
+  test('Booking confirmation notifies both parties instantly, no delay', async ({ request }) => {
+    const pro = await registerPro(request);
+    const cust = await registerCustomer(request);
+    const date = futureDateStr(bookingDayCounter++);
+
+    const createRes = await request.post(`${BACKEND_URL}/api/bookings/create`, {
+      headers: authHeader(cust.token),
+      data: { professionalId: pro.user._id, date, time: '09:00', type: 'short', duration: 1, address: 'Test Address, Dhaka', workDescription: 'Instant notification test' },
+    });
+    const { bookingId } = await createRes.json();
+
+    // The request notification to the professional must already exist the
+    // instant create() returns - no polling/waiting.
+    const proNotifsAfterCreate = await notificationsFor(request, pro.token);
+    expect(proNotifsAfterCreate.some((n) => n.type === 'booking' && /new booking request/i.test(n.message))).toBe(true);
+
+    const acceptRes = await request.post(`${BACKEND_URL}/api/bookings/accept/${bookingId}`, { headers: authHeader(pro.token) });
+    expect(acceptRes.status()).toBe(200);
+
+    // Both sides' "confirmed" notifications must already exist the instant
+    // accept() returns.
+    const custNotifs = await notificationsFor(request, cust.token);
+    const proNotifs = await notificationsFor(request, pro.token);
+    expect(custNotifs.some((n) => /confirmed/i.test(n.message))).toBe(true);
+    expect(proNotifs.some((n) => /confirmed/i.test(n.message))).toBe(true);
+    console.log('✅ Booking request + confirmation notifications exist immediately, no delay');
+  });
+
+  test('Chat message notifies the recipient instantly, no delay', async ({ request }) => {
+    const pro = await registerPro(request);
+    const cust = await registerCustomer(request);
+    const date = futureDateStr(bookingDayCounter++);
+
+    const createRes = await request.post(`${BACKEND_URL}/api/bookings/create`, {
+      headers: authHeader(cust.token),
+      data: { professionalId: pro.user._id, date, time: '13:00', type: 'short', duration: 1, address: 'Test Address, Dhaka', workDescription: 'Chat instant test' },
+    });
+    const { bookingId } = await createRes.json();
+    await request.post(`${BACKEND_URL}/api/bookings/accept/${bookingId}`, { headers: authHeader(pro.token) });
+
+    await request.post(`${BACKEND_URL}/api/chat/send`, {
+      headers: authHeader(cust.token),
+      data: { recipient: pro.user._id, message: 'Hello, instant delivery test', bookingId },
+    });
+
+    const proNotifs = await notificationsFor(request, pro.token);
+    expect(proNotifs.some((n) => n.type === 'chat')).toBe(true);
+    console.log('✅ Chat message notification exists immediately, no delay');
+  });
+
+  test('Emergency job post notifies every matching professional instantly, no delay', async ({ request }) => {
+    const serviceType = 'Physiotherapist';
+    const proA = await registerPro(request, { professionalType: serviceType });
+    const proB = await registerPro(request, { professionalType: serviceType });
+    const cust = await registerCustomer(request);
+
+    // Emergency posts need emergencyPostCreditCost credits - a fresh
+    // customer's free signup credits already cover the default cost of 3.
+    const postRes = await request.post(`${BACKEND_URL}/api/jobs`, {
+      headers: authHeader(cust.token),
+      data: {
+        title: 'Emergency instant-notify test', description: 'Proving zero delay for emergency posts',
+        serviceType, location: { division: 'Dhaka', district: 'Dhaka', thana: 'Gulshan' },
+        schedule: { preferredDays: ['Monday'], preferredTime: '10:00' },
+        bookingType: 'short', isEmergency: true,
+      },
+    });
+    expect(postRes.status()).toBe(201);
+    const post = await postRes.json();
+
+    const notifsA = await notificationsFor(request, proA.token);
+    const notifsB = await notificationsFor(request, proB.token);
+    expect(notifsA.some((n) => n.link === '/job-posts/' + post._id)).toBe(true);
+    expect(notifsB.some((n) => n.link === '/job-posts/' + post._id)).toBe(true);
+    console.log('✅ Emergency post notified both matching professionals immediately, no delay for anyone');
+  });
+
+  test('Normal job post: boosted professional notified instantly, non-boosted is not - only the boost-delay wave is deferred', async ({ request }) => {
+    const serviceType = 'Aged Care';
+    const location = { division: 'Dhaka', district: 'Dhaka', thana: 'Gulshan' };
+    const boostedPro = await registerPro(request, { professionalType: serviceType, location });
+    const nonBoostedPro = await registerPro(request, { professionalType: serviceType, location });
+    const cust = await registerCustomer(request);
+
+    await boostPro(request, boostedPro.token);
+
+    const postRes = await request.post(`${BACKEND_URL}/api/jobs`, {
+      headers: authHeader(cust.token),
+      data: {
+        title: 'Normal post wave test', description: 'Proving boosted is instant and non-boosted is not, immediately after posting',
+        serviceType, location,
+        schedule: { preferredDays: ['Monday'], preferredTime: '10:00' },
+        bookingType: 'short', isEmergency: false,
+      },
+    });
+    expect(postRes.status()).toBe(201);
+    const post = await postRes.json();
+
+    const boostedNotifs = await notificationsFor(request, boostedPro.token);
+    const nonBoostedNotifs = await notificationsFor(request, nonBoostedPro.token);
+    expect(boostedNotifs.some((n) => n.link === '/job-posts/' + post._id)).toBe(true);
+    expect(nonBoostedNotifs.some((n) => n.link === '/job-posts/' + post._id)).toBe(false);
+    console.log('✅ Normal job post: boosted professional notified instantly, non-boosted professional correctly not notified yet (only case where a delay applies)');
+  });
 });

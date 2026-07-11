@@ -119,11 +119,35 @@ const emailTemplate = (title, content, status) => `
 </body></html>
 `;
 
+// Marks an error as a rate-limit/quota condition so the fallback loop can
+// log it distinctly - detects Brevo's (and any provider's) 429 status code
+// plus any error body/message mentioning limit/quota/exceeded/credits,
+// since providers phrase daily-cap errors differently ("daily quota
+// exceeded", "you have reached your sending limit", "insufficient
+// credits", etc) and a plain 429 check alone would miss provider-specific
+// wording.
+const isRateLimitError = (err) => {
+  const statusCode = err?.statusCode || err?.response?.status || err?.code;
+  if (statusCode === 429) return true;
+  const haystack = [
+    err?.message,
+    JSON.stringify(err?.body || err?.response?.data || ''),
+  ].join(' ').toLowerCase();
+  return /limit|quota|exceeded|credits/.test(haystack);
+};
+
 // Provider 1: Brevo. Uses the v6 @getbrevo/brevo SDK (BrevoClient +
 // transactionalEmails.sendTransacEmail) - the older SibApiV3Sdk-style
 // classes (TransactionalEmailsApi, SendSmtpEmail) this file used to call
 // don't exist in this SDK version and threw "is not a constructor" on
 // every single send, silently falling through to Resend every time.
+//
+// The SDK already throws a typed BrevoError for any non-2xx response
+// (including 429 rate-limit/quota-exceeded), so a failure here always
+// propagates as a rejected promise - this must NEVER be caught and
+// swallowed here, only in the shared fallback loop in sendEmail(), or a
+// rate-limited send would silently succeed as "sent" with nothing actually
+// delivered.
 const sendViaBrevo = async ({ to, subject, html, text }) => {
   console.log('Trying Brevo...');
   if (!process.env.BREVO_API_KEY) throw new Error('Brevo not configured');
@@ -172,7 +196,11 @@ const sendViaSendGrid = async ({ to, subject, html, text }) => {
   return { provider: 'sendgrid', id: result[0]?.headers?.['x-message-id'] };
 };
 
-const providers = [sendViaBrevo, sendViaResend, sendViaSendGrid];
+const providers = [
+  { name: 'Brevo', send: sendViaBrevo },
+  { name: 'Resend', send: sendViaResend },
+  { name: 'SendGrid', send: sendViaSendGrid },
+];
 
 // Returns {success, provider?, id?, error?/errors?} so diagnostic callers
 // (the admin test-email route) can report real status. Existing
@@ -180,6 +208,13 @@ const providers = [sendViaBrevo, sendViaResend, sendViaSendGrid];
 //
 // `status` is optional - when passed (e.g. 'Confirmed', 'Declined'), a
 // colored pill is rendered at the top of the email body.
+//
+// Any error from a provider - configuration, network, timeout, or a rate
+// limit/quota response - is treated identically: log it and move to the
+// next provider. Nothing here is allowed to swallow a failure and report
+// success, and nothing here is allowed to block the caller for long (the
+// 8s per-provider timeout guarantees all three are tried well within a
+// normal request timeout even if one hangs).
 const sendEmail = async ({ to, subject, title, content, status }) => {
   if (!to) return { success: false, error: 'No recipient address provided' };
 
@@ -187,21 +222,28 @@ const sendEmail = async ({ to, subject, title, content, status }) => {
   const text = htmlToText(`${title}\n\n${content}`);
   const errors = [];
 
-  for (const provider of providers) {
+  for (let i = 0; i < providers.length; i++) {
+    const { name, send } = providers[i];
     try {
       const result = await Promise.race([
-        provider({ to, subject, html, text }),
+        send({ to, subject, html, text }),
         new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 8000)),
       ]);
       console.log('✅ Email sent via', result.provider, 'to', to);
       return { success: true, ...result };
     } catch (err) {
-      errors.push(provider.name.replace('sendVia', '') + ': ' + err.message);
-      console.log('⚠️ Email provider failed, trying next:', err.message);
+      errors.push(name + ': ' + err.message);
+      const nextName = providers[i + 1]?.name;
+      const reason = isRateLimitError(err) ? ' (rate limit)' : '';
+      if (nextName) {
+        console.log(`⚠️ ${name} failed${reason} -> falling back to ${nextName}`);
+      } else {
+        console.log(`⚠️ ${name} failed${reason} - no more providers left to try`);
+      }
     }
   }
 
-  console.error('❌ All email providers failed for', to, ':', errors);
+  console.error('❌ All email providers failed for', to, '-', subject, ':', errors);
   return { success: false, errors };
 };
 

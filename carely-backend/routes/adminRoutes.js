@@ -30,6 +30,19 @@ router.get('/test-email', adminAuth, async (req, res) => {
   res.status(result.success ? 200 : 500).json(result);
 });
 
+// Diagnostic: report which email provider API keys actually exist in this
+// environment, without sending any real email (unlike /test-email above,
+// which only proves the first provider that succeeds - this is what
+// EMAIL_CAPACITY.md is checked against, so a fallback provider being
+// unconfigured is visible before it's ever needed).
+router.get('/email-capacity', adminAuth, (req, res) => {
+  res.json({
+    brevo: !!process.env.BREVO_API_KEY,
+    resend: !!process.env.RESEND_API_KEY,
+    sendgrid: !!process.env.SENDGRID_API_KEY,
+  });
+});
+
 // Admin self-service password change (no DB access required to rotate it)
 router.put('/change-password', adminAuth, async (req, res) => {
   try {
