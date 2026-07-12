@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /my-bookings
+Disallow: /my-credits
+Disallow: /chat
+Disallow: /chat-inbox
+Disallow: /edit-profile
+Disallow: /upload-documents
+
+Sitemap: https://mycarely.app/sitemap.xml
