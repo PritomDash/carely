@@ -5,7 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import { formatBDT } from '../utils/currency';
 import {
   LayoutDashboard, Users, Calendar, Briefcase, CreditCard,
-  Settings as SettingsIcon, MessageSquare, LogOut, XCircle, UserCheck,
+  Settings as SettingsIcon, MessageSquare, LogOut, UserCheck,
+  Download, Activity, TrendingUp, Star,
 } from 'lucide-react';
 
 const TABS = [
@@ -41,19 +42,37 @@ function OverviewTab() {
   if (loading) return <p className="text-muted">Loading overview...</p>;
   if (error || !data) return <div className="badge badge-red" style={{ display: 'block', padding: '8px 12px' }}>{error || 'No data'}</div>;
 
-  const stats = [
-    { label: 'Total Users', value: data.totalUsers, icon: Users },
-    { label: 'Professionals', value: data.totalPros, icon: Briefcase },
-    { label: 'Customers', value: data.totalCustomers, icon: UserCheck },
-    { label: 'Bookings', value: data.totalBookings, icon: Calendar },
-    { label: 'Cancelled', value: data.cancelledBookings, icon: XCircle },
+  const topStats = [
+    { label: 'Total Professionals', value: data.totalPros, icon: Briefcase },
+    { label: 'Total Customers', value: data.totalCustomers, icon: UserCheck },
+    { label: 'Installed App', value: data.installedCount, icon: Download },
+    { label: 'Active This Week', value: data.activeLast7Days, icon: Activity },
   ];
+
+  const secondStats = [
+    { label: 'Signups Today', value: data.signupsToday, icon: TrendingUp },
+    { label: 'Signups This Week', value: data.signupsThisWeek, icon: Calendar },
+    { label: 'Boosted Pros', value: data.boostedProfessionals, icon: Star },
+    { label: 'Active Today', value: data.activeToday, icon: Users },
+  ];
+
+  const typeBreakdown = [
+    { label: 'Child Care', value: data.professionalsByType?.childCare },
+    { label: 'Aged Care', value: data.professionalsByType?.agedCare },
+    { label: 'Nurse', value: data.professionalsByType?.nurse },
+    { label: 'Physiotherapist', value: data.professionalsByType?.physiotherapist },
+  ];
+
+  const signupsByDay = data.signupsByDay || [];
+  const maxSignups = Math.max(1, ...signupsByDay.map((d) => d.count));
+  const districts = data.professionalsByDistrict || [];
 
   return (
     <div>
       <h2 style={{ marginBottom: 16 }}>Overview</h2>
+
       <div className="stat-grid">
-        {stats.map((s) => (
+        {topStats.map((s) => (
           <div key={s.label} className="stat-card">
             <div className="stat-icon"><s.icon size={20} /></div>
             <div>
@@ -62,6 +81,64 @@ function OverviewTab() {
             </div>
           </div>
         ))}
+      </div>
+
+      <div className="stat-grid" style={{ marginTop: 16 }}>
+        {secondStats.map((s) => (
+          <div key={s.label} className="stat-card">
+            <div className="stat-icon"><s.icon size={20} /></div>
+            <div>
+              <div className="stat-value">{s.value ?? 0}</div>
+              <div className="text-muted">{s.label}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="card" style={{ marginTop: 20 }}>
+        <h3 style={{ marginBottom: 12, fontSize: 16 }}>Professionals by Type</h3>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+          {typeBreakdown.map((t) => (
+            <div key={t.label} className="badge badge-blue" style={{ padding: '6px 14px', fontSize: 13 }}>
+              {t.label}: <strong>{t.value ?? 0}</strong>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="card" style={{ marginTop: 16 }}>
+        <h3 style={{ marginBottom: 12, fontSize: 16 }}>Professionals by Area</h3>
+        {districts.length === 0 ? (
+          <p className="text-muted">No location data yet.</p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {districts.map((d) => (
+              <div key={d.district} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, padding: '7px 0', borderBottom: '1px solid #F1F5F9' }}>
+                <span>{d.district}</span>
+                <strong>{d.count}</strong>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="card" style={{ marginTop: 16 }}>
+        <h3 style={{ marginBottom: 12, fontSize: 16 }}>Signups - Last 14 Days</h3>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 130, overflowX: 'auto', paddingBottom: 4 }}>
+          {signupsByDay.map((d) => (
+            <div key={d.date} title={`${d.date}: ${d.count}`} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0, width: 22 }}>
+              <div style={{
+                width: '100%',
+                height: Math.max(4, (d.count / maxSignups) * 90),
+                background: '#2B7FFF',
+                borderRadius: '4px 4px 0 0',
+              }} />
+              <div style={{ fontSize: 9, color: '#94A3B8', marginTop: 4, whiteSpace: 'nowrap' }}>
+                {d.date.slice(5)}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

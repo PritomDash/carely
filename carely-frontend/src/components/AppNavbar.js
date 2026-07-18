@@ -8,6 +8,11 @@ import { isStandalone, requestInstall } from '../utils/pwaInstall';
 import CarelyLogo from './CarelyLogo';
 import NotificationBell from './NotificationBell';
 
+// Module-scope, not state - AppNavbar remounts on every page (each page
+// imports its own copy), but this flag survives those remounts for the
+// life of the tab, so the heartbeat still only fires once per session load.
+let heartbeatSent = false;
+
 export default function AppNavbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -45,6 +50,14 @@ export default function AppNavbar() {
   useEffect(() => {
     if (!user) return;
     socket.emit('joinRoom', user._id);
+  }, [user]);
+
+  useEffect(() => {
+    if (!user || heartbeatSent) return;
+    heartbeatSent = true;
+    const standalone = window.matchMedia('(display-mode: standalone)').matches
+      || window.navigator.standalone === true;
+    api.post('/api/users/heartbeat', { standalone }).catch(() => {});
   }, [user]);
 
   useEffect(() => {

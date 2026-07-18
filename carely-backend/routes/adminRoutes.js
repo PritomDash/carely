@@ -603,10 +603,27 @@ router.put('/credits/:userId', adminAuth, async (req, res) => {
 });
 
 // Analytics
+const PROFESSIONAL_TYPE_KEYS = {
+  'Child Care': 'childCare',
+  'Aged Care': 'agedCare',
+  'Nurse': 'nurse',
+  'Physiotherapist': 'physiotherapist',
+};
+
 router.get('/analytics', adminAuth, async (req, res) => {
   try {
-    const [totalUsers, totalPros, totalCustomers, totalBookings, confirmedBookings,
-           completedBookings, cancelledBookings, topPros] = await Promise.all([
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const fourteenDaysAgo = new Date(startOfToday.getTime() - 13 * 24 * 60 * 60 * 1000);
+
+    const [
+      totalUsers, totalPros, totalCustomers, totalBookings, confirmedBookings,
+      completedBookings, cancelledBookings, topPros,
+      professionalTypeCounts, installedCount, signupsToday, signupsThisWeek,
+      activeLast7Days, activeToday, boostedProfessionals, signupsByDayRaw,
+      professionalsByDistrictRaw,
+    ] = await Promise.all([
       User.countDocuments(),
       User.countDocuments({ role: 'professional' }),
       User.countDocuments({ role: 'customer' }),
@@ -619,7 +636,26 @@ router.get('/analytics', adminAuth, async (req, res) => {
         { $group: { _id: '$professional', totalBookings: { $sum: 1 } } },
         { $sort: { totalBookings: -1 } },
         { $limit: 5 }
-      ])
+      ]),
+      User.aggregate([
+        { $match: { role: 'professional' } },
+        { $group: { _id: '$professionalType', count: { $sum: 1 } } },
+      ]),
+      User.countDocuments({ hasInstalledApp: true }),
+      User.countDocuments({ createdAt: { $gte: startOfToday } }),
+      User.countDocuments({ createdAt: { $gte: sevenDaysAgo } }),
+      User.countDocuments({ lastActiveAt: { $gte: sevenDaysAgo } }),
+      User.countDocuments({ lastActiveAt: { $gte: startOfToday } }),
+      User.countDocuments({ isFeatured: true, featuredUntil: { $gt: now } }),
+      User.aggregate([
+        { $match: { createdAt: { $gte: fourteenDaysAgo } } },
+        { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }, count: { $sum: 1 } } },
+      ]),
+      User.aggregate([
+        { $match: { role: 'professional', 'location.district': { $nin: [null, ''] } } },
+        { $group: { _id: '$location.district', count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+      ]),
     ]);
 
     const proIds = topPros.map(r => r._id);
@@ -630,9 +666,31 @@ router.get('/analytics', adminAuth, async (req, res) => {
       totalBookings: r.totalBookings
     }));
 
+    const professionalsByType = { childCare: 0, agedCare: 0, nurse: 0, physiotherapist: 0 };
+    professionalTypeCounts.forEach((r) => {
+      const key = PROFESSIONAL_TYPE_KEYS[r._id];
+      if (key) professionalsByType[key] = r.count;
+    });
+
+    // Zero-fill every day in the window so the mini chart doesn't show gaps
+    // as missing bars vs. days with genuinely zero signups.
+    const countByDate = {};
+    signupsByDayRaw.forEach((r) => { countByDate[r._id] = r.count; });
+    const signupsByDay = [];
+    for (let i = 13; i >= 0; i--) {
+      const d = new Date(startOfToday.getTime() - i * 24 * 60 * 60 * 1000);
+      const date = d.toISOString().slice(0, 10);
+      signupsByDay.push({ date, count: countByDate[date] || 0 });
+    }
+
+    const professionalsByDistrict = professionalsByDistrictRaw.map((r) => ({ district: r._id, count: r.count }));
+
     res.json({
       totalUsers, totalPros, totalCustomers, totalBookings,
-      confirmedBookings, completedBookings, cancelledBookings, topProfessionals: topProsData
+      confirmedBookings, completedBookings, cancelledBookings, topProfessionals: topProsData,
+      professionalsByType, installedCount, signupsToday, signupsThisWeek,
+      activeLast7Days, activeToday, boostedProfessionals, signupsByDay,
+      professionalsByDistrict,
     });
   } catch (err) {
     res.status(500).json({ error: 'Failed to load analytics' });

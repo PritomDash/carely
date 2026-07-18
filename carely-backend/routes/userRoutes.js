@@ -16,6 +16,23 @@ router.get('/me', authMiddleware, async (req, res) => {
   }
 });
 
+// Lightweight liveness/install ping, fired once per app session load (not on
+// every route change). Doubles as our install-tracking signal since GA4
+// can't tell us which of our own users actually installed the PWA.
+router.post('/heartbeat', authMiddleware, async (req, res) => {
+  try {
+    const update = { lastActiveAt: new Date() };
+    if (req.body.standalone === true && !req.user.hasInstalledApp) {
+      update.hasInstalledApp = true;
+      update.appInstalledAt = new Date();
+    }
+    await User.findByIdAndUpdate(req.user._id, update);
+    res.sendStatus(200);
+  } catch (err) {
+    res.status(500).json({ message: 'Failed' });
+  }
+});
+
 router.put('/update-profile', authMiddleware, async (req, res) => {
   try {
     const { name, phone, experience, availability, location, about,

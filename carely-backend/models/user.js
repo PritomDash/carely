@@ -67,6 +67,9 @@ const userSchema = new mongoose.Schema({
   featuredTier:  { type: String, enum: ['none', 'basic', 'premium'], default: 'none' },
   completedBookingsCount: { type: Number, default: 0 },
   pushSubscription: { type: Object, default: null },
+  hasInstalledApp: { type: Boolean, default: false },
+  appInstalledAt:  { type: Date, default: null },
+  lastActiveAt:    { type: Date, default: null },
 }, { timestamps: true });
 
 userSchema.index({ role: 1, 'location.thana': 1, professionalType: 1 });
