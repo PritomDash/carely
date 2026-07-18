@@ -53,8 +53,12 @@ export default function InstallBanner() {
   const handleInstall = useCallback(async () => {
     const wasInstallable = canPromptInstall();
     const outcome = await requestInstall();
-    if (outcome === 'accepted') setVisible(false);
-    else if (!wasInstallable) setShowInstructions(true);
+    if (outcome === 'accepted') {
+      setVisible(false);
+      if (window.gtag) window.gtag('event', 'pwa_install_accepted');
+    } else if (!wasInstallable) {
+      setShowInstructions(true);
+    }
   }, []);
 
   const dismiss = () => {

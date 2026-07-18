@@ -1,5 +1,5 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 
 import LandingPage        from './pages/LandingPage';
@@ -38,10 +38,27 @@ import MaintenanceGate     from './components/MaintenanceGate';
 import BlogPage           from './pages/BlogPage';
 import BlogPost           from './pages/BlogPost';
 
+function AnalyticsPageView() {
+  const location = useLocation();
+
+  useEffect(() => {
+    if (window.gtag) {
+      window.gtag('event', 'page_view', {
+        page_path: location.pathname,
+        page_location: window.location.href,
+        page_title: document.title,
+      });
+    }
+  }, [location]);
+
+  return null;
+}
+
 function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <AnalyticsPageView />
         <OfflineBanner />
         <MaintenanceGate>
         <Routes>

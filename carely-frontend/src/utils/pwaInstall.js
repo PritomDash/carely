@@ -21,6 +21,7 @@ window.addEventListener(CAN_INSTALL_EVENT, notify);
 window.addEventListener('appinstalled', () => {
   installed = true;
   notify();
+  if (window.gtag) window.gtag('event', 'pwa_install', { method: 'browser_prompt' });
 });
 
 export const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
