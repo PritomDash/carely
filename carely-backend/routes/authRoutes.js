@@ -8,7 +8,7 @@ const crypto = require('crypto');
 const { sendEmail, emailButton } = require('../utils/emailService');
 const { createNotification } = require('../utils/notificationService');
 const { upload } = require('../middlewares/uploadMiddleware');
-const { isValidBDPhone } = require('../utils/phoneValidation');
+const { isValidBDPhone, normalizeBDPhone } = require('../utils/phoneValidation');
 
 const generateToken = (user) =>
   jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '90d' });
@@ -66,7 +66,8 @@ router.post('/register', upload.fields([
     if (!name || !email || !password || !phone || !role)
       return res.status(400).json({ message: 'All fields are required' });
 
-    if (!isValidBDPhone(phone)) {
+    const normalizedPhone = normalizeBDPhone(phone);
+    if (!isValidBDPhone(normalizedPhone)) {
       return res.status(400).json({ message: 'Enter a valid Bangladeshi mobile number (e.g. 01712345678)' });
     }
 
@@ -85,7 +86,7 @@ router.post('/register', upload.fields([
     const existing = await User.findOne({ email });
     if (existing) return res.status(400).json({ message: 'Email already exists' });
 
-    const userData = { name, email, password, phone, role: normalizedRole };
+    const userData = { name, email, password, phone: normalizedPhone, role: normalizedRole };
 
     if (userData.role === 'professional') {
       if (professionalType) userData.professionalType = professionalType;

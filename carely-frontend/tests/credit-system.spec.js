@@ -79,11 +79,21 @@ test.describe.serial('Monetization Model Verification', () => {
       featuredListingEnabled: current.featuredListingEnabled,
       manualTopUpEnabled: current.manualTopUpEnabled,
       boostNotificationDelayMinutes: current.boostNotificationDelayMinutes,
+      platformBkash: current.platformBkash,
+      platformNagad: current.platformNagad,
     };
 
+    // Pre-launch, platformBkash/platformNagad are intentionally left blank
+    // (payments are off) - the manual-payment route correctly 400s with
+    // "Payment number is not configured yet" without one. This suite needs
+    // a real end-to-end approve/activate flow, so it provides its own test
+    // number for the duration, same as it does for the boolean flags below.
     await request.put(`${BACKEND_URL}/api/admin/settings`, {
       headers: authHeader(adminToken),
-      data: { emergencyPostEnabled: true, featuredListingEnabled: true, manualTopUpEnabled: true },
+      data: {
+        emergencyPostEnabled: true, featuredListingEnabled: true, manualTopUpEnabled: true,
+        platformBkash: '01700000000', platformNagad: '01700000000',
+      },
     });
 
     const refreshedRes = await request.get(`${BACKEND_URL}/api/admin/settings`, { headers: authHeader(adminToken) });

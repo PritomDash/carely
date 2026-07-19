@@ -6,7 +6,7 @@ const Settings = require('../models/Settings');
 const authMiddleware = require('../middlewares/authMiddleware');
 const { createNotification } = require('../utils/notificationService');
 const { fireEmail, emailButton, detailRow } = require('../utils/emailService');
-const { isValidBDPhone } = require('../utils/phoneValidation');
+const { isValidBDPhone, normalizeBDPhone } = require('../utils/phoneValidation');
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 
@@ -37,7 +37,8 @@ router.post('/request-manual', authMiddleware, async (req, res) => {
       return res.status(400).json({ error: 'Tier and transaction ID required' });
     }
 
-    if (senderNumber && !isValidBDPhone(senderNumber)) {
+    const normalizedSenderNumber = senderNumber ? normalizeBDPhone(senderNumber) : senderNumber;
+    if (senderNumber && !isValidBDPhone(normalizedSenderNumber)) {
       return res.status(400).json({ error: 'Enter a valid Bangladeshi mobile number (e.g. 01712345678)' });
     }
 
@@ -70,7 +71,7 @@ router.post('/request-manual', authMiddleware, async (req, res) => {
       amountBDT: pack.priceBDT,
       method: method || 'bkash',
       transactionID: transactionID.trim(),
-      senderNumber,
+      senderNumber: normalizedSenderNumber,
     });
 
     const admins = await User.find({ role: 'admin' }).select('_id email');

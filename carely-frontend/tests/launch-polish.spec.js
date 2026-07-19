@@ -57,11 +57,38 @@ const registerCustomer = async (request, overrides = {}) => {
 
 let adminToken;
 let bookingDayCounter = 40;
+let originalSettings = null;
 
 test.describe.serial('Launch Polish Verification', () => {
   test.beforeAll(async ({ request }) => {
     const adminRes = await request.post(`${BACKEND_URL}/api/auth/login`, { data: ADMIN });
     adminToken = (await adminRes.json()).token;
+
+    // boostPro() below needs the real manual-payment approve flow to work.
+    // Pre-launch, featuredListingEnabled/manualTopUpEnabled and the
+    // platform bKash/Nagad numbers are all intentionally off/blank - snapshot
+    // and restore around this suite the same way credit-system.spec.js does,
+    // so production is left in its real disabled state afterwards.
+    const settingsRes = await request.get(`${BACKEND_URL}/api/admin/settings`, { headers: authHeader(adminToken) });
+    const current = await settingsRes.json();
+    originalSettings = {
+      featuredListingEnabled: current.featuredListingEnabled,
+      manualTopUpEnabled: current.manualTopUpEnabled,
+      platformBkash: current.platformBkash,
+      platformNagad: current.platformNagad,
+    };
+    await request.put(`${BACKEND_URL}/api/admin/settings`, {
+      headers: authHeader(adminToken),
+      data: {
+        featuredListingEnabled: true, manualTopUpEnabled: true,
+        platformBkash: '01700000000', platformNagad: '01700000000',
+      },
+    });
+  });
+
+  test.afterAll(async ({ request }) => {
+    if (!originalSettings) return;
+    await request.put(`${BACKEND_URL}/api/admin/settings`, { headers: authHeader(adminToken), data: originalSettings });
   });
 
   test('Cancelled booking releases the time slot for another customer', async ({ request }) => {
