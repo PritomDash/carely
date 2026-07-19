@@ -64,23 +64,26 @@ test.describe.serial('Launch Polish Verification', () => {
     const adminRes = await request.post(`${BACKEND_URL}/api/auth/login`, { data: ADMIN });
     adminToken = (await adminRes.json()).token;
 
-    // boostPro() below needs the real manual-payment approve flow to work.
-    // Pre-launch, featuredListingEnabled/manualTopUpEnabled and the
-    // platform bKash/Nagad numbers are all intentionally off/blank - snapshot
-    // and restore around this suite the same way credit-system.spec.js does,
-    // so production is left in its real disabled state afterwards.
+    // boostPro() below needs the real manual-payment approve flow to work,
+    // and the emergency-post notification test needs emergency posting
+    // itself turned on. Pre-launch, all of these (featuredListingEnabled,
+    // manualTopUpEnabled, emergencyPostEnabled, and the platform bKash/Nagad
+    // numbers) are intentionally off/blank - snapshot and restore around
+    // this suite the same way credit-system.spec.js does, so production is
+    // left in its real disabled state afterwards.
     const settingsRes = await request.get(`${BACKEND_URL}/api/admin/settings`, { headers: authHeader(adminToken) });
     const current = await settingsRes.json();
     originalSettings = {
       featuredListingEnabled: current.featuredListingEnabled,
       manualTopUpEnabled: current.manualTopUpEnabled,
+      emergencyPostEnabled: current.emergencyPostEnabled,
       platformBkash: current.platformBkash,
       platformNagad: current.platformNagad,
     };
     await request.put(`${BACKEND_URL}/api/admin/settings`, {
       headers: authHeader(adminToken),
       data: {
-        featuredListingEnabled: true, manualTopUpEnabled: true,
+        featuredListingEnabled: true, manualTopUpEnabled: true, emergencyPostEnabled: true,
         platformBkash: '01700000000', platformNagad: '01700000000',
       },
     });
