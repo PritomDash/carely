@@ -6,6 +6,7 @@ import { formatBDT } from '../utils/currency';
 import { getAllThanas } from '../utils/locations';
 import AppNavbar from '../components/AppNavbar';
 import BoostStar from '../components/BoostStar';
+import FounderWelcomeCard from '../components/FounderWelcomeCard';
 import socket from '../socket';
 import { Search, MapPin, Clock, Star } from 'lucide-react';
 
@@ -454,6 +455,7 @@ export default function HomePage() {
   const [professionals, setProfessionals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [resultMeta, setResultMeta] = useState({ locationLabel: '', serviceLabel: '', widenedTo: null });
+  const [hasBookings, setHasBookings] = useState(null); // null = unknown yet, professionals only
 
   const width = useWindowWidth();
   const cols = width < 600 ? 1 : width < 900 ? 2 : width < 1200 ? 3 : 4;
@@ -508,6 +510,15 @@ export default function HomePage() {
     socket.emit('joinRoom', user._id);
   }, [user]);
 
+  // Only professionals need this - it decides how prominent the founder
+  // welcome card is (bigger for a professional with zero bookings yet).
+  useEffect(() => {
+    if (user?.role !== 'professional') return;
+    api.get('/api/bookings/my-bookings')
+      .then((res) => setHasBookings((res.data || []).length > 0))
+      .catch(() => setHasBookings(false));
+  }, [user?.role]);
+
   useEffect(() => {
     runSearch();
     // eslint-disable-next-line
@@ -523,6 +534,12 @@ export default function HomePage() {
   return (
     <div className="app-shell" style={{ minHeight: '100vh', background: '#F7FAFF' }}>
       <AppNavbar />
+
+      {user.role === 'professional' && (
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '20px 20px 0' }}>
+          <FounderWelcomeCard prominent={hasBookings === false} />
+        </div>
+      )}
 
       <SearchHero
         keyword={keyword}

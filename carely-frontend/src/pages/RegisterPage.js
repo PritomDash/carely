@@ -126,6 +126,13 @@ export default function RegisterPage() {
       await api.post('/api/auth/register', formData);
       localStorage.removeItem('carelyReferralCode');
 
+      // Timestamp used by AppNavbar to time the founder-welcome push to
+      // land ~20-30s after registration once this professional logs in and
+      // subscribes to push - see founder-welcome-notify on the backend.
+      if (role === 'professional') {
+        localStorage.setItem('carelyFounderWelcomeRegisteredAt', String(Date.now()));
+      }
+
       setSubmitState('success');
       setTimeout(() => {
         navigate('/login', { state: { success: 'Account created successfully! Please log in.' } });
