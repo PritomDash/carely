@@ -13,6 +13,40 @@ const { isValidBDPhone } = require('../utils/phoneValidation');
 const generateToken = (user) =>
   jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '90d' });
 
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://mycarely.app';
+const hashToken = (raw) => crypto.createHash('sha256').update(raw).digest('hex');
+
+// Constant-time compare so a stored hash can't be inferred from response
+// timing - a plain === would short-circuit on the first differing byte.
+const tokensMatch = (storedHex, candidateHex) => {
+  if (!storedHex) return false;
+  const a = Buffer.from(storedHex, 'hex');
+  const b = Buffer.from(candidateHex, 'hex');
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+};
+
+// In-memory per-email throttle for /forgot-password - protects our email
+// provider quota from being drained by someone hammering one address, and
+// (combined with the always-neutral response) gives an attacker nothing to
+// distinguish "rate limited" from "email sent". Fine as in-process state
+// since this runs as a single Render instance; would need a shared store
+// (Redis) if it's ever scaled to multiple instances.
+const FORGOT_PASSWORD_MAX = 3;
+const FORGOT_PASSWORD_WINDOW_MS = 60 * 60 * 1000;
+const forgotPasswordAttempts = new Map();
+const isForgotPasswordRateLimited = (email) => {
+  const key = email.trim().toLowerCase();
+  const now = Date.now();
+  const attempts = (forgotPasswordAttempts.get(key) || []).filter((t) => now - t < FORGOT_PASSWORD_WINDOW_MS);
+  if (attempts.length >= FORGOT_PASSWORD_MAX) {
+    forgotPasswordAttempts.set(key, attempts);
+    return true;
+  }
+  attempts.push(now);
+  forgotPasswordAttempts.set(key, attempts);
+  return false;
+};
+
 router.post('/register', upload.fields([
   { name: 'profilePhoto' },
   { name: 'idDocument' },
@@ -185,58 +219,89 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// Always responds with this exact neutral message, whether or not the email
+// is registered, whether the send succeeded, throttled, or errored - the
+// response must never be a signal an attacker can use to enumerate accounts.
+const FORGOT_PASSWORD_NEUTRAL = { message: 'If an account exists, a reset link has been sent.' };
+
 router.post('/forgot-password', async (req, res) => {
   try {
     const { email } = req.body;
-    const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: 'No account with that email' });
+    if (!email || typeof email !== 'string') return res.json(FORGOT_PASSWORD_NEUTRAL);
+    if (isForgotPasswordRateLimited(email)) return res.json(FORGOT_PASSWORD_NEUTRAL);
 
-    const token = crypto.randomBytes(32).toString('hex');
-    user.resetPasswordToken = token;
-    user.resetPasswordExpires = Date.now() + 3600000;
-    await user.save();
+    const user = await User.findOne({ email: email.trim().toLowerCase() });
+    if (user) {
+      const rawToken = crypto.randomBytes(32).toString('hex');
+      user.resetPasswordToken = hashToken(rawToken);
+      user.resetPasswordExpires = Date.now() + 60 * 60 * 1000;
+      await user.save();
 
-    const resetUrl = process.env.APP_BASE_URL + '/reset-password/' + token;
-    const result = await sendEmail({
-      to: user.email,
-      subject: 'Password Reset - Carely',
-      title: 'Reset your password',
-      content:
-        '<p style="color:#1A1A2E;font-size:14px;line-height:1.7;">Click the button below to reset your password. This link expires in 1 hour.</p>' +
-        '<div style="margin-top:16px;text-align:center;">' +
-        emailButton('Reset Password', resetUrl) +
-        '</div>' +
-        '<p style="margin-top:20px;color:#64748B;font-size:12px;">If the button does not work, copy this link: ' + resetUrl + '</p>',
-    });
-
-    // Unlike booking notification emails, a failed reset email leaves the
-    // user with no way to reset their password - report it as a real error
-    // instead of silently returning success.
-    if (!result.success) {
-      return res.status(500).json({ message: 'Failed to send reset email. Please try again later.' });
+      const resetUrl = `${FRONTEND_URL}/reset-password?token=${rawToken}&email=${encodeURIComponent(user.email)}`;
+      try {
+        await sendEmail({
+          to: user.email,
+          subject: 'Reset your password - Carely',
+          title: 'Reset your password',
+          content:
+            '<p style="color:#1A1A2E;font-size:14px;line-height:1.7;">We received a request to reset your Carely password.</p>' +
+            '<div style="margin-top:16px;text-align:center;">' +
+            emailButton('Reset your password', resetUrl) +
+            '</div>' +
+            '<p style="margin-top:20px;color:#64748B;font-size:12px;">This link expires in 1 hour. If you didn\'t request this, ignore this email - your password will stay the same.</p>',
+        });
+      } catch (err) {
+        // A failed send must not change the response - that would leak
+        // whether the email existed (existing account -> send attempted /
+        // errored vs. unknown account -> never attempted).
+        console.error('Password reset email failed to send:', err.message);
+      }
     }
 
-    res.json({ message: 'Password reset email sent' });
+    res.json(FORGOT_PASSWORD_NEUTRAL);
   } catch (err) {
-    res.status(500).json({ message: 'Failed to send reset email' });
+    res.json(FORGOT_PASSWORD_NEUTRAL);
   }
 });
 
-router.post('/reset-password/:token', async (req, res) => {
+router.post('/reset-password', async (req, res) => {
+  const INVALID = { message: 'This reset link is invalid or has expired. Please request a new one.' };
   try {
-    const user = await User.findOne({
-      resetPasswordToken: req.params.token,
-      resetPasswordExpires: { $gt: Date.now() }
-    });
-    if (!user) return res.status(400).json({ message: 'Invalid or expired token' });
+    const { email, token, newPassword } = req.body;
+    if (!email || !token || !newPassword) {
+      return res.status(400).json({ message: 'Email, token, and new password are required' });
+    }
+    if (newPassword.length < 8) {
+      return res.status(400).json({ message: 'Password must be at least 8 characters' });
+    }
 
-    user.password = req.body.password;
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpires = undefined;
+    const user = await User.findOne({ email: email.trim().toLowerCase() });
+    if (!user || !user.resetPasswordExpires || user.resetPasswordExpires < Date.now()) {
+      return res.status(400).json(INVALID);
+    }
+    if (!tokensMatch(user.resetPasswordToken, hashToken(token))) {
+      return res.status(400).json(INVALID);
+    }
+
+    // Assign the PLAIN password - User's pre-save hook hashes any modified
+    // `password` field on save. Hashing it here too would double-hash and
+    // silently break login (the exact bug this flow avoided in resetAdmin.js).
+    user.password = newPassword;
+    user.resetPasswordToken = null;
+    user.resetPasswordExpires = null;
     await user.save();
+
+    createNotification({
+      userId: user._id,
+      type: 'admin',
+      message: "Your password was changed. If this wasn't you, contact support immediately.",
+      link: '/edit-profile',
+      io: req.io,
+    }).catch(() => {});
+
     res.json({ message: 'Password reset successful' });
   } catch (err) {
-    res.status(500).json({ message: 'Reset failed' });
+    res.status(500).json({ message: 'Reset failed. Please try again.' });
   }
 });
 

@@ -3,6 +3,11 @@ import api from '../services/api';
 import { Link } from 'react-router-dom';
 import AppNavbar from '../components/AppNavbar';
 
+// Always the same wording regardless of whether the email was actually
+// registered - the backend itself returns an identical neutral response
+// either way, so there is nothing else this page could truthfully say.
+const NEUTRAL_MESSAGE = "If an account exists for that email, we've sent a reset link. Please check your inbox and spam folder.";
+
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
@@ -16,9 +21,9 @@ export default function ForgotPasswordPage() {
     setLoading(true);
     try {
       await api.post('/api/auth/forgot-password', { email });
-      setSuccess('Check your email for a link to reset your password.');
+      setSuccess(NEUTRAL_MESSAGE);
     } catch (err) {
-      setError(err.response?.data?.message || 'Something went wrong. Please try again.');
+      setError('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -45,22 +50,25 @@ export default function ForgotPasswordPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              required
-            />
-          </div>
+        {!success && (
+          <form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label>Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                style={{ fontSize: 16 }}
+                required
+              />
+            </div>
 
-          <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: '100%', marginTop: 8 }}>
-            {loading ? 'Sending...' : 'Send Reset Link'}
-          </button>
-        </form>
+            <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: '100%', marginTop: 8 }}>
+              {loading ? 'Sending...' : 'Send Reset Link'}
+            </button>
+          </form>
+        )}
 
         <div style={{ marginTop: 20, textAlign: 'center' }}>
           <Link to="/login" className="text-green">Back to login</Link>

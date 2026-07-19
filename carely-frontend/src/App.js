@@ -78,7 +78,7 @@ function App() {
           <Route path="/earnings"               element={<EarningsPage />} />
           <Route path="/rate/:id"               element={<RatingPage />} />
           <Route path="/forgot-password"        element={<ForgotPasswordPage />} />
-          <Route path="/reset-password/:token"  element={<ResetPasswordPage />} />
+          <Route path="/reset-password"          element={<ResetPasswordPage />} />
           <Route path="/admin/login"            element={<AdminLoginPage />} />
           <Route path="/admin"                  element={<AdminDashboard />} />
           <Route path="/job-posts"              element={<JobPostFeed />} />
