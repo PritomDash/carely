@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import LocationSelector from '../components/LocationSelector';
 import AppNavbar from '../components/AppNavbar';
 import ShareCard from '../components/ShareCard';
-import { isValidBDPhone, BD_PHONE_ERROR } from '../utils/phoneValidation';
+import { isValidPhone, PHONE_HINT } from '../utils/phoneValidation';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -86,16 +86,15 @@ export default function EditProfilePage() {
     setPhotoPreview(URL.createObjectURL(file));
   };
 
+  // Never blocks submit - only a gentle heads-up shown near the field. An
+  // empty phone still can't be submitted, but that's the browser's native
+  // `required` validation on the input itself, not this check.
+  const phoneLooksOff = form.phone.trim().length > 0 && !isValidPhone(form.phone);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
-
-    if (!isValidBDPhone(form.phone)) {
-      setError(BD_PHONE_ERROR);
-      return;
-    }
-
     setSubmitState('submitting');
     try {
       if (photoFile) {
@@ -183,6 +182,9 @@ export default function EditProfilePage() {
           <div style={{ marginBottom: 16 }}>
             <label className="form-label">Phone</label>
             <input className="form-input" type="tel" value={form.phone} onChange={(e) => setField('phone', e.target.value)} placeholder="01XXXXXXXXX" required />
+            {phoneLooksOff && (
+              <div style={{ fontSize: 12, color: '#B45309', marginTop: 6 }}>{PHONE_HINT}</div>
+            )}
           </div>
 
           {role === 'professional' && (

@@ -8,7 +8,7 @@ const crypto = require('crypto');
 const { sendEmail, emailButton } = require('../utils/emailService');
 const { createNotification } = require('../utils/notificationService');
 const { upload } = require('../middlewares/uploadMiddleware');
-const { isValidBDPhone, normalizeBDPhone } = require('../utils/phoneValidation');
+const { isValidPhone, normalizePhone } = require('../utils/phoneValidation');
 
 const generateToken = (user) =>
   jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '90d' });
@@ -66,9 +66,9 @@ router.post('/register', upload.fields([
     if (!name || !email || !password || !phone || !role)
       return res.status(400).json({ message: 'All fields are required' });
 
-    const normalizedPhone = normalizeBDPhone(phone);
-    if (!isValidBDPhone(normalizedPhone)) {
-      return res.status(400).json({ message: 'Enter a valid Bangladeshi mobile number (e.g. 01712345678)' });
+    const normalizedPhone = normalizePhone(phone);
+    if (!isValidPhone(normalizedPhone)) {
+      return res.status(400).json({ message: "That doesn't look like a valid phone number." });
     }
 
     // Public registration may only ever create customer/professional accounts -

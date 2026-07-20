@@ -5,7 +5,7 @@ import LocationSelector from '../components/LocationSelector';
 import { User, Briefcase } from 'lucide-react';
 import { handleGoogleLogin } from '../utils/googleAuth';
 import CarelyLogo from '../components/CarelyLogo';
-import { isValidBDPhone, BD_PHONE_ERROR } from '../utils/phoneValidation';
+import { isValidPhone, PHONE_HINT } from '../utils/phoneValidation';
 
 const PROFESSIONAL_TYPES = ['Child Care', 'Aged Care', 'Nurse', 'Physiotherapist'];
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -73,15 +73,14 @@ export default function RegisterPage() {
   const setDayTime = (day, part, value) =>
     setAvailability((a) => ({ ...a, [day]: { ...a[day], [part]: value } }));
 
+  // Never blocks submit - only a gentle heads-up shown near the field. An
+  // empty phone still can't be submitted, but that's the browser's native
+  // `required` validation on the input itself, not this check.
+  const phoneLooksOff = phone.trim().length > 0 && !isValidPhone(phone);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-
-    if (!isValidBDPhone(phone)) {
-      setError(BD_PHONE_ERROR);
-      return;
-    }
-
     setSubmitState('submitting');
 
     try {
@@ -293,6 +292,9 @@ export default function RegisterPage() {
           <div>
             <label className="form-label">Phone Number</label>
             <input className="auth-input" style={inputStyle} type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="01XXXXXXXXX" required />
+            {phoneLooksOff && (
+              <div style={{ fontSize: 12, color: '#B45309', marginTop: -12, marginBottom: 16 }}>{PHONE_HINT}</div>
+            )}
           </div>
 
           {role === 'professional' && (

@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useSearchParams, Link } from 'react-router-dom';
 import { formatBDT } from '../utils/currency';
 import AppNavbar from '../components/AppNavbar';
-import { isValidBDPhone, BD_PHONE_ERROR } from '../utils/phoneValidation';
+import { isValidPhone, PHONE_HINT } from '../utils/phoneValidation';
 
 const timeAgo = (dateStr) => {
   const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
@@ -168,8 +168,8 @@ export default function CreditsPage() {
       return;
     }
 
-    if (senderNumber && !isValidBDPhone(senderNumber)) {
-      setError(BD_PHONE_ERROR);
+    if (senderNumber && !isValidPhone(senderNumber)) {
+      setError(PHONE_HINT);
       return;
     }
 

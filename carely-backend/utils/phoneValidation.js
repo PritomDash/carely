@@ -1,21 +1,22 @@
-// Bangladeshi mobile numbers: 11 digits, starting 01, second digit 3-9.
-// Mirrors carely-frontend/src/utils/phoneValidation.js - keep both in sync.
-const BD_PHONE_RE = /^01[3-9]\d{8}$/;
-
+// Deliberately permissive. Mirrors carely-frontend/src/utils/phoneValidation.js
+// - keep both in sync. The old strict BD-only pattern (/^01[3-9]\d{8}$/)
+// rejected real-world mobile input often enough to block real
+// registrations - a nurse unable to sign up is a far bigger problem than a
+// slightly-off phone number. This only strips formatting noise and checks
+// the result looks roughly like a phone number at all; it never enforces a
+// country-specific shape.
 const BENGALI_DIGITS = '০১২৩৪৫৬৭৮৯';
 
-// See the frontend copy of this file for why normalization exists: real
-// mobile input commonly arrives as Bengali numerals, or with a "+880"/"880"
-// country code and/or spaces/dashes from phone autofill - all of which are
-// still a valid number, just not in the bare "01XXXXXXXXX" shape. Enforced
-// here too since this is the real server-side gate, not just UI polish.
-const normalizeBDPhone = (raw) => {
+const normalizePhone = (raw) => {
   let s = String(raw || '').trim().replace(/[০-৯]/g, (d) => String(BENGALI_DIGITS.indexOf(d)));
   s = s.replace(/[^\d+]/g, '');
   s = s.replace(/^\+?880/, '0');
   return s;
 };
 
-const isValidBDPhone = (phone) => BD_PHONE_RE.test(normalizeBDPhone(phone));
+const isValidPhone = (phone) => {
+  const digits = normalizePhone(phone).replace(/\D/g, '');
+  return digits.length >= 10 && digits.length <= 14;
+};
 
-module.exports = { isValidBDPhone, normalizeBDPhone };
+module.exports = { isValidPhone, normalizePhone };

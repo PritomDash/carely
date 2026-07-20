@@ -2,18 +2,24 @@ const { test, expect } = require('@playwright/test');
 const path = require('path');
 const fs = require('fs');
 
-// Regression coverage for the pre-launch "registration fails on mobile" bug
-// (2026-07-19). Root cause: isValidBDPhone() only accepted a bare
-// "01XXXXXXXXX" string. Real mobile input never looks like that - a Bangla
-// keyboard/locale (common default on BD phones) produces Bengali numerals
-// for the numeric row, and a phone's own tel-autofill/QuickType suggestion
-// inserts the number with a "+880" country code. Desktop users typing
-// manually essentially never hit either case, which is why this only
-// showed up on mobile. Fixed in carely-frontend/src/utils/phoneValidation.js
-// and carely-backend/utils/phoneValidation.js (normalizeBDPhone). This
-// suite runs these two real-world mobile formats through the actual
-// register form on a real mobile viewport, both roles, end to end to /home.
-test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+// Regression coverage for phone-number validation on mobile registration.
+//
+// 2026-07-19: "registration fails on mobile" was traced to isValidBDPhone()
+// only accepting a bare "01XXXXXXXXX" string, rejecting real mobile input
+// (Bengali numerals from a Bangla keyboard, a "+880" country code from
+// phone tel-autofill). Fixed by normalizing those before a still-strict
+// BD-shape check.
+//
+// 2026-07-20: that strict BD-shape check itself turned out to be
+// over-engineered and still too easy to trip on real-world formatting -
+// simplified further to a permissive "does this look like a phone number
+// at all" digit-count check (carely-frontend/src/utils/phoneValidation.js,
+// carely-backend/utils/phoneValidation.js). Registration must never
+// hard-block on phone formatting; only a gentle inline hint, and even that
+// never prevents submit unless the field is empty (the browser's own
+// `required` handles empty). This suite runs the real register form on a
+// real mobile viewport, both roles, end to end to /home.
+test.use({ viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true });
 
 const tinyPngPath = path.join(__dirname, '_mobile-reg-tiny.png');
 const tinyPngBuffer = Buffer.from(
@@ -24,21 +30,47 @@ const tinyPngBuffer = Buffer.from(
 test.beforeAll(() => { fs.writeFileSync(tinyPngPath, tinyPngBuffer); });
 test.afterAll(() => { try { fs.unlinkSync(tinyPngPath); } catch (e) {} });
 
-test.describe('Mobile registration - real-world phone input formats', () => {
+const registerCustomer = async (page, { name, email, phone }) => {
+  await page.goto('/register');
+  await page.locator('input[type="text"]').first().fill(name);
+  await page.locator('input[type="email"]').fill(email);
+  await page.locator('input[type="password"]').fill('MobileReg123!');
+  await page.locator('input[type="tel"]').fill(phone);
+  await page.locator('#terms').click();
+  await page.locator('button[type="submit"]').click();
+  await page.waitForURL(/\/login/, { timeout: 15000 });
+  await expect(page.locator('text=/Account created successfully/i')).toBeVisible({ timeout: 5000 });
+};
+
+test.describe('Mobile registration - permissive phone validation, common real-world formats', () => {
+  const formats = [
+    { label: 'plain', phone: '01712345678' },
+    { label: 'dashed', phone: '017-1234-5678' },
+    { label: '+880 prefixed', phone: '+8801712345678' },
+    { label: '880 prefixed no plus', phone: '8801712345678' },
+    { label: 'spaced', phone: '017 1234 5678' },
+  ];
+
+  for (const { label, phone } of formats) {
+    test(`Customer registers on mobile with a "${label}" phone number (${phone})`, async ({ page }) => {
+      const n = Date.now() + Math.random();
+      await registerCustomer(page, {
+        name: `Mobile Format Customer ${n}`,
+        email: `mobile.fmt.${label.replace(/\W+/g, '')}.${n}@carelytest.com`,
+        phone,
+      });
+    });
+  }
+
   test('Customer registers on mobile with a Bengali-numeral phone number', async ({ page }) => {
     const n = Date.now();
-    await page.goto('/register');
-    await page.locator('input[type="text"]').first().fill(`Mobile Bengali Customer ${n}`);
-    await page.locator('input[type="email"]').fill(`mobile.bn.cust.${n}@carelytest.com`);
-    await page.locator('input[type="password"]').fill('MobileReg123!');
     // Bengali-numeral equivalent of 01712345678, as a Bangla-locale keyboard
     // would actually produce it - not something a desktop user ever types.
-    await page.locator('input[type="tel"]').fill('০১৭১২৩৪৫৬৭৮');
-    await page.locator('#terms').click();
-    await page.locator('button[type="submit"]').click();
-
-    await page.waitForURL(/\/login/, { timeout: 15000 });
-    await expect(page.locator('text=/Account created successfully/i')).toBeVisible({ timeout: 5000 });
+    await registerCustomer(page, {
+      name: `Mobile Bengali Customer ${n}`,
+      email: `mobile.bn.cust.${n}@carelytest.com`,
+      phone: '০১৭১২৩৪৫৬৭৮',
+    });
 
     // End to end: log back in with the same account and land on /home.
     await page.locator('input[type="email"]').fill(`mobile.bn.cust.${n}@carelytest.com`);
@@ -47,7 +79,7 @@ test.describe('Mobile registration - real-world phone input formats', () => {
     await page.waitForURL(/\/home/, { timeout: 15000 });
   });
 
-  test('Professional registers on mobile with a +880-prefixed phone number', async ({ page }) => {
+  test('Professional registers on mobile with a +880-prefixed phone number, full form, end to end to /home', async ({ page }) => {
     const n = Date.now();
     await page.goto('/register');
     await page.locator('text="I\'m a Professional"').click();
@@ -55,8 +87,6 @@ test.describe('Mobile registration - real-world phone input formats', () => {
     await page.locator('input[type="text"]').first().fill(`Mobile 880 Pro ${n}`);
     await page.locator('input[type="email"]').fill(`mobile.880.pro.${n}@carelytest.com`);
     await page.locator('input[type="password"]').fill('MobileReg123!');
-    // +880 country-code prefix, as a phone's own tel-autofill/QuickType
-    // suggestion commonly inserts it - again, not a desktop-typing pattern.
     await page.locator('input[type="tel"]').fill('+8801712345678');
 
     await page.locator('select').first().selectOption('Nurse');
@@ -81,16 +111,23 @@ test.describe('Mobile registration - real-world phone input formats', () => {
     await page.waitForURL(/\/home/, { timeout: 15000 });
   });
 
-  test('Registering with a genuinely invalid number is still rejected, on mobile', async ({ page }) => {
+  test('A clearly-not-a-phone value shows a gentle hint but never hard-blocks the submit click', async ({ page }) => {
     await page.goto('/register');
-    await page.locator('input[type="text"]').first().fill('Should Not Register');
-    await page.locator('input[type="email"]').fill(`mobile.invalid.${Date.now()}@carelytest.com`);
+    await page.locator('input[type="text"]').first().fill('Should Show Hint Only');
+    await page.locator('input[type="email"]').fill(`mobile.hint.${Date.now()}@carelytest.com`);
     await page.locator('input[type="password"]').fill('MobileReg123!');
-    await page.locator('input[type="tel"]').fill('01012345678'); // 010 is not an allocated BD prefix
+    await page.locator('input[type="tel"]').fill('123');
+
+    // Gentle inline hint appears while typing - not a blocking form error.
+    await expect(page.locator("text=/doesn't quite look like a phone number/i")).toBeVisible({ timeout: 3000 });
+
+    // Submit is never prevented client-side for non-empty input - clicking
+    // it actually attempts the request (the backend, not the form, is the
+    // only thing that can still say no to something this clearly not a
+    // phone number).
     await page.locator('#terms').click();
     await page.locator('button[type="submit"]').click();
-
-    await expect(page.locator('text=/valid Bangladeshi mobile number/i')).toBeVisible({ timeout: 5000 });
+    await page.waitForTimeout(2000);
     await expect(page).toHaveURL(/\/register/);
   });
 });

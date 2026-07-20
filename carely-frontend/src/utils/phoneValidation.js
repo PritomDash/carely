@@ -1,25 +1,28 @@
-// Bangladeshi mobile numbers: 11 digits, starting 01, second digit 3-9
-// (013/014/015/016/017/018/019 - the current operator prefix ranges;
-// 010/011/012 aren't allocated). Same rule used client and server side.
-const BD_PHONE_RE = /^01[3-9]\d{8}$/;
-
+// Deliberately permissive. The old strict BD-only pattern
+// (/^01[3-9]\d{8}$/) rejected real-world mobile input often enough to
+// block real registrations - a nurse unable to sign up is a far bigger
+// problem than a slightly-off phone number. This only strips formatting
+// noise and checks the result looks roughly like a phone number at all;
+// it never enforces a country-specific shape.
 const BENGALI_DIGITS = '০১২৩৪৫৬৭৮৯';
 
-// Real mobile input never looks like a cleanly-typed desktop string. Found
-// while root-causing "registration fails on mobile" (2026-07-19): a phone
-// with a Bangla keyboard/locale produces Bengali numerals for the numeric
-// row, and a phone's own tel-autofill/QuickType suggestion inserts the
-// number with a "+880"/"880" country code and/or spaces or dashes - none of
-// which a desktop user typing manually ever hits. Normalizing before
-// validating (and before storing) means all of those still count as the
-// same valid number instead of being rejected as "invalid".
-export const normalizeBDPhone = (raw) => {
+// Strips spaces, dashes, parens, Bengali numerals (common on a
+// Bangla-locale keyboard), and a leading country code (+880/880) - so
+// "017-1234-5678", "+8801712345678", and "০১৭১২৩৪৫৬৭৮" all normalize to
+// the same digits before validating or storing.
+export const normalizePhone = (raw) => {
   let s = String(raw || '').trim().replace(/[০-৯]/g, (d) => String(BENGALI_DIGITS.indexOf(d)));
   s = s.replace(/[^\d+]/g, '');
   s = s.replace(/^\+?880/, '0');
   return s;
 };
 
-export const isValidBDPhone = (phone) => BD_PHONE_RE.test(normalizeBDPhone(phone));
+// "Does this look like a phone number at all?" - a digit count in a
+// reasonable range, nothing more. No leading-01 requirement, no operator
+// prefix check, no fixed length.
+export const isValidPhone = (phone) => {
+  const digits = normalizePhone(phone).replace(/\D/g, '');
+  return digits.length >= 10 && digits.length <= 14;
+};
 
-export const BD_PHONE_ERROR = 'Enter a valid Bangladeshi mobile number (e.g. 01712345678)';
+export const PHONE_HINT = "That doesn't quite look like a phone number - please double-check it.";

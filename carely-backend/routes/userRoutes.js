@@ -4,7 +4,7 @@ const authMiddleware = require('../middlewares/authMiddleware');
 const { upload } = require('../middlewares/uploadMiddleware');
 const User = require('../models/user');
 const { findNearbyProfessionals } = require('../utils/nearbySearch');
-const { isValidBDPhone, normalizeBDPhone } = require('../utils/phoneValidation');
+const { isValidPhone, normalizePhone } = require('../utils/phoneValidation');
 const { createNotification } = require('../utils/notificationService');
 
 router.get('/me', authMiddleware, async (req, res) => {
@@ -40,9 +40,9 @@ router.put('/update-profile', authMiddleware, async (req, res) => {
             weekdayRate, saturdayRate, sundayRate, hourlyRate,
             bkashNumber, nagadNumber, payoutMethod, bankDetails } = req.body;
 
-    const normalizedPhone = phone !== undefined ? normalizeBDPhone(phone) : undefined;
-    if (phone !== undefined && !isValidBDPhone(normalizedPhone)) {
-      return res.status(400).json({ message: 'Enter a valid Bangladeshi mobile number (e.g. 01712345678)' });
+    const normalizedPhone = phone !== undefined ? normalizePhone(phone) : undefined;
+    if (phone !== undefined && !isValidPhone(normalizedPhone)) {
+      return res.status(400).json({ message: "That doesn't look like a valid phone number." });
     }
 
     const num = (v) => (v === "" || v == null ? 0 : Number(v));
