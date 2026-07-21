@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import api, { API_BASE } from '../services/api';
+import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { formatBDT } from '../utils/currency';
 import AppNavbar from '../components/AppNavbar';
 import BoostStar from '../components/BoostStar';
+import Avatar from '../components/Avatar';
 import { Star, MessageCircle, MapPin } from 'lucide-react';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -13,12 +14,6 @@ const TABS = [
   { key: 'availability', label: 'Availability' },
   { key: 'reviews', label: 'Reviews' },
 ];
-
-const fileUrl = (p) => {
-  if (!p) return null;
-  const name = String(p).split(/[\\/]/).pop();
-  return `${API_BASE}/uploads/documents/${name}`;
-};
 
 const formatLocation = (loc) => {
   if (!loc) return 'Location not set';
@@ -107,14 +102,7 @@ export default function ViewProfilePage() {
       <div className="app-page-content" style={{ maxWidth: 1000, margin: '0 auto', padding: '28px 20px' }}>
       <div className="card" style={{ marginBottom: 20 }}>
         <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', alignItems: 'center' }}>
-          <div style={{
-            width: 110, height: 110, borderRadius: '50%', overflow: 'hidden',
-            background: 'var(--primary-light)', flexShrink: 0
-          }}>
-            {pro.profilePhoto && (
-              <img src={fileUrl(pro.profilePhoto)} alt={pro.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            )}
-          </div>
+          <Avatar user={pro} size={110} />
           <div style={{ minWidth: 0 }}>
             <h2>{pro.name}{pro.isFeatured && <BoostStar />}</h2>
             <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>

@@ -1,14 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import api, { API_BASE } from '../services/api';
+import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import AppNavbar from '../components/AppNavbar';
-
-const fileUrl = (p) => {
-  if (!p) return null;
-  const name = String(p).split(/[\\/]/).pop();
-  return `${API_BASE}/uploads/documents/${name}`;
-};
+import Avatar from '../components/Avatar';
 
 const formatTime = (d) => new Date(d).toLocaleString('en-BD', {
   month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
@@ -79,11 +74,7 @@ export default function ChatInbox() {
                 style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}
                 onClick={() => navigate(`/chat/${otherId}`)}
               >
-                <div style={{ width: 48, height: 48, borderRadius: '50%', overflow: 'hidden', background: '#f3f4f6', flexShrink: 0 }}>
-                  {other?.profilePhoto && (
-                    <img src={fileUrl(other.profilePhoto)} alt={other.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  )}
-                </div>
+                <Avatar user={other} size={48} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
                     <strong>{other?.name || 'Unknown'}</strong>

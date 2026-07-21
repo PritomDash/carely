@@ -3,6 +3,7 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { formatBDT } from '../utils/currency';
+import Avatar from '../components/Avatar';
 import {
   LayoutDashboard, Users, Calendar, Briefcase, CreditCard,
   Settings as SettingsIcon, MessageSquare, LogOut, UserCheck,
@@ -234,7 +235,12 @@ function UsersTab() {
           <tbody>
             {filteredUsers.map((u) => (
               <tr key={u._id}>
-                <td>{u.name}</td>
+                <td>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Avatar user={u} size={28} />
+                    {u.name}
+                  </div>
+                </td>
                 <td>{u.email}</td>
                 <td style={{ textTransform: 'capitalize' }}>{u.role}</td>
                 <td>{formatLocation(u.location)}</td>
@@ -282,8 +288,13 @@ function UsersTab() {
       <div className="admin-mobile-cards">
         {filteredUsers.map((u) => (
           <div key={u._id} style={{ background: 'white', border: '1px solid #E8EDF3', borderRadius: 10, padding: 14, marginBottom: 10 }}>
-            <div style={{ fontWeight: 700 }}>{u.name}</div>
-            <div style={{ color: '#64748B', fontSize: 13 }}>{u.email}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <Avatar user={u} size={36} />
+              <div>
+                <div style={{ fontWeight: 700 }}>{u.name}</div>
+                <div style={{ color: '#64748B', fontSize: 13 }}>{u.email}</div>
+              </div>
+            </div>
             <div style={{ marginTop: 6, display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
               <span className="badge badge-gray" style={{ textTransform: 'capitalize' }}>{u.role}</span>
               <span className="text-muted">{formatLocation(u.location)}</span>

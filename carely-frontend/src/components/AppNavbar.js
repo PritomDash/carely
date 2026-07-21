@@ -7,6 +7,7 @@ import { setupPushNotifications } from '../utils/pushManager';
 import { isStandalone, requestInstall } from '../utils/pwaInstall';
 import CarelyLogo from './CarelyLogo';
 import NotificationBell from './NotificationBell';
+import Avatar from './Avatar';
 
 // Module-scope, not state - AppNavbar remounts on every page (each page
 // imports its own copy), but this flag survives those remounts for the
@@ -76,7 +77,6 @@ export default function AppNavbar() {
     return () => document.removeEventListener('mousedown', h);
   }, []);
 
-  const initials = (name) => name ? name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2) : '?';
   const active = (p) => location.pathname === p;
 
   const customerTabs = [
@@ -132,14 +132,14 @@ export default function AppNavbar() {
             <NotificationBell userId={user._id} />
             <span className="hide-mobile" style={{ fontSize:14, fontWeight:600, color:'#374151' }}>{user.name}</span>
             <div ref={ref} style={{ position:'relative' }}>
-              <div onClick={() => setOpen(!open)} style={{ width:40, height:40, borderRadius:'50%', background:'linear-gradient(135deg,#2B7FFF,#60A5FA)', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:800, fontSize:15, cursor:'pointer', boxShadow:'0 2px 8px rgba(43,127,255,0.35)', userSelect:'none' }}>
-                {initials(user.name)}
+              <div onClick={() => setOpen(!open)} style={{ cursor:'pointer' }}>
+                <Avatar user={user} size={40} style={{ boxShadow:'0 2px 8px rgba(43,127,255,0.35)' }} />
               </div>
               {open && (
                 <div style={{ position:'absolute', right:0, top:'115%', background:'#fff', border:'1px solid #E2E8F0', borderRadius:14, boxShadow:'0 8px 32px rgba(0,0,0,0.14)', width:230, padding:12, zIndex:300 }}>
                   <div style={{ textAlign:'center', padding:'10px 0 14px' }}>
-                    <div style={{ width:52, height:52, borderRadius:'50%', background:'linear-gradient(135deg,#2B7FFF,#60A5FA)', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:800, fontSize:20, margin:'0 auto 10px' }}>
-                      {initials(user.name)}
+                    <div style={{ margin:'0 auto 10px', width:'fit-content' }}>
+                      <Avatar user={user} size={52} />
                     </div>
                     <div style={{ fontWeight:700, fontSize:15, color:'#1A1A2E' }}>{user.name}</div>
                     <div style={{ fontSize:12, color:'#64748B', marginTop:3 }}>{user.email}</div>
@@ -369,14 +369,7 @@ const BottomNav = () => {
         {/* User info */}
         <div style={{ padding: '12px 20px 16px', borderBottom: '1px solid #F1F5F9' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{
-              width: 48, height: 48, borderRadius: '50%',
-              background: 'linear-gradient(135deg, #2563EB, #60A5FA)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'white', fontWeight: 800, fontSize: 18,
-            }}>
-              {user?.name?.charAt(0)?.toUpperCase()}
-            </div>
+            <Avatar user={user} size={48} />
             <div>
               <div style={{ fontWeight: 700, fontSize: 15, color: '#1A1A2E' }}>{user?.name}</div>
               <div style={{ fontSize: 12, color: '#64748B', textTransform: 'capitalize' }}>{user?.role}</div>

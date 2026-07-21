@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import api, { API_BASE } from '../services/api';
+import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { Star } from 'lucide-react';
 import AppNavbar from '../components/AppNavbar';
+import Avatar from '../components/Avatar';
 
 const STATUS_BADGE = {
   Open: 'badge-green',
@@ -11,12 +12,6 @@ const STATUS_BADGE = {
   Completed: 'badge-gray',
   Expired: 'badge-gray',
   Cancelled: 'badge-red',
-};
-
-const fileUrl = (p) => {
-  if (!p) return null;
-  const name = String(p).split(/[\\/]/).pop();
-  return `${API_BASE}/uploads/documents/${name}`;
 };
 
 const formatLocation = (loc) => {
@@ -153,11 +148,7 @@ export default function MyJobPosts() {
                               display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
                               borderBottom: '1px solid #f3f4f6', paddingBottom: 10
                             }}>
-                              <div style={{ width: 40, height: 40, borderRadius: '50%', overflow: 'hidden', background: '#f3f4f6', flexShrink: 0 }}>
-                                {pro.profilePhoto && (
-                                  <img src={fileUrl(pro.profilePhoto)} alt={pro.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                )}
-                              </div>
+                              <Avatar user={pro} size={40} />
                               <div style={{ flex: 1, minWidth: 120 }}>
                                 <div style={{ fontWeight: 500 }}>{pro.name}</div>
                                 <Stars rating={pro.rating} />

@@ -1,16 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import api, { API_BASE } from '../services/api';
+import api from '../services/api';
 import AppNavbar from '../components/AppNavbar';
-
-const fileUrl = (p) => {
-  if (!p) return null;
-  const name = String(p).split(/[\\/]/).pop();
-  return `${API_BASE}/uploads/documents/${name}`;
-};
-
-const getInitials = (name = '') =>
-  name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase()).join('') || '?';
+import Avatar from '../components/Avatar';
 
 export default function ReferralPage() {
   const { code } = useParams();
@@ -47,17 +39,8 @@ export default function ReferralPage() {
         }}>
           {!loading && pro && (
             <>
-              <div style={{
-                width: 80, height: 80, borderRadius: '50%', margin: '0 auto 16px',
-                background: 'linear-gradient(135deg,#2B7FFF,#60A5FA)', color: '#fff',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontWeight: 800, fontSize: 28, overflow: 'hidden'
-              }}>
-                {pro.profilePhoto ? (
-                  <img src={fileUrl(pro.profilePhoto)} alt={pro.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                ) : (
-                  getInitials(pro.name)
-                )}
+              <div style={{ margin: '0 auto 16px', width: 'fit-content' }}>
+                <Avatar user={pro} size={80} />
               </div>
               <div style={{ color: '#64748B', fontSize: 13, marginBottom: 4 }}>You were invited by</div>
               <div style={{ fontWeight: 700, fontSize: 24, color: '#1A1A2E', marginBottom: 8 }}>{pro.name}</div>

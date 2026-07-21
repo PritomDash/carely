@@ -1,21 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import api, { API_BASE } from '../services/api';
+import api from '../services/api';
 import { Link } from 'react-router-dom';
 import LocationSelector from '../components/LocationSelector';
 import AppNavbar from '../components/AppNavbar';
 import ShareCard from '../components/ShareCard';
+import Avatar from '../components/Avatar';
 import { isValidPhone, PHONE_HINT } from '../utils/phoneValidation';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 const emptyAvailability = () =>
   DAYS.reduce((acc, day) => ({ ...acc, [day]: { start: '', end: '' } }), {});
-
-const fileUrl = (p) => {
-  if (!p) return null;
-  const name = String(p).split(/[\\/]/).pop();
-  return `${API_BASE}/uploads/documents/${name}`;
-};
 
 export default function EditProfilePage() {
   const [loading, setLoading] = useState(true);
@@ -51,7 +46,7 @@ export default function EditProfilePage() {
       setRole(u.role);
       setHourlyRate(u.hourlyRate || 0);
       setProfile(u);
-      setPhotoPreview(fileUrl(u.profilePhoto));
+      setPhotoPreview(u.profilePhoto || null);
       setForm({
         name: u.name || '',
         phone: u.phone || '',
@@ -161,13 +156,8 @@ export default function EditProfilePage() {
         <form onSubmit={handleSubmit}>
           {role === 'professional' && (
             <div style={{ marginBottom: 16, textAlign: 'center' }}>
-              <div style={{
-                width: 96, height: 96, borderRadius: '50%', overflow: 'hidden',
-                background: '#EBF3FF', margin: '0 auto 12px'
-              }}>
-                {photoPreview && (
-                  <img src={photoPreview} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                )}
+              <div style={{ margin: '0 auto 12px', width: 'fit-content' }}>
+                <Avatar name={form.name} photo={photoPreview} size={96} />
               </div>
               <label className="form-label" style={{ display: 'block', textAlign: 'center' }}>Profile Photo</label>
               <input type="file" accept="image/*" onChange={handlePhotoChange} />

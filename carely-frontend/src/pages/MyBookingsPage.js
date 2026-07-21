@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import api, { API_BASE } from '../services/api';
+import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useLocation, useSearchParams, Link } from 'react-router-dom';
 import { formatBDT } from '../utils/currency';
 import AppNavbar from '../components/AppNavbar';
+import Avatar from '../components/Avatar';
 
 const STATUS_CLASS = {
   AwaitingAcceptance: 'status-awaiting',
@@ -21,21 +22,6 @@ const FILTER_TABS = [
   { key: 'Completed', label: 'Completed' },
   { key: 'Cancelled', label: 'Cancelled' },
 ];
-
-const fileUrl = (p) => {
-  if (!p) return null;
-  const name = String(p).split(/[\\/]/).pop();
-  return `${API_BASE}/uploads/documents/${name}`;
-};
-
-const getInitials = (name = '') =>
-  name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase()).join('') || '?';
-
-const Avatar = ({ src, name, size = 48 }) => (
-  <div className="avatar" style={{ width: size, height: size, fontSize: size * 0.35 }}>
-    {src ? <img src={src} alt={name} /> : <span>{getInitials(name)}</span>}
-  </div>
-);
 
 export default function MyBookingsPage() {
   const { user } = useAuth();
@@ -164,7 +150,7 @@ export default function MyBookingsPage() {
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
                   <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                    <Avatar src={fileUrl(otherParty?.profilePhoto)} name={otherParty?.name} size={48} />
+                    <Avatar user={otherParty} size={48} />
                     <div>
                       <div style={{ fontWeight: 700 }}>{otherParty?.name || 'Unknown'}</div>
                       <div className="text-muted">{b.date?.slice(0, 10)} at {b.time} &middot; {b.duration}h</div>

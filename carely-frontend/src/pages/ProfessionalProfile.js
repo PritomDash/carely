@@ -1,16 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import api, { API_BASE } from '../services/api';
+import api from '../services/api';
 import { Link } from 'react-router-dom';
 import { formatBDT } from '../utils/currency';
 import { Star } from 'lucide-react';
 import AppNavbar from '../components/AppNavbar';
 import BoostStar from '../components/BoostStar';
-
-const fileUrl = (p) => {
-  if (!p) return null;
-  const name = String(p).split(/[\\/]/).pop();
-  return `${API_BASE}/uploads/documents/${name}`;
-};
+import Avatar from '../components/Avatar';
 
 const formatLocation = (loc) => {
   if (!loc) return 'Location not set';
@@ -75,14 +70,7 @@ export default function ProfessionalProfile() {
       <div className="app-page-content" style={{ maxWidth: 720, margin: '0 auto', padding: '28px 20px' }}>
       <div className="card">
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center' }}>
-          <div style={{
-            width: 88, height: 88, borderRadius: '50%', overflow: 'hidden',
-            background: '#f3f4f6', flexShrink: 0
-          }}>
-            {profile.profilePhoto && (
-              <img src={fileUrl(profile.profilePhoto)} alt={profile.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            )}
-          </div>
+          <Avatar user={profile} size={88} />
           <div style={{ minWidth: 0 }}>
             <h2>{profile.name}{profile.isFeatured && <BoostStar />}</h2>
             <Stars rating={profile.rating} />

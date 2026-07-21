@@ -1,22 +1,17 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import api, { API_BASE } from '../services/api';
+import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { formatBDT } from '../utils/currency';
 import AppNavbar from '../components/AppNavbar';
+import Avatar from '../components/Avatar';
 import { MapPin, Star } from 'lucide-react';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const DAY_ABBR = { Monday: 'Mon', Tuesday: 'Tue', Wednesday: 'Wed', Thursday: 'Thu', Friday: 'Fri', Saturday: 'Sat', Sunday: 'Sun' };
 const DAY_BY_INDEX = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-
-const fileUrl = (p) => {
-  if (!p) return null;
-  const name = String(p).split(/[\\/]/).pop();
-  return `${API_BASE}/uploads/documents/${name}`;
-};
 
 const formatLocation = (loc) => {
   if (!loc) return 'Location not set';
@@ -308,13 +303,8 @@ export default function BookingPage() {
       <div className="app-page-content" style={{ maxWidth: 1000, margin: '0 auto', padding: '28px 20px' }}>
       <div className="booking-layout">
         <div className="card">
-          <div style={{
-            width: 88, height: 88, borderRadius: '50%', overflow: 'hidden',
-            background: 'var(--primary-light)', margin: '0 auto 14px'
-          }}>
-            {pro.profilePhoto && (
-              <img src={fileUrl(pro.profilePhoto)} alt={pro.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            )}
+          <div style={{ margin: '0 auto 14px', width: 'fit-content' }}>
+            <Avatar user={pro} size={88} />
           </div>
           <div style={{ textAlign: 'center', fontWeight: 700, fontSize: 18 }}>{pro.name}</div>
           <div style={{ textAlign: 'center', marginTop: 6 }}>

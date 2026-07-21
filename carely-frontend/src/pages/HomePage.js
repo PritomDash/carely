@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import api, { API_BASE } from '../services/api';
+import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { formatBDT } from '../utils/currency';
 import { getAllThanas } from '../utils/locations';
 import AppNavbar from '../components/AppNavbar';
 import BoostStar from '../components/BoostStar';
+import Avatar from '../components/Avatar';
 import socket from '../socket';
 import { Search, MapPin, Clock, Star } from 'lucide-react';
 
@@ -17,19 +18,10 @@ const TYPE_COLORS = {
   'Physiotherapist': { bg: '#FFF7ED', text: '#C2410C' },
 };
 
-const fileUrl = (p) => {
-  if (!p) return null;
-  const name = String(p).split(/[\\/]/).pop();
-  return `${API_BASE}/uploads/documents/${name}`;
-};
-
 const formatLocation = (loc) => {
   if (!loc) return 'Location not set';
   return [loc.thana, loc.district].filter(Boolean).join(', ') || 'Location not set';
 };
-
-const getInitials = (name = '') =>
-  name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase()).join('') || '?';
 
 // Honest, verifiable trust signals - a real completed-job count and a real
 // join date, never a "verified" claim Carely can't actually back up.
@@ -103,14 +95,8 @@ function Leaderboard() {
                 👑
               </div>
             )}
-            <div style={{
-              width: isMobile ? 42 : 56, height: isMobile ? 42 : 56, borderRadius: '50%', overflow: 'hidden', margin: '0 auto 8px',
-              background: '#EBF3FF', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontWeight: 700, color: '#2B7FFF',
-            }}>
-              {p.profilePhoto ? (
-                <img src={fileUrl(p.profilePhoto)} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              ) : getInitials(p.name)}
+            <div style={{ margin: '0 auto 8px', width: 'fit-content' }}>
+              <Avatar user={p} size={isMobile ? 42 : 56} />
             </div>
             <div style={{
               fontWeight: 700,
@@ -347,11 +333,7 @@ function ProfessionalsGrid({ professionals, loading, cols }) {
               }}
             >
               <div style={{ flexShrink: 0 }}>
-                {p.profilePhoto ? (
-                  <img className="pro-avatar" src={fileUrl(p.profilePhoto)} alt={p.name} style={{ width: 56, height: 56 }} />
-                ) : (
-                  <div className="pro-avatar" style={{ width: 56, height: 56 }}>{getInitials(p.name)}</div>
-                )}
+                <Avatar user={p} size={56} />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div className="pro-name" style={{ fontSize: 15, fontWeight: 700 }}>
@@ -392,11 +374,7 @@ function ProfessionalsGrid({ professionals, loading, cols }) {
             style={{ position: 'relative', padding: compact ? 12 : 18 }}
           >
             <div className="pro-card-header">
-              {p.profilePhoto ? (
-                <img className="pro-avatar" src={fileUrl(p.profilePhoto)} alt={p.name} style={{ width: avatarSize, height: avatarSize }} />
-              ) : (
-                <div className="pro-avatar" style={{ width: avatarSize, height: avatarSize }}>{getInitials(p.name)}</div>
-              )}
+              <Avatar user={p} size={avatarSize} />
               <div>
                 <div className="pro-name" style={{ fontSize: compact ? 14 : 16 }}>
                   {p.name}{p.isFeatured && <BoostStar />}

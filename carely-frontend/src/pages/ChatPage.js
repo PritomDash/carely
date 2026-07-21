@@ -1,15 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import api, { API_BASE } from '../services/api';
+import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import socket from '../socket';
 import AppNavbar from '../components/AppNavbar';
-
-const fileUrl = (p) => {
-  if (!p) return null;
-  const name = String(p).split(/[\\/]/).pop();
-  return `${API_BASE}/uploads/documents/${name}`;
-};
+import Avatar from '../components/Avatar';
 
 const formatTime = (d) => new Date(d).toLocaleString('en-BD', {
   month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
@@ -104,11 +99,7 @@ export default function ChatPage() {
       <div className="app-page-content" style={{ maxWidth: 640, margin: '0 auto', padding: '28px 20px' }}>
       <div className="card chat-card" style={{ display: 'flex', flexDirection: 'column', height: '70vh', padding: 0, overflow: 'hidden' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', borderBottom: '1px solid #e5e7eb' }}>
-          <div style={{ width: 36, height: 36, borderRadius: '50%', overflow: 'hidden', background: '#f3f4f6', flexShrink: 0 }}>
-            {otherUser?.profilePhoto && (
-              <img src={fileUrl(otherUser.profilePhoto)} alt={otherUser.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            )}
-          </div>
+          <Avatar user={otherUser} size={36} />
           <strong>{otherUser?.name || 'Conversation'}</strong>
         </div>
 
