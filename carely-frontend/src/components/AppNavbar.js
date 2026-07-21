@@ -12,7 +12,6 @@ import NotificationBell from './NotificationBell';
 // imports its own copy), but this flag survives those remounts for the
 // life of the tab, so the heartbeat still only fires once per session load.
 let heartbeatSent = false;
-let founderWelcomeTimerArmed = false;
 
 export default function AppNavbar() {
   const { user, logout } = useAuth();
@@ -70,25 +69,6 @@ export default function AppNavbar() {
       }, 3000);
     }
   }, [user?._id]);
-
-  // Founder welcome push+in-app notification for professionals, timed to
-  // land ~20-30s after registration (falling back to ~25s after this first
-  // load for anyone who registered before push was subscribed, or before
-  // this feature existed). Guarded module-wide so navigating between pages
-  // never arms a second timer; the backend call is itself idempotent via
-  // founderWelcomeNotifiedAt, so even a rare double-arm is harmless. Not
-  // cleared on unmount on purpose - it's a background browser timer that
-  // should keep counting down across in-app navigation, same as heartbeat.
-  useEffect(() => {
-    if (!user || user.role !== 'professional' || user.founderWelcomeNotifiedAt) return;
-    if (founderWelcomeTimerArmed) return;
-    founderWelcomeTimerArmed = true;
-    const registeredAt = Number(localStorage.getItem('carelyFounderWelcomeRegisteredAt')) || Date.now();
-    const delay = Math.max(0, registeredAt + 25000 - Date.now());
-    setTimeout(() => {
-      api.post('/api/users/founder-welcome-notify').catch(() => {});
-    }, delay);
-  }, [user?._id, user?.role, user?.founderWelcomeNotifiedAt]);
 
   useEffect(() => {
     const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };

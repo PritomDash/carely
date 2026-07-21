@@ -2,7 +2,7 @@ const { sendPushNotification } = require('./pushNotification');
 const User = require('../models/user');
 const Notification = require('../models/Notification');
 
-const createNotification = async ({ userId, type, message, link, io, pushTitle }) => {
+const createNotification = async ({ userId, type, message, link, io }) => {
   try {
     const notification = await Notification.create({
       user: userId,
@@ -26,7 +26,7 @@ const createNotification = async ({ userId, type, message, link, io, pushTitle }
     if (user?.pushSubscription) {
       await sendPushNotification({
         subscription: user.pushSubscription,
-        title: pushTitle || 'Carely',
+        title: 'Carely',
         body: message,
         link: link || '/my-bookings'
       });

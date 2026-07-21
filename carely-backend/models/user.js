@@ -70,7 +70,6 @@ const userSchema = new mongoose.Schema({
   hasInstalledApp: { type: Boolean, default: false },
   appInstalledAt:  { type: Date, default: null },
   lastActiveAt:    { type: Date, default: null },
-  founderWelcomeNotifiedAt: { type: Date, default: null },
 }, { timestamps: true });
 
 userSchema.index({ role: 1, 'location.thana': 1, professionalType: 1 });

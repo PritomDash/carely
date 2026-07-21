@@ -5,7 +5,6 @@ const { upload } = require('../middlewares/uploadMiddleware');
 const User = require('../models/user');
 const { findNearbyProfessionals } = require('../utils/nearbySearch');
 const { isValidPhone, normalizePhone } = require('../utils/phoneValidation');
-const { createNotification } = require('../utils/notificationService');
 
 router.get('/me', authMiddleware, async (req, res) => {
   try {
@@ -231,31 +230,6 @@ router.post('/push-subscription', authMiddleware, async (req, res) => {
 
 router.get('/vapid-public-key', (req, res) => {
   res.json({ publicKey: process.env.VAPID_PUBLIC_KEY || '' });
-});
-
-// One-time push + in-app "note from the founder" for new professionals - the
-// frontend calls this ~20-30s after registration/first login. Idempotent via
-// founderWelcomeNotifiedAt so a re-armed client-side timer (e.g. after a
-// fresh page load) can never send it twice. Intentionally push + in-app
-// only, no email - see the "add free founder welcome" feature.
-router.post('/founder-welcome-notify', authMiddleware, async (req, res) => {
-  try {
-    if (req.user.role !== 'professional') return res.status(403).json({ message: 'Not applicable' });
-    if (req.user.founderWelcomeNotifiedAt) return res.json({ sent: false });
-
-    await User.findByIdAndUpdate(req.user._id, { founderWelcomeNotifiedAt: new Date() });
-    await createNotification({
-      userId: req.user._id,
-      type: 'admin',
-      message: 'A personal note from the founder is waiting — tap to read.',
-      link: '/home',
-      pushTitle: 'Welcome to Carely 💙',
-      io: req.io,
-    });
-    res.json({ sent: true });
-  } catch (err) {
-    res.status(500).json({ message: 'Failed to send founder welcome' });
-  }
 });
 
 router.get('/:id', async (req, res) => {
